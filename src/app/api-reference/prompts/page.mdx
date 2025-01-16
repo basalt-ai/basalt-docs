@@ -1,16 +1,16 @@
 export const metadata = {
   title: 'Prompts',
   description:
-    'On this page, we\'ll dive into the prompts endpoint you can use to retrieve prompt content programmatically.',
+    'On this page, we\'ll dive into the prompts endpoint you can use to retrieve LLM prompt content programmatically.',
 }
 
 # Prompts
 
-Prompts are a fundamental part of the system, allowing you to maintain and version control your AI prompt templates. On this page, we'll explore how to retrieve prompts and their specific versions programmatically. We'll look at how to fetch prompts using their unique identifiers and how version resolution works. {{ className: 'lead' }}
+Prompts are a fundamental part of the system, allowing you to maintain and version control your prompt. On this page, we'll explore how to retrieve prompts and their specific versions programmatically. We'll look at how to fetch prompts using their unique identifiers and how version resolution works. {{ className: 'lead' }}
 
 ## The prompt model
 
-The prompt model contains all the information about your prompts, including their content, versions, and metadata. Each prompt can have multiple versions and can be tagged for different environments or purposes.
+The prompt model contains all the information about your prompts, including their content, versions, and model configurations. Each prompt can have multiple versions and can be tagged for different environments or purposes.
 
 ### Properties
 
@@ -18,16 +18,63 @@ The prompt model contains all the information about your prompts, including thei
   <Property name="slug" type="string">
     Unique identifier for the prompt.
   </Property>
-  <Property name="contentText" type="string">
+  <Property name="text" type="string">
     The actual content of the prompt version.
   </Property>
+  <Property name="model" type="object">
+    Configuration for the LLM model.
+
+    ```ts
+    {
+      provider: 'anthropic' | 'open-ai' | 'mistral' | 'gemini';
+      model: string;
+      version: string | 'latest';
+      parameters: {
+        temperature: number;
+        topP: number;
+        frequencyPenalty?: number;
+        presencePenalty?: number;
+        topK?: number;
+        maxLength: number;
+        responseFormat: ResponseFormat;
+        jsonObject?: Record<string, any>;
+      };
+    }
+    ```
+  </Property>
   <Property name="version" type="string">
-    Version identifier for the prompt (e.g., "1.0.0").
+    Version identifier for the prompt (e.g., "1.0").
   </Property>
   <Property name="tag" type="string">
-    Optional tag for the prompt version (e.g., "production", "staging").
+    Optional tag for the prompt version (e.g., "production", "staging"). The "latest" tag is always available. The "production" is linked to the version you deployed in the app.
   </Property>
 </Properties>
+
+### Supported Models
+
+The system supports various LLM providers and their respective models:
+
+#### Anthropic
+- 3.5-sonnet
+- 3-sonnet
+- 3-haiku
+
+#### OpenAI
+- gpt-4o
+- gpt-4o-mini
+- gpt-3.5-turbo
+- o1-preview
+- o1-mini
+
+#### Mistral
+- mistral-large
+- mistral-8x7B
+- mistral-7b
+
+#### Gemini
+- gemini-1.5-flash
+- gemini-1.5-flash-8b
+- gemini-1.5-pro
 
 ---
 
@@ -52,65 +99,62 @@ The prompt model contains all the information about your prompts, including thei
     ### Version resolution
 
     When retrieving a prompt, the system follows this hierarchy:
-    1. Uses the specified version if provided
+    1. Uses the specified version if provided (ignores tag if both are provided)
     2. Uses the specified tag if provided
-    3. Defaults to the "production" tagged version
-    4. Returns 404 if no matching version is found
+    3. Falls back to the "production" tagged version if neither version nor tag matches
+    4. Returns 404 if no matching version is found, including production version
+
+    ### Workspace context
+
+    All requests must include workspace authentication. The endpoint will only return prompts that belong to the authenticated workspace's scope.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Request" tag="GET" label="/prompts/welcome-email">
+    <CodeGroup title="Request" tag="GET" label="/prompts/customer-support">
 
     ```bash {{ title: 'cURL' }}
-    curl -G https://api.example.com/prompts/welcome-email \
+    curl -G https://api.getbasalt.ai/prompts/customer-support \
       -H "Authorization: Bearer {token}" \
-      -d version=1.0.0
+      -d version=1.0
     ```
-
-    ```js
-    import ApiClient from '@example/api'
-
-    const client = new ApiClient(token)
-
-    await client.prompts.get('welcome-email', {
-      version: '1.0.0'
-    })
-    ```
-
-    ```python
-    from api_client import ApiClient
-
-    client = ApiClient(token)
-
-    client.prompts.get("welcome-email", version="1.0.0")
-    ```
-
-    ```php
-    $client = new \Api\Client($token);
-
-    $client->prompts->get('welcome-email', [
-      'version' => '1.0.0'
-    ]);
-    ```
-
     </CodeGroup>
 
     ```json {{ title: 'Response 200' }}
     {
-      "prompt": "Welcome {{name}} to our platform! We're excited to have you on board."
+      "prompt": {
+        "text": "You are a helpful customer support agent. Help the customer with their inquiry: {{inquiry}}",
+        "model": {
+          "provider": "anthropic",
+          "model": "3.5-sonnet",
+          "version": "latest",
+          "parameters": {
+            "temperature": 0.7,
+            "topP": 0.95,
+            "maxLength": 1000,
+            "responseFormat": "text"
+          }
+        }
+      },
+      "warning": "Both version and tag were provided. Ignoring the tag."
     }
     ```
 
     ```json {{ title: 'Response 404 (Prompt not found)' }}
     {
-      "message": "Prompt not found"
+      "error": "No prompt with slug \"customer-support\" exists."
     }
     ```
 
     ```json {{ title: 'Response 404 (Version not found)' }}
     {
-      "message": "No prompt found at the specified version or tag."
+      "error": "No prompt found at the specified version or tag. The production version is also missing. Please check on the app."
+    }
+    ```
+
+    ```json {{ title: 'Response 404 (No production version)' }}
+    {
+      "error": "No production version found. Please check on the app."
     }
     ```
 
@@ -130,25 +174,86 @@ The prompt model contains all the information about your prompts, including thei
     - If neither is provided, the system attempts to find the "production" tagged version
     - The tag filtering system is being enhanced to support more complex scenarios
 
-    ### Authentication
-
-    All prompt API requests require workspace authentication. Your workspace context must be included in the request, and you can only access prompts within your workspace scope.
-
   </Col>
   <Col sticky>
 
     <CodeGroup title="Request examples" tag="GET" label="/prompts/welcome-email">
 
     ```bash {{ title: 'Version-based request' }}
-    curl -G https://api.example.com/prompts/welcome-email \
+    curl -G https://api.getbasalt.ai/prompts/welcome-email \
       -H "Authorization: Bearer {token}" \
       -d version=1.0.0
     ```
 
     ```bash {{ title: 'Tag-based request' }}
-    curl -G https://api.example.com/prompts/welcome-email \
+    curl -G https://api.getbasalt.ai/prompts/welcome-email \
       -H "Authorization: Bearer {token}" \
       -d tag=production
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+## Response warnings
+
+<Row>
+  <Col>
+
+    The API may return warning messages in certain scenarios while still successfully returning the prompt content. These warnings help you understand when fallbacks or parameter precedence rules have been applied.
+
+    ### Possible warnings
+
+    - When both version and tag are provided, the version takes precedence and the tag is ignored
+    - When a specified version is not found, the system falls back to the production version
+    - When a specified tag is not found, the system falls back to the production version
+
+    The warning field in the response will be omitted if no warning conditions are triggered.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Response examples" tag="GET" label="/prompts/customer-support">
+
+    ```json {{ title: 'Version precedence warning' }}
+    {
+      "prompt": {
+        "text": "You are a helpful customer support agent...",
+        "model": {
+          "provider": "anthropic",
+          "model": "3.5-sonnet",
+          "version": "latest",
+          "parameters": {
+            "temperature": 0.7,
+            "topP": 0.95,
+            "maxLength": 1000,
+            "responseFormat": "text"
+          }
+        }
+      },
+      "warning": "Both version and tag were provided. Ignoring the tag."
+    }
+    ```
+
+    ```json {{ title: 'Version fallback warning' }}
+    {
+      "prompt": {
+        "text": "You are a helpful customer support agent...",
+        "model": {
+          "provider": "anthropic",
+          "model": "3.5-sonnet",
+          "version": "latest",
+          "parameters": {
+            "temperature": 0.7,
+            "topP": 0.95,
+            "maxLength": 1000,
+            "responseFormat": "text"
+          }
+        }
+      },
+      "warning": "No prompt found at the specified version. Falling back to the production version."
+    }
     ```
 
     </CodeGroup>
