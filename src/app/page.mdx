@@ -1,0 +1,52 @@
+import { Guides } from '@/components/Guides'
+import { Resources } from '@/components/Resources'
+import { HeroPattern } from '@/components/HeroPattern'
+import { Button } from '@/components/Button'
+
+export const metadata = {
+  title: 'Basalt Documentation',
+  description:
+    'Learn everything there is to know about the Basalt API and integrate Basalt into your product.',
+}
+
+export const sections = [
+  { title: 'Getting Started', id: 'getting-started' },
+  { title: 'Core Concepts', id: 'core-concepts' },
+]
+
+<HeroPattern />
+
+# Basalt Documentation
+
+Use the Basalt API to deploy your AI features to production. You can access your prompts to easily deploy them to production, monitor them and more.  {{ className: 'lead' }}
+
+<div className="not-prose mb-16 mt-6 flex gap-3">
+  <Button href="/quickstart" arrow="right">
+    <>Get Started</>
+  </Button>
+  <Button href="/sdks" variant="outline">
+    <>View documentation</>
+  </Button>
+</div>
+
+## Getting started
+
+To get started with Basalt, you need an account on the [Basalt application](https://app.getbasalt.ai). Once you have an account, you can explore our documentation on making requests for the resources you need using our HTTP APIs or client SDKs. {{ className: 'lead' }}
+
+<div className="not-prose">
+  <Button href="https://app.getbasalt.ai" variant="text" arrow="right">
+    <>Create an account</>
+  </Button>
+</div>
+
+## Core Concepts
+
+Basalt provides a robust API and SDKs that allows you to interact with two main components: prompts and monitoring.
+
+### Prompts
+Utilize Basalt's no-code playground to craft and iterate on prompts efficiently. Save multiple versions, switch between models, and receive recommendations from the Co-pilot to refine your AI interactions.
+
+Once you've created a prompt that satisfies your needs, you can use it in your by using our SDKs or by calling the API directly. This will allow you to easily deploy new versions of your prompt to production and manage multiple tags and environments.
+
+### Monitoring
+By deploying your prompts with Basalt's SDK, you can capture logs and monitor usage in production. Stay informed about new errors and edge cases to optimize your AI features continuously.

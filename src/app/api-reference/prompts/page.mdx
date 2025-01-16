@@ -1,0 +1,157 @@
+export const metadata = {
+  title: 'Prompts',
+  description:
+    'On this page, we\'ll dive into the prompts endpoint you can use to retrieve prompt content programmatically.',
+}
+
+# Prompts
+
+Prompts are a fundamental part of the system, allowing you to maintain and version control your AI prompt templates. On this page, we'll explore how to retrieve prompts and their specific versions programmatically. We'll look at how to fetch prompts using their unique identifiers and how version resolution works. {{ className: 'lead' }}
+
+## The prompt model
+
+The prompt model contains all the information about your prompts, including their content, versions, and metadata. Each prompt can have multiple versions and can be tagged for different environments or purposes.
+
+### Properties
+
+<Properties>
+  <Property name="slug" type="string">
+    Unique identifier for the prompt.
+  </Property>
+  <Property name="contentText" type="string">
+    The actual content of the prompt version.
+  </Property>
+  <Property name="version" type="string">
+    Version identifier for the prompt (e.g., "1.0.0").
+  </Property>
+  <Property name="tag" type="string">
+    Optional tag for the prompt version (e.g., "production", "staging").
+  </Property>
+</Properties>
+
+---
+
+## Retrieve a prompt {{ tag: 'GET', label: '/prompts/:slug' }}
+
+<Row>
+  <Col>
+
+    This endpoint allows you to retrieve a specific prompt by its slug. You can optionally specify a version or tag to get a particular variant of the prompt.
+
+    ### Optional parameters
+
+    <Properties>
+      <Property name="version" type="string">
+        Specific version of the prompt to retrieve.
+      </Property>
+      <Property name="tag" type="string">
+        Tag identifier to fetch a specific prompt version.
+      </Property>
+    </Properties>
+
+    ### Version resolution
+
+    When retrieving a prompt, the system follows this hierarchy:
+    1. Uses the specified version if provided
+    2. Uses the specified tag if provided
+    3. Defaults to the "production" tagged version
+    4. Returns 404 if no matching version is found
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/prompts/welcome-email">
+
+    ```bash {{ title: 'cURL' }}
+    curl -G https://api.example.com/prompts/welcome-email \
+      -H "Authorization: Bearer {token}" \
+      -d version=1.0.0
+    ```
+
+    ```js
+    import ApiClient from '@example/api'
+
+    const client = new ApiClient(token)
+
+    await client.prompts.get('welcome-email', {
+      version: '1.0.0'
+    })
+    ```
+
+    ```python
+    from api_client import ApiClient
+
+    client = ApiClient(token)
+
+    client.prompts.get("welcome-email", version="1.0.0")
+    ```
+
+    ```php
+    $client = new \Api\Client($token);
+
+    $client->prompts->get('welcome-email', [
+      'version' => '1.0.0'
+    ]);
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Response 200' }}
+    {
+      "prompt": "Welcome {{name}} to our platform! We're excited to have you on board."
+    }
+    ```
+
+    ```json {{ title: 'Response 404 (Prompt not found)' }}
+    {
+      "message": "Prompt not found"
+    }
+    ```
+
+    ```json {{ title: 'Response 404 (Version not found)' }}
+    {
+      "message": "No prompt found at the specified version or tag."
+    }
+    ```
+
+  </Col>
+</Row>
+
+## Using versions and tags
+
+<Row>
+  <Col>
+
+    When working with prompts, you can use either versions or tags to get specific variants of your prompts. Versions are typically used for tracking specific iterations (like "1.0.0"), while tags are used for environment management (like "production" or "staging").
+
+    ### Version and tag priority
+
+    - If both version and tag are provided, version takes precedence
+    - If neither is provided, the system attempts to find the "production" tagged version
+    - The tag filtering system is being enhanced to support more complex scenarios
+
+    ### Authentication
+
+    All prompt API requests require workspace authentication. Your workspace context must be included in the request, and you can only access prompts within your workspace scope.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request examples" tag="GET" label="/prompts/welcome-email">
+
+    ```bash {{ title: 'Version-based request' }}
+    curl -G https://api.example.com/prompts/welcome-email \
+      -H "Authorization: Bearer {token}" \
+      -d version=1.0.0
+    ```
+
+    ```bash {{ title: 'Tag-based request' }}
+    curl -G https://api.example.com/prompts/welcome-email \
+      -H "Authorization: Bearer {token}" \
+      -d tag=production
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
