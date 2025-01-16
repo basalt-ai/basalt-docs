@@ -18,41 +18,283 @@ export const sections = [
 
 # Prompts
 
-Prompts are a fundamental part of the system, allowing you to maintain and version control your AI prompt templates. On this page, we'll explore how to retrieve prompts and their specific versions programmatically. We'll look at how to fetch prompts using their unique identifiers and how version resolution works.
+Prompts are a fundamental part of the system, allowing you to maintain and version control your AI prompt templates. On this page, we'll explore how to retrieve prompts and their specific versions programmatically using our official SDKs for Python and TypeScript/JavaScript. {{ className: 'lead' }}
 
+<Note>
+Before using the SDK, make sure you have your API key ready. You can find it in your Basalt workspace settings.
+</Note>
+
+## Installation
+
+First, install the Basalt SDK using your preferred package manager:
+
+<CodeGroup>
+
+```bash {{ title: 'npm' }}
+npm install @basalt-ai/sdk
+```
+
+```bash {{ title: 'pip' }}
+pip install basalt-sdk
+```
+
+</CodeGroup>
 
 ## Retrieve a Prompt
 
-<CodeGroup>
-```ts
-// Import the Basalt SDK
-import Basalt from '@basalt-ai/sdk'
+Start by initializing the SDK with your API key. We recommend storing the API key in an environment variable.
 
-// Initialize the SDK with your API key
-const basalt = new Basalt({ apiKey: "YOUR_API_KEY" })
+<CodeGroup>
+
+```ts
+import { Basalt } from '@basalt-ai/sdk'
+
+// Initialize with API key from environment
+const basalt = new Basalt({
+  apiKey: process.env.BASALT_API_KEY,
+  logLevel: 'warning' // Optional, defaults to 'warning'
+})
+
+// Get the production version of a prompt
+const result = await basalt.prompt.get('welcome-message')
 ```
 
 ```python
-# Import the Basalt SDK
 from basalt import Basalt
+import os
 
-# Initialize the SDK with your API key
-basalt = Basalt('YOUR_API_KEY')
+# Initialize with API key from environment
+basalt = Basalt(
+    api_key=os.getenv("BASALT_API_KEY"),
+    log_level="warning"  # Optional, defaults to "warning"
+)
+
+# Get the production version of a prompt
+error, result = basalt.prompt.get('welcome-message')
 ```
 
 </CodeGroup>
 
 ## Returned data
 
+When you retrieve a prompt, the SDK returns the prompt content along with its model configuration:
+
+<CodeGroup>
+
+```ts
+interface PromptResult {
+  text: string;  // The prompt content
+  model: {
+    provider: 'anthropic' | 'open-ai' | 'mistral' | 'gemini';
+    model: string;
+    version: string | 'latest';
+    parameters: {
+      temperature: number;
+      topP: number;
+      frequencyPenalty?: number;
+      presencePenalty?: number;
+      topK?: number;
+      maxLength: number;
+      responseFormat: string;
+      jsonObject?: Record<string, any>;
+    };
+  };
+}
+```
+
+```python
+class PromptResult:
+    text: str  # The prompt content
+    model: dict  # Model configuration
+```
+
+</CodeGroup>
+
+Example response:
+
+```json
+{
+  "text": "You are a helpful assistant...",
+  "model": {
+    "provider": "anthropic",
+    "model": "3.5-sonnet",
+    "version": "latest",
+    "parameters": {
+      "temperature": 0.7,
+      "topP": 0.95,
+      "maxLength": 1000,
+      "responseFormat": "text"
+    }
+  }
+}
+```
 
 ## Get a specific Version
 
+You can retrieve a specific version of a prompt by providing the version parameter:
+
+<CodeGroup>
+
+```ts
+// Using object syntax
+const result = await basalt.prompt.get({
+  slug: 'welcome-message',
+  version: '1.0.0'
+})
+
+// Using parameter syntax
+const result = await basalt.prompt.get('welcome-message', {
+  version: '1.0.0'
+})
+```
+
+```python
+# Using named parameters
+error, result = basalt.prompt.get(
+    slug='welcome-message',
+    version='1.0.0'
+)
+
+# Using dictionary syntax
+error, result = basalt.prompt.get({
+    'slug': 'welcome-message',
+    'version': '1.0.0'
+})
+```
+
+</CodeGroup>
 
 ## Get a specific Tag
 
+Similarly, you can retrieve a prompt by its tag:
+
+<CodeGroup>
+
+```ts
+// Using object syntax
+const result = await basalt.prompt.get({
+  slug: 'welcome-message',
+  tag: 'staging'
+})
+
+// Using parameter syntax
+const result = await basalt.prompt.get('welcome-message', {
+  tag: 'staging'
+})
+```
+
+```python
+# Using named parameters
+error, result = basalt.prompt.get(
+    slug='welcome-message',
+    tag='staging'
+)
+```
+
+</CodeGroup>
+
+<Note>
+If both version and tag are provided, the version takes precedence and the tag will be ignored.
+</Note>
 
 ## Replace variables
 
+If your prompt contains variables (e.g., `{{name}}`), you need to provide values for them when retrieving the prompt:
+
+<CodeGroup>
+
+```ts
+const result = await basalt.prompt.get({
+  slug: 'welcome-message',
+  variables: {
+    name: 'John Doe',
+    company: 'Acme Inc'
+  }
+})
+
+// The variables can also be provided with the parameter syntax
+const result = await basalt.prompt.get('welcome-message', {
+  variables: {
+    name: 'John Doe'
+  }
+})
+```
+
+```python
+error, result = basalt.prompt.get(
+    slug='welcome-message',
+    variables={
+        'name': 'John Doe',
+        'company': 'Acme Inc'
+    }
+)
+```
+
+</CodeGroup>
+
 ## Cache policy
 
+The SDK includes built-in caching enabled by default with a 5-minute duration to improve performance. You can disable caching for specific requests if needed:
+
+<CodeGroup>
+
+```ts
+// Default behavior: caching enabled
+const result = await basalt.prompt.get('welcome-message')
+
+// Disable caching for this specific request
+const result = await basalt.prompt.get('welcome-message', {
+  cache: false
+})
+```
+
+```python
+# Default behavior: caching enabled
+error, result = basalt.prompt.get('welcome-message')
+
+# Disable caching for this specific request
+error, result = basalt.prompt.get('welcome-message', cache=False)
+```
+
+</CodeGroup>
+
 ## Error handling
+
+The SDKs handle errors differently based on the language conventions:
+
+<CodeGroup>
+
+```ts
+// TypeScript returns a Result type
+const result = await basalt.prompt.get('welcome-message')
+
+if (result.error) {
+  console.error('Error fetching prompt:', result.error.message)
+  return
+}
+
+// Use the result value
+console.log('Prompt text:', result.value.text)
+```
+
+```python
+# Python returns an error-first tuple
+error, result = basalt.prompt.get('welcome-message')
+
+if error:
+    print('Error fetching prompt:', error)
+else:
+    # Use the result
+    print('Prompt text:', result.text)
+```
+
+</CodeGroup>
+
+Common error types include:
+
+- `PromptNotFoundError`: The requested prompt doesn't exist
+- `VersionNotFoundError`: The specified version wasn't found
+- `TagNotFoundError`: The specified tag wasn't found
+- `MissingVariablesError`: Required variables weren't provided
+- `AuthenticationError`: Invalid API key or authentication failed
+- `NetworkError`: Connection or timeout issues
