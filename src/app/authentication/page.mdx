@@ -1,5 +1,6 @@
 import Image from 'next/image'
-import imageUrl from '@/images/screens/api-key.webp'
+import apiKey from '@/images/screens/api-key.webp'
+import apiKeySecret from '@/images/screens/api-key-secret.webp'
 
 export const metadata = {
   title: 'Authentication',
@@ -15,10 +16,14 @@ Authentication is required to access any endpoint in the Basalt API. We provide 
 
 To get your API key, you need to create an account on the [Basalt dashboard](https://app.basalt.ai). Once you've created an account, you can create an API key from the settings page of your workspace.
 
-<Image src={imageUrl} alt="Image alt" />
+<Image src={apiKey} alt="Image alt" />
+
+Click "Create API key" and define a name for your key.
+
+<Image src={apiKeySecret} alt="Image alt" />
 
 <Note>
-  Always keep your token safe and reset it if you suspect it has been compromised.
+	Your secret key will only be shown once. Always keep it safe and reset it if you suspect it has been compromised.
 </Note>
 
 ## Using an SDK
@@ -26,7 +31,7 @@ To get your API key, you need to create an account on the [Basalt dashboard](htt
 To use the Basalt SDK, you need to import the SDK and initialize it with your API key.
 
 <CodeGroup>
-```bash {{ language: 'ts' }}
+```ts
 // Import the Basalt SDK
 import Basalt from '@basalt/sdk'
 
@@ -34,7 +39,7 @@ import Basalt from '@basalt/sdk'
 const basalt = new Basalt({ apiKey: "YOUR_API_KEY" })
 ```
 
-```bash {{ language: 'python' }}
+```python
 # Import the Basalt SDK
 from basalt import Basalt
 
@@ -49,6 +54,6 @@ basalt = Basalt('YOUR_API_KEY')
 If you don't want to use an SDK, you can use the API directly by adding your API key to the request header as a bearer token.
 
 ```bash {{ title: 'Example request with bearer token' }}
-curl https://api.getbasalt.com/prompts \
+curl https://api.getbasalt.ai/{endpoint} \
   -H "Authorization: Bearer {token}"
 ```

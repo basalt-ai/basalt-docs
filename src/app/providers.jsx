@@ -1,7 +1,23 @@
 'use client'
 
+import posthog from 'posthog-js'
 import { useEffect } from 'react'
 import { ThemeProvider, useTheme } from 'next-themes'
+
+import { PostHogProvider } from 'posthog-js/react'
+
+
+if (typeof window !== 'undefined') {
+  posthog.init('phc_RnCOvNiwUQbN9BGEmqskmwcLSPFKKXeWCY050aDxbzr', {
+    api_host: 'https://e.getbasalt.ai',
+	ui_host: 'https://eu.posthog.com',
+    person_profiles: 'always',
+  })
+}
+export function CSPostHogProvider({ children }) {
+    return <PostHogProvider client={posthog}>{children}</PostHogProvider>
+}
+
 
 function ThemeWatcher() {
   let { resolvedTheme, setTheme } = useTheme()

@@ -1,4 +1,6 @@
+
 import { forwardRef } from 'react'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { motion, useScroll, useTransform } from 'framer-motion'
@@ -13,12 +15,24 @@ import { useMobileNavigationStore } from '@/components/MobileNavigation'
 import { MobileSearch, Search } from '@/components/Search'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
+function useInitialValue(value, condition = true) {
+	let initialValue = useRef(value).current
+	return condition ? initialValue : value
+}
+
 function TopLevelNavItem({ href, children, target }) {
+	let [pathname] = usePathname()
+
   return (
     <li>
       <Link
         href={href}
-        className="text-sm leading-5 text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+		className={clsx(
+			'text-sm leading-5',
+			href === pathname
+			? 'text-zinc-900 dark:text-white font-medium'
+			: 'text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
+		)}
         target={target}
       >
         {children}
@@ -70,7 +84,7 @@ export const Header = forwardRef(function Header({ className, ...props }, ref) {
       <div className="flex items-center gap-5">
         <nav className="hidden md:block">
           <ul role="list" className="flex items-center gap-8">
-			<TopLevelNavItem href="/">For developers</TopLevelNavItem>
+			<TopLevelNavItem href="/">Dev documentation</TopLevelNavItem>
 			<TopLevelNavItem target="_blank" href="https://hexacc.notion.site/Basalt-User-Guide-1251cc0bd5bc80b8a703eaee3d4e86ca">User guide</TopLevelNavItem>
           </ul>
         </nav>

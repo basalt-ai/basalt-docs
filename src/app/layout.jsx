@@ -1,5 +1,7 @@
 import glob from 'fast-glob'
 
+import { CSPostHogProvider } from './providers'
+
 import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
 
@@ -27,7 +29,9 @@ export default async function RootLayout({ children }) {
       <body className="flex min-h-full bg-white antialiased dark:bg-zinc-900">
         <Providers>
           <div className="w-full">
-            <Layout allSections={allSections}>{children}</Layout>
+            <CSPostHogProvider>
+              <Layout allSections={allSections}>{children}</Layout>
+            </CSPostHogProvider>
           </div>
         </Providers>
       </body>

@@ -3,7 +3,7 @@
 import { forwardRef, useState } from 'react'
 import { Transition } from '@headlessui/react'
 import clsx from 'clsx'
-
+import { usePostHog } from 'posthog-js/react'
 function CheckIcon(props) {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
@@ -78,12 +78,15 @@ const FeedbackThanks = forwardRef(function FeedbackThanks(
 
 export function Feedback() {
   let [submitted, setSubmitted] = useState(false)
+  const posthog = usePostHog()
 
   function onSubmit(event) {
     event.preventDefault()
 
-    // event.nativeEvent.submitter.dataset.response
-    // => "yes" or "no"
+	posthog.capture('feedback', {
+		response: event.nativeEvent.submitter.dataset.response,
+		page: window.location.pathname,
+	})
 
     setSubmitted(true)
   }

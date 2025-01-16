@@ -1,6 +1,6 @@
 # Basalt
 
-Repo for the [Basalt documentation](https://docs.getbasalt.com) based on [Tailwind Protocol](https://tailwindui.com/templates/protocol)
+Repo for the [Basalt documentation](https://docs.getbasalt.ai) based on [Tailwind Protocol](https://tailwindui.com/templates/protocol)
 
 ## Getting started
 

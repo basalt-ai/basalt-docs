@@ -17,7 +17,7 @@ const libraries = [
     href: '/sdks/typescript',
     name: 'TypeScript',
     description:
-      'Type-safe JavaScript/TypeScript SDK with first-class support for Node.js 18+ and modern browsers.',
+      'Type-safe JavaScript/TypeScript SDK with first-class support for Node.js 18+.',
     logo: logoTypescript,
   },
 ]

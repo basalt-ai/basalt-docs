@@ -1,0 +1,59 @@
+import Image from 'next/image'
+import deployButton from '@/images/screens/deploy-button.webp'
+import deployKeyStep from '@/images/screens/deploy-key-step.webp'
+import deploySlugStep from '@/images/screens/deploy-slug-step.webp'
+import deployVersionStep from '@/images/screens/deploy-version-step.webp'
+import deploySdkStep from '@/images/screens/deploy-sdk-step.webp'
+
+export const metadata = {
+  title: 'Deploy your prompt',
+  description:
+    'Learn how to deploy your prompt in the Basalt dashboard. This will allow you to use your prompt in your own applications.',
+}
+
+# Deploy your prompt
+
+Deploying your prompt in the Basalt dashboard will allow you to use your prompt in your own applications.
+
+## Deploy to production
+
+Once you've created your prompt and tested it thoroughly in the playground, you can deploy it to production.
+
+
+### Go to your prompt Overview
+
+Go to your prompt Overview and click the "Deploy" button in the deployment section.
+
+<Image src={deployButton} alt="Image alt" />
+
+### Follow the steps to deploy
+
+A modal will open with the steps to deploy your prompt. Follow the steps to deploy your prompt.
+
+<Image src={deployKeyStep} alt="Image alt" />
+
+Verify you have your API key. If you don't have it, you can create one in the your Settings.
+
+<div className="not-prose">
+  <Button href="/authentication#get-your-api-key" variant="text" arrow="right">
+    <>Create an API key</>
+  </Button>
+</div>
+
+<Image src={deploySlugStep} alt="Image alt" />
+
+Enter a unique identifier for your prompt. This will be used to identify your prompt in the API.
+
+<Note>
+  Choose your slug carefully as it must be unique within your workspace and cannot be modified after deployment.
+</Note>
+
+<Image src={deployVersionStep} alt="Image alt" />
+
+Chose the version of your prompt you want to deploy as "production" version.
+
+<Image src={deploySdkStep} alt="Image alt" />
+
+You did it! Your prompt is now deployed and you can now get it from the API.
+
+
