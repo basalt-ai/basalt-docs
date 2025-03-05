@@ -1,36 +1,659 @@
 import { Button } from '@/components/Button'
+import { Libraries } from '@/components/Libraries'
 
 export const metadata = {
-  title: ' Monitoring',
+  title: 'Monitoring',
   description: 'Monitor and analyze your prompts in production with Basalt\'s comprehensive observability system.',
 }
 
 # Monitoring
 
-Gain deep insights into your prompts' performance, costs, and behavior in production environments with Basalt's prompt monitoring system. {{ className: 'lead' }}
+Gain deep insights into your prompts' performance, costs, and behavior in production environments with Basalt's prompt monitoring system. Our monitoring tools help you track, analyze, and optimize your AI applications in real-time. {{ className: 'lead' }}
 
 <Note>
-  This feature is coming soon! We're working hard to bring you advanced Prompt Monitoring capabilities.
+Before using the monitoring features, make sure you have your API key ready. You can find it in your Basalt workspace settings.
 </Note>
 
 ## Overview
 
 Basalt's Monitoring provides real-time visibility into your prompt engineering lifecycle, helping you optimize costs, improve response quality, and maintain reliability at scale. Our monitoring system is specifically designed for AI applications, offering insights that matter for prompt engineering teams. {{ className: 'lead' }}
 
-## Key Features
+## Creating Traces
 
-When released, Basalt LLM Monitoring will include:
+Traces allow you to group related monitoring events together. Start by initializing the SDK with your API key and creating a trace.
 
-- **Response Quality Analysis** - Automatically evaluate LLM response quality, consistency, and adherence to expected formats or constraints.
-- **Prompt Performance Metrics** - Track key indicators including response times, token usage, cost per request, and completion rates across different prompt versions.
-- **Version Control** - Track changes in prompt templates and their impact on performance and costs.
-- **Failure Detection** - Identify common failure patterns, hallucinations, and edge cases in your prompts.
-- **A/B Testing** - Compare different prompt versions and their performance in production.
+<CodeGroup>
 
+```ts
+import { Basalt } from '@basalt-ai/sdk'
+
+// Initialize with API key from environment
+const basalt = new Basalt({
+  apiKey: process.env.BASALT_API_KEY,
+  logLevel: 'warning' // Optional, defaults to 'warning'
+})
+
+// Create a trace to group related monitoring events
+const trace = basalt.monitor.createTrace('chain-slug', {
+  name: 'user-conversation',
+  metadata: {
+    sessionId: 'session-456',
+  }
+})
+```
+
+```python
+from basalt import Basalt
+import os
+from datetime import datetime
+
+# Initialize with API key from environment
+basalt = Basalt(
+    api_key=os.getenv("BASALT_API_KEY"),
+    log_level="warning"  # Optional, defaults to "warning"
+)
+
+# Create a trace to group related monitoring events
+trace = basalt.monitor.create_trace('chain-slug', {
+    'name': 'user-conversation',
+    'metadata': {
+        'sessionId': 'session-456',
+    }
+})
+```
+
+</CodeGroup>
+
+## Advanced Monitoring with Spans
+
+Spans allow you to track specific operations within a trace, creating a hierarchical view of your application's execution:
+
+<CodeGroup>
+
+```ts
+// Create a main trace for the entire user request
+const mainTrace = basalt.monitor.createTrace('content-processing', {
+  metadata: {
+    userId: 'user-123',
+    contentType: 'article',
+    requestId: 'req-789'
+  }
+})
+
+// Create a span for a specific operation
+const generationSpan = mainTrace.createSpan({
+  name: 'content-generation',
+  input: 'Create an article about AI monitoring',
+  metadata: { 
+    operation: 'text-generation',
+    priority: 'high'
+  }
+})
+
+try {
+  // Perform your operation
+  const result = await someAsyncOperation()
+  
+  // End the span with the result
+  generationSpan.end(result)
+} catch (error) {
+  // Update span with error information
+  generationSpan.update({ 
+    metadata: {
+      error: {
+        name: 'OperationError',
+        message: error.message
+      }
+    }
+  })
+  generationSpan.end()
+} finally {
+  // Always end the trace when done
+  mainTrace.end()
+}
+```
+
+```python
+# Create a main trace for the entire user request
+main_trace = basalt.monitor.create_trace('content-processing', {
+    'metadata': {
+        'userId': 'user-123',
+        'contentType': 'article',
+        'requestId': 'req-789'
+    }
+})
+
+# Create a span for a specific operation
+generation_span = main_trace.create_span({
+    'name': 'content-generation',
+    'input': 'Create an article about AI monitoring',
+    'metadata': {
+        'operation': 'text-generation',
+        'priority': 'high'
+    }
+})
+
+try:
+    # Perform your operation
+    result = await some_async_operation()
+    
+    # End the span with the result
+    generation_span.end(result)
+except Exception as error:
+    # Update span with error information
+    generation_span.update({
+        'metadata': {
+            'error': {
+                'name': 'OperationError',
+                'message': str(error)
+            }
+        }
+    })
+    generation_span.end()
+finally:
+    # Always end the trace when done
+    main_trace.end()
+```
+
+</CodeGroup>
+
+## Tracking LLM Generations
+
+Track detailed information about your LLM generations, including prompts, completions, and performance metrics:
+
+<CodeGroup>
+
+```ts
+// Create a generation within a span
+const generation = generationSpan.createGeneration({
+  name: 'text-generation',
+  input: userQuery,
+  prompt: promptTemplate,
+  variables: { 'query': userQuery },
+  metadata: {
+    model: 'gpt-4',
+    temperature: 0.7,
+    requestTime: new Date().toISOString()
+  }
+})
+
+// Make the LLM call
+const completion = await openai.chat.completions.create({
+  model: "gpt-4",
+  messages: [
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: promptTemplate }
+  ],
+  temperature: 0.7,
+  max_tokens: 500,
+})
+
+// Update the generation with results and metrics
+generation.update({ 
+  output: completion.choices[0].message.content,
+  metadata: {
+    ...generation.metadata,
+    promptTokens: completion.usage.prompt_tokens,
+    completionTokens: completion.usage.completion_tokens,
+    totalTokens: completion.usage.total_tokens,
+    latencyMs: Date.now() - startTime
+  }
+})
+```
+
+```python
+import time
+
+# Create a generation within a span
+start_time = time.time()
+generation = generation_span.create_generation({
+    'name': 'text-generation',
+    'input': user_query,
+    'prompt': prompt_template,
+    'variables': {'query': user_query},
+    'metadata': {
+        'model': 'gpt-4',
+        'temperature': 0.7,
+        'requestTime': datetime.now().isoformat()
+    }
+})
+
+# Make the LLM call
+completion = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt_template}
+    ],
+    temperature=0.7,
+    max_tokens=500,
+)
+
+# Update the generation with results and metrics
+generation.update({
+    'output': completion.choices[0].message.content,
+    'metadata': {
+        **generation.metadata,
+        'promptTokens': completion.usage.prompt_tokens,
+        'completionTokens': completion.usage.completion_tokens,
+        'totalTokens': completion.usage.total_tokens,
+        'latencyMs': (time.time() - start_time) * 1000
+    }
+})
+```
+
+</CodeGroup>
+
+## Real-world Example: Multi-step AI Pipeline
+
+Here's a comprehensive example of monitoring a complex AI pipeline with multiple steps:
+
+<CodeGroup>
+
+```ts
+async function processUserContent(user, content) {
+  // Create a main trace for the entire user request
+  const mainTrace = basalt.monitor.createTrace('content-processing', {
+    metadata: {
+      userId: user.id,
+      userName: user.name,
+      contentType: 'article'
+    }
+  })
+  
+  try {
+    // Step 1: Content generation
+    const generationSpan = mainTrace.createSpan({
+      name: 'content-generation',
+      input: content
+    })
+    
+    try {
+      // Get prompt from Basalt
+      const basaltPrompt = await basalt.prompt.get('article-generator', {
+        variables: { 'article_subject': content },
+        version: '1.2'
+      })
+      
+      // Create generation record
+      const generationLog = generationSpan.createGeneration({
+        name: 'text-generation',
+        input: content,
+        prompt: basaltPrompt.generation.prompt,
+        variables: { 'article_subject': content }
+      })
+      
+      // Generate content with LLM
+      const generatedText = await generateText(basaltPrompt.value.text)
+      
+      // Update with results
+      generationLog.update({ 
+        output: generatedText,
+        metadata: {
+          contentLength: generatedText.length,
+          processingTime: 1200 // ms
+        }
+      })
+      
+      generationSpan.end(generatedText)
+      
+      // Step 2: Parallel processing - Classification and Translation
+      const parallelSpan = mainTrace.createSpan({
+        name: 'parallel-processing', 
+        input: generatedText
+      })
+      
+      // Run operations in parallel and track each one
+      const [categories, translatedText] = await Promise.all([
+        classifyContent(generatedText, parallelSpan),
+        translateContent(generatedText, parallelSpan)
+      ])
+      
+      parallelSpan.end()
+      
+      // Step 3: Summarization
+      const summarySpan = mainTrace.createSpan({
+        name: 'summarization', 
+        input: generatedText
+      })
+      
+      const summary = await summarizeContent(generatedText, summarySpan)
+      summarySpan.end(summary)
+      
+      // Complete the main trace with final output
+      mainTrace.update({
+        output: summary,
+        metadata: {
+          processingSteps: 3,
+          totalContentLength: generatedText.length,
+          status: 'completed'
+        }
+      })
+      
+      return summary
+    } catch (error) {
+      // Handle and record errors
+      mainTrace.update({
+        metadata: {
+          error: {
+            name: 'ProcessingError',
+            message: error.message
+          },
+          status: 'failed'
+        }
+      })
+      throw error
+    } finally {
+      // Always end the trace
+      mainTrace.end()
+    }
+  }
+}
+```
+
+```python
+async def process_user_content(user, content):
+    # Create a main trace for the entire user request
+    main_trace = basalt.monitor.create_trace('content-processing', {
+        'metadata': {
+            'userId': user['id'],
+            'userName': user['name'],
+            'contentType': 'article'
+        }
+    })
+    
+    try:
+        # Step 1: Content generation
+        generation_span = main_trace.create_span({
+            'name': 'content-generation',
+            'input': content
+        })
+        
+        try:
+            # Get prompt from Basalt
+            error, basalt_prompt = await basalt.prompt.get('article-generator', {
+                'variables': {'article_subject': content},
+                'version': '1.2'
+            })
+            
+            # Create generation record
+            generation_log = generation_span.create_generation({
+                'name': 'text-generation',
+                'input': content,
+                'prompt': basalt_prompt.generation.prompt,
+                'variables': {'article_subject': content}
+            })
+            
+            # Generate content with LLM
+            generated_text = await generate_text(basalt_prompt.text)
+            
+            # Update with results
+            generation_log.update({
+                'output': generated_text,
+                'metadata': {
+                    'contentLength': len(generated_text),
+                    'processingTime': 1200  # ms
+                }
+            })
+            
+            generation_span.end(generated_text)
+            
+            # Step 2: Parallel processing - Classification and Translation
+            parallel_span = main_trace.create_span({
+                'name': 'parallel-processing',
+                'input': generated_text
+            })
+            
+            # Run operations in parallel and track each one
+            categories, translated_text = await asyncio.gather(
+                classify_content(generated_text, parallel_span),
+                translate_content(generated_text, parallel_span)
+            )
+            
+            parallel_span.end()
+            
+            # Step 3: Summarization
+            summary_span = main_trace.create_span({
+                'name': 'summarization',
+                'input': generated_text
+            })
+            
+            summary = await summarize_content(generated_text, summary_span)
+            summary_span.end(summary)
+            
+            # Complete the main trace with final output
+            main_trace.update({
+                'output': summary,
+                'metadata': {
+                    'processingSteps': 3,
+                    'totalContentLength': len(generated_text),
+                    'status': 'completed'
+                }
+            })
+            
+            return summary
+        except Exception as error:
+            # Handle and record errors
+            main_trace.update({
+                'metadata': {
+                    'error': {
+                        'name': 'ProcessingError',
+                        'message': str(error)
+                    },
+                    'status': 'failed'
+                }
+            })
+            raise error
+        finally:
+            # Always end the trace
+            main_trace.end()
+    }
+```
+
+</CodeGroup>
+
+## Creating Logs
+
+Logs allow you to record additional events and information related to your AI application:
+
+<CodeGroup>
+
+```ts
+// Create a log entry
+const log = basalt.monitor.createLog({
+  traceId: trace.id, // Optional: associate with a trace
+  level: "info",
+  message: "User requested information about quantum computing",
+  metadata: {
+    userId: "user-123",
+    topic: "quantum-computing",
+    timestamp: new Date().toISOString()
+  }
+})
+
+// Create error logs
+try {
+  // Some operation that might fail
+} catch (error) {
+  basalt.monitor.createLog({
+    traceId: trace.id,
+    level: "error",
+    message: `Operation failed: ${error.message}`,
+    metadata: {
+      errorName: error.name,
+      stack: error.stack,
+      component: "content-processor"
+    }
+  })
+}
+```
+
+```python
+from datetime import datetime
+
+# Create a log entry
+log = basalt.monitor.create_log({
+    'trace_id': trace.id,  # Optional: associate with a trace
+    'level': "info",
+    'message': "User requested information about quantum computing",
+    'metadata': {
+        'user_id': "user-123",
+        'topic': "quantum-computing",
+        'timestamp': datetime.now().isoformat()
+    }
+})
+
+# Create error logs
+try:
+    # Some operation that might fail
+    pass
+except Exception as error:
+    basalt.monitor.create_log({
+        'trace_id': trace.id,
+        'level': "error",
+        'message': f"Operation failed: {str(error)}",
+        'metadata': {
+            'error_name': error.__class__.__name__,
+            'traceback': traceback.format_exc(),
+            'component': "content-processor"
+        }
+    })
+```
+
+</CodeGroup>
+
+## Parameters Reference
+
+### Trace Parameters
+
+<CodeGroup>
+
+```ts
+interface TraceParams {
+  metadata?: Record<string, any>;  // Optional metadata for the trace
+  input?: string;                  // Input data for the trace
+  output?: string;                 // Output data for the trace
+  name?: string;                   // Optional name for the trace
+}
+```
+
+```python
+class TraceParams:
+    metadata: dict  # Optional metadata for the trace
+    input: str      # Input data for the trace
+    output: str     # Output data for the trace
+    name: str       # Optional name for the trace
+```
+
+</CodeGroup>
+
+### Span Parameters
+
+<CodeGroup>
+
+```ts
+interface SpanParams {
+  name: string;                    // Name of the span
+  input?: string;                  // Input data for the span
+  output?: string;                 // Output data for the span
+  metadata?: Record<string, any>;  // Optional metadata for the span
+}
+```
+
+```python
+class SpanParams:
+    name: str       # Name of the span
+    input: str      # Input data for the span
+    output: str     # Output data for the span
+    metadata: dict  # Optional metadata for the span
+```
+
+</CodeGroup>
+
+### Generation Parameters
+
+<CodeGroup>
+
+```ts
+interface GenerationParams {
+  name?: string;                   // Optional name for the generation
+  traceId?: string;                // Optional trace ID to associate with
+  input?: string;                  // Input data for the generation
+  output?: string;                 // Output from the LLM
+  prompt?: string;                 // The prompt template sent to the LLM
+  variables?: Record<string, any>; // Variables used in the prompt
+  metadata?: Record<string, any>;  // Additional contextual information
+}
+```
+
+```python
+class GenerationParams:
+    name: str                # Optional name for the generation
+    trace_id: str            # Optional trace ID to associate with
+    input: str               # Input data for the generation
+    output: str              # Output from the LLM
+    prompt: str              # The prompt template sent to the LLM
+    variables: dict          # Variables used in the prompt
+    metadata: dict           # Additional contextual information
+```
+
+</CodeGroup>
+
+### Log Parameters
+
+<CodeGroup>
+
+```ts
+interface LogParams {
+  traceId?: string;                // Optional trace ID to associate with
+  level: 'debug' | 'info' | 'warning' | 'error'; // Log level
+  message: string;                 // Log message
+  metadata?: Record<string, any>;  // Additional contextual information
+}
+```
+
+```python
+class LogParams:
+    trace_id: str  # Optional trace ID to associate with
+    level: str     # Log level ('debug', 'info', 'warning', 'error')
+    message: str   # Log message
+    metadata: dict # Additional contextual information
+```
+
+</CodeGroup>
+
+## Error Handling
+
+The SDKs handle errors differently based on the language conventions:
+
+<CodeGroup>
+
+```ts
+try {
+  const trace = basalt.monitor.createTrace('user-conversation')
+  
+  // Use the trace
+  console.log('Trace created with ID:', trace.id)
+} catch (error) {
+  console.error('Error creating trace:', error.message)
+}
+```
+
+```python
+try:
+    trace = basalt.monitor.create_trace('user-conversation')
+    
+    # Use the trace
+    print('Trace created with ID:', trace.id)
+except Exception as error:
+    print('Error creating trace:', str(error))
+```
+
+</CodeGroup>
 
 ## Dashboard Features
 
-The Basalt monitoring dashboard will provide:
+The Basalt monitoring dashboard provides:
 
 - Real-time prompt performance visualization
 - Token usage and cost breakdowns
@@ -39,15 +662,10 @@ The Basalt monitoring dashboard will provide:
 - Prompt version comparison tools
 - Custom metric tracking capabilities
 
-## Stay Updated
-
-We're excited to bring you these monitoring capabilities soon. In the meantime:
-
 <div className="not-prose mt-4 flex gap-4">
   <Button href="https://github.com/getbasalt" variant="text" arrow="right">
     <>Follow us on GitHub</>
   </Button>
 </div>
 
-
-For early access to our monitoring features or to discuss specific monitoring needs, please contact our [team](mailto:support@getbasalt.ai).
+For additional support or to discuss specific monitoring needs, please contact our [team](mailto:support@getbasalt.ai).
