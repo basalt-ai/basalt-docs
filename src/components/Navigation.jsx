@@ -207,6 +207,7 @@ export const navigation = [
 			{ title: 'Installation', href: '/installation' },
 			{ title: 'Authentication', href: '/authentication' },
 			{ title: 'Deploy your prompt', href: '/deploy-prompt' },
+			{ title: 'Deploy your chain', href: '/deploy-chain' },
 			{ title: 'Making your first request', href: '/first-request' }
 		],
 	},

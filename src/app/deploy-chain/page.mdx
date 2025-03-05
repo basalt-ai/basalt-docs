@@ -1,0 +1,50 @@
+import Image from 'next/image'
+import chainHomepage from '@/images/screens/chain-homepage.webp'
+import chainSlugSetting from '@/images/screens/chain-slug-setting.webp'
+
+export const metadata = {
+  title: 'Deploy your chain',
+  description:
+    'Learn how to deploy your chain in the Basalt dashboard. This will allow you to use your chain in your own applications.',
+}
+
+# Deploy your chain
+
+Deploying your chain in the Basalt dashboard will allow you to monitor your chain in your own applications.
+
+## Deploy to production
+
+Once you've created your chain and tested it thoroughly in the playground, you can deploy it to production.
+
+### Go to your chain Overview
+
+Go to your chain Overview and click the "slug" button in the deployment section.
+
+<Image src={chainHomepage} alt="Image alt" />
+
+### Follow the steps to deploy
+
+A modal will open with the steps to deploy your chain. Follow the steps to deploy your chain.
+Enter a unique identifier for your chain. This will be used to identify your chain in the API.
+
+<Image src={chainSlugSetting} alt="Image alt" />
+
+Verify you have your API key. If you don't have it, you can create one in the your Settings.
+
+<div className="not-prose">
+  <Button href="/authentication#get-your-api-key" variant="text" arrow="right">
+    <>Create an API key</>
+  </Button>
+</div>
+
+<Note>
+  Choose your slug carefully as it must be unique within your workspace and cannot be modified after deployment.
+</Note>
+
+You did it! Your chain is now deployed and you can now push traces & logs to it.. 
+
+<div className="not-prose">
+  <Button href="/documentation/monitoring#creating-traces" variant="text" arrow="right">
+    <>Monitor your chain</>
+  </Button>
+</div>
