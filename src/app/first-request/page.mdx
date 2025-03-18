@@ -38,7 +38,7 @@ import Basalt from '@basalt-ai/sdk'
 const basalt = new Basalt(token)
 
 // Get your prompt
-await basalt.prompts.get('my-prompt-slug')
+await basalt.prompt.get('my-prompt-slug')
 ```
 
 ```python
@@ -49,7 +49,7 @@ from basalt import Basalt
 basalt = Basalt(token)
 
 # Get your prompt
-basalt.prompts.get('my-prompt-slug')
+basalt.prompt.get('my-prompt-slug')
 ```
 
 ```bash {{ title: 'cURL' }}
