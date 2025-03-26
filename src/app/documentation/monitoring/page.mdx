@@ -167,7 +167,6 @@ Track detailed information about your LLM generations, including prompts, comple
 // Create a generation within a span
 const generation = generationSpan.createGeneration({
   name: 'text-generation',
-  input: userQuery,
   prompt: promptTemplate,
   variables: { 'query': userQuery },
   metadata: {
@@ -208,7 +207,6 @@ import time
 start_time = time.time()
 generation = generation_span.create_generation({
     'name': 'text-generation',
-    'input': user_query,
     'prompt': prompt_template,
     'variables': {'query': user_query},
     'metadata': {
@@ -278,7 +276,6 @@ async function processUserContent(user, content) {
       // Create generation record
       const generationLog = generationSpan.createGeneration({
         name: 'text-generation',
-        input: content,
         prompt: basaltPrompt.generation.prompt,
         variables: { 'article_subject': content }
       })
@@ -379,7 +376,6 @@ async def process_user_content(user, content):
             # Create generation record
             generation_log = generation_span.create_generation({
                 'name': 'text-generation',
-                'input': content,
                 'prompt': basalt_prompt.generation.prompt,
                 'variables': {'article_subject': content}
             })
@@ -448,76 +444,6 @@ async def process_user_content(user, content):
             # Always end the trace
             main_trace.end()
     }
-```
-
-</CodeGroup>
-
-## Creating Logs
-
-Logs allow you to record additional events and information related to your AI application:
-
-<CodeGroup>
-
-```ts
-// Create a log entry
-const log = basalt.monitor.createLog({
-  traceId: trace.id, // Optional: associate with a trace
-  level: "info",
-  message: "User requested information about quantum computing",
-  metadata: {
-    userId: "user-123",
-    topic: "quantum-computing",
-    timestamp: new Date().toISOString()
-  }
-})
-
-// Create error logs
-try {
-  // Some operation that might fail
-} catch (error) {
-  basalt.monitor.createLog({
-    traceId: trace.id,
-    level: "error",
-    message: `Operation failed: ${error.message}`,
-    metadata: {
-      errorName: error.name,
-      stack: error.stack,
-      component: "content-processor"
-    }
-  })
-}
-```
-
-```python
-from datetime import datetime
-
-# Create a log entry
-log = basalt.monitor.create_log({
-    'trace_id': trace.id,  # Optional: associate with a trace
-    'level': "info",
-    'message': "User requested information about quantum computing",
-    'metadata': {
-        'user_id': "user-123",
-        'topic': "quantum-computing",
-        'timestamp': datetime.now().isoformat()
-    }
-})
-
-# Create error logs
-try:
-    # Some operation that might fail
-    pass
-except Exception as error:
-    basalt.monitor.create_log({
-        'trace_id': trace.id,
-        'level': "error",
-        'message': f"Operation failed: {str(error)}",
-        'metadata': {
-            'error_name': error.__class__.__name__,
-            'traceback': traceback.format_exc(),
-            'component': "content-processor"
-        }
-    })
 ```
 
 </CodeGroup>
@@ -595,29 +521,6 @@ class GenerationParams:
     prompt: str              # The prompt template sent to the LLM
     variables: dict          # Variables used in the prompt
     metadata: dict           # Additional contextual information
-```
-
-</CodeGroup>
-
-### Log Parameters
-
-<CodeGroup>
-
-```ts
-interface LogParams {
-  traceId?: string;                // Optional trace ID to associate with
-  level: 'debug' | 'info' | 'warning' | 'error'; // Log level
-  message: string;                 // Log message
-  metadata?: Record<string, any>;  // Additional contextual information
-}
-```
-
-```python
-class LogParams:
-    trace_id: str  # Optional trace ID to associate with
-    level: str     # Log level ('debug', 'info', 'warning', 'error')
-    message: str   # Log message
-    metadata: dict # Additional contextual information
 ```
 
 </CodeGroup>
