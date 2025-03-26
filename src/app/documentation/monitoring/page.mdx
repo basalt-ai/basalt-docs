@@ -83,6 +83,7 @@ const mainTrace = basalt.monitor.createTrace('content-processing', {
 // Create a span for a specific operation
 const generationSpan = mainTrace.createLog({
   name: 'content-generation',
+  type: 'span',
   input: 'Create an article about AI monitoring',
   metadata: {
     operation: 'text-generation',
@@ -124,8 +125,9 @@ main_trace = basalt.monitor.create_trace('content-processing', {
 })
 
 # Create a span for a specific operation
-generation_span = main_trace.create_span({
+generation_span = main_trace.create_log({
     'name': 'content-generation',
+    'type': 'span',
     'input': 'Create an article about AI monitoring',
     'metadata': {
         'operation': 'text-generation',
@@ -263,6 +265,7 @@ async function processUserContent(user, content) {
     // Step 1: Content generation
     const generationSpan = mainTrace.createLog({
       name: 'content-generation',
+      type: 'span',
       input: content
     })
     
@@ -297,6 +300,7 @@ async function processUserContent(user, content) {
       // Step 2: Parallel processing - Classification and Translation
       const parallelSpan = mainTrace.createLog({
         name: 'parallel-processing', 
+        type: 'span',
         input: generatedText
       })
       
@@ -361,8 +365,9 @@ async def process_user_content(user, content):
     
     try:
         # Step 1: Content generation
-        generation_span = main_trace.create_span({
+        generation_span = main_trace.create_log({
             'name': 'content-generation',
+            'type': 'span',
             'input': content
         })
         
@@ -395,8 +400,9 @@ async def process_user_content(user, content):
             generation_span.end(generated_text)
             
             # Step 2: Parallel processing - Classification and Translation
-            parallel_span = main_trace.create_span({
+            parallel_span = main_trace.create_log({
                 'name': 'parallel-processing',
+                'type': 'span',
                 'input': generated_text
             })
             
@@ -409,8 +415,9 @@ async def process_user_content(user, content):
             parallel_span.end()
             
             # Step 3: Summarization
-            summary_span = main_trace.create_span({
+            summary_span = main_trace.create_log({
                 'name': 'summarization',
+                'type': 'span',
                 'input': generated_text
             })
             
