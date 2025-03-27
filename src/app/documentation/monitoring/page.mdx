@@ -166,10 +166,24 @@ Track detailed information about your LLM generations, including prompts, comple
 <CodeGroup>
 
 ```ts
-// Create a generation within a span
-const generation = generationSpan.createGeneration({
+// There are 2 ways to create a generation:
+// 1. Using the prompt stored in Basalt
+
+// Get the production version of a prompt
+const { value, generation } = await basalt.prompt.get('welcome-message')
+// {value} contains the prompt text located in value.text and the systemText located in value.systemText
+// These are the values you should use to feed into the LLM provider SDK
+
+// Here you have 2 options, use the instanciated generation or create yours
+
+// If you need to create your own generation you can reuse the prompt retrieved from Basalt
+const customGeneration = generationSpan.createGeneration({
   name: 'text-generation',
-  prompt: promptTemplate,
+  // If you provide the prompt object Basalt will retrieve the prompt text and system text and use them as the input
+  prompt: {
+    slug: 'prompt-slug'
+  },
+  // If you provide the prompt object you need to pass the variables used for the inference (you can also use generation.update with the variables later on)
   variables: { 'query': userQuery },
   metadata: {
     model: 'gpt-4',
@@ -182,15 +196,19 @@ const generation = generationSpan.createGeneration({
 const completion = await openai.chat.completions.create({
   model: "gpt-4",
   messages: [
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: promptTemplate }
+    { role: "system", content: value.systemText },
+    { role: "user", content: value.text }
   ],
   temperature: 0.7,
   max_tokens: 500,
 })
 
+// Using the generation from the prompt retrieval step
+// You don't need to provide the variables as they were already setup in the prompt.get method above
+generation.end(completion.choices[0].message.content)
+
 // Update the generation with results and metrics
-generation.update({ 
+customGeneration.update({ 
   output: completion.choices[0].message.content,
   metadata: {
     ...generation.metadata,
@@ -200,16 +218,31 @@ generation.update({
     latencyMs: Date.now() - startTime
   }
 })
+
+customGeneration.end()
 ```
 
 ```python
-import time
+# There are 2 ways to create a generation:
+# 1. Using the prompt stored in Basalt
 
-# Create a generation within a span
+# Get the production version of a prompt
+error, result, generation = basalt.prompt.get('welcome-message')
+
+# {result} contains the prompt text located in result.text and the systemText located in result.systemText
+# These are the values you should use to feed into the LLM provider SDK
+
+# Here you have 2 options, use the instanciated generation or create yours
+
+# If you need to create your own generation you can reuse the prompt retrieved from Basalt
 start_time = time.time()
-generation = generation_span.create_generation({
+custom_generation = generation_span.create_generation({
     'name': 'text-generation',
-    'prompt': prompt_template,
+    # If you provide the prompt object Basalt will retrieve the prompt text and system text and use them as the input
+    'prompt': {
+      'slug': 'prompt-slug'
+    },
+    # If you provide the prompt object you need to pass the variables used for the inference (you can also use generation.update with the variables later on)
     'variables': {'query': user_query},
     'metadata': {
         'model': 'gpt-4',
@@ -229,8 +262,12 @@ completion = openai.chat.completions.create(
     max_tokens=500,
 )
 
+# Using the generation from the prompt retrieval step
+# You don't need to provide the variables as they were already setup in the prompt.get method above
+custom_generation.end(completion.choices[0].message.content)
+
 # Update the generation with results and metrics
-generation.update({
+custom_generation.update({
     'output': completion.choices[0].message.content,
     'metadata': {
         **generation.metadata,
@@ -240,6 +277,8 @@ generation.update({
         'latencyMs': (time.time() - start_time) * 1000
     }
 })
+
+custom_generation.end()
 ```
 
 </CodeGroup>
