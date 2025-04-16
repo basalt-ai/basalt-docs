@@ -5,9 +5,9 @@ export const metadata = {
   description: 'Monitor and analyze your prompts in production with Basalt\'s comprehensive observability system.',
 }
 
-# Monitoring
+# Monitoring 
 
-Gain deep insights into your prompts' performance, costs, and behavior in production environments with Basalt's monitoring system. On this page, we'll explore how to use the monitoring API to track and analyze your AI application's performance. {{ className: 'lead' }}
+Gain deep insights into your prompts' performance, costs, and behavior in production environments with Basalt's monitoring system. On this page, we'll explore how to use the monitoring API to track and analyze your AI application's performance. { className: 'lead' }
 
 ## The monitoring model
 
@@ -18,7 +18,7 @@ The monitoring system is built around traces and logs, allowing you to track the
 <Properties>
   <Property name="trace" type="object">
     The top-level container for a monitoring session.
-    
+
     ```ts
     {
       id: string;
@@ -39,9 +39,10 @@ The monitoring system is built around traces and logs, allowing you to track the
     }
     ```
   </Property>
+
   <Property name="log" type="object">
     An individual operation or step within a trace.
-    
+
     ```ts
     {
       id: string;
@@ -81,11 +82,10 @@ The monitoring system supports various log types to represent different operatio
 
 ---
 
-## Create a trace {{ tag: 'POST', label: '/monitor/trace' }}
+## Create a trace { tag: 'POST', label: '/monitor/trace' }
 
 <Row>
   <Col>
-
     This endpoint allows you to create a new trace to track the execution of a feature. You can optionally include logs to record individual steps within the trace.
 
     ### Required parameters
@@ -102,24 +102,31 @@ The monitoring system supports various log types to represent different operatio
       <Property name="input" type="string">
         The input provided to the feature.
       </Property>
+
       <Property name="output" type="string">
         The output produced by the feature.
       </Property>
+
       <Property name="metadata" type="object">
         Additional metadata about the trace.
       </Property>
+
       <Property name="organization" type="object">
         Information about the organization associated with this trace.
       </Property>
+
       <Property name="user" type="object">
         Information about the user associated with this trace.
       </Property>
+
       <Property name="startTime" type="string">
         ISO timestamp for when the trace started.
       </Property>
+
       <Property name="endTime" type="string">
         ISO timestamp for when the trace ended.
       </Property>
+
       <Property name="logs" type="array">
         Array of log objects to be created with the trace.
       </Property>
@@ -128,43 +135,41 @@ The monitoring system supports various log types to represent different operatio
     ### Workspace context
 
     All requests must include workspace authentication. The endpoint will only create traces for features that belong to the authenticated workspace's scope.
-
   </Col>
+
   <Col sticky>
-
     <CodeGroup title="Request" tag="POST" label="/monitor/trace">
-
-    ```bash {{ title: 'cURL' }}
-    curl -X POST https://api.getbasalt.ai/monitor/trace \
-      -H "Authorization: Bearer {apiKey}" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "chainSlug": "customer-support",
-        "input": "How do I reset my password?",
-        "output": "You can reset your password by clicking the Forgot Password link on the login page.",
-        "metadata": {
-          "sessionId": "sess_12345",
-          "channel": "web"
-        },
-        "organization": {
-          "id": "org_12345",
-          "name": "Acme Inc."
-        },
-        "user": {
-          "id": "user_12345",
-          "name": "John Doe"
-        },
-        "logs": [
-          {
-            "id": "client-log-1",
-            "type": "generation",
-            "name": "Password Reset Instructions",
-            "input": "How do I reset my password?",
-            "output": "You can reset your password by clicking the Forgot Password link on the login page.",
-          }
-        ]
-      }'
-    ```
+      ```bash {{ title: 'cURL' }}
+      curl -X POST https://api.getbasalt.ai/monitor/trace \
+        -H "Authorization: Bearer {apiKey}" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "chainSlug": "customer-support",
+          "input": "How do I reset my password?",
+          "output": "You can reset your password by clicking the Forgot Password link on the login page.",
+          "metadata": {
+            "sessionId": "sess_12345",
+            "channel": "web"
+          },
+          "organization": {
+            "id": "org_12345",
+            "name": "Acme Inc."
+          },
+          "user": {
+            "id": "user_12345",
+            "name": "John Doe"
+          },
+          "logs": [
+            {
+              "id": "client-log-1",
+              "type": "generation",
+              "name": "Password Reset Instructions",
+              "input": "How do I reset my password?",
+              "output": "You can reset your password by clicking the Forgot Password link on the login page.",
+            }
+          ]
+        }'
+      ```
     </CodeGroup>
 
     ```json {{ title: 'Response 200' }}
@@ -186,15 +191,13 @@ The monitoring system supports various log types to represent different operatio
       "error": "Failed to create trace"
     }
     ```
-
   </Col>
 </Row>
 
-## Create a prompt generation log {{ tag: 'POST', label: '/monitor/log' }}
+## Create a prompt generation log { tag: 'POST', label: '/monitor/log' }
 
 <Row>
   <Col>
-
     This endpoint allows you to create a new log to track the execution of a prompt generation.
     The Basalt prompt object is retrieved from the Basalt platform with an existing slug.
     If the version is not specified we fallback on the tag.
@@ -206,6 +209,7 @@ The monitoring system supports various log types to represent different operatio
       <Property name="name" type="string">
         A descriptive name for the log.
       </Property>
+
       <Property name="slug" type="string">
         The slug of the prompt in the basalt platform.
       </Property>
@@ -217,59 +221,66 @@ The monitoring system supports various log types to represent different operatio
       <Property name="version" type="string">
         The version of the prompt to use.
       </Property>
+
       <Property name="tag" type="string">
         The tag of the prompt to use.
       </Property>
+
       <Property name="startTime" type="string">
         ISO timestamp for when the log operation started.
       </Property>
+
       <Property name="startTime" type="string">
         ISO timestamp for when the log operation started.
       </Property>
+
       <Property name="endTime" type="string">
         ISO timestamp for when the log operation ended.
       </Property>
+
       <Property name="metadata" type="object">
         Additional metadata about the log.
       </Property>
+
       <Property name="input" type="string">
         The input provided to the operation.
       </Property>
+
       <Property name="output" type="string">
         The output produced by the operation.
       </Property>
+
       <Property name="organization" type="object">
         Information about the organization associated with this trace.
       </Property>
+
       <Property name="user" type="object">
         Information about the user associated with this trace.
       </Property>
     </Properties>
-
   </Col>
+
   <Col sticky>
-
     <CodeGroup title="Request" tag="POST" label="/monitor/log">
-
-    ```bash {{ title: 'cURL' }}
-    curl -X POST https://api.getbasalt.ai/monitor/log \
-      -H "Authorization: Bearer {apiKey}" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "slug": "subscription-help",
-        "version": "2.1",
-        "tag": "production"
-        "name": "Fetch User Data",
-        "startTime": "2023-06-15T10:30:00Z",
-        "endTime": "2023-06-15T10:30:01Z",
-        "metadata": {
-          "functionName": "getUserData",
-          "status": "success"
-        },
-        "input": "{\"userId\": \"user_12345\"}",
-        "output": "{\"name\": \"John Doe\", \"email\": \"john@example.com\"}"
-      }'
-    ```
+      ```bash {{ title: 'cURL' }}
+      curl -X POST https://api.getbasalt.ai/monitor/log \
+        -H "Authorization: Bearer {apiKey}" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "slug": "subscription-help",
+          "version": "2.1",
+          "tag": "production"
+          "name": "Fetch User Data",
+          "startTime": "2023-06-15T10:30:00Z",
+          "endTime": "2023-06-15T10:30:01Z",
+          "metadata": {
+            "functionName": "getUserData",
+            "status": "success"
+          },
+          "input": "{\"userId\": \"user_12345\"}",
+          "output": "{\"name\": \"John Doe\", \"email\": \"john@example.com\"}"
+        }'
+      ```
     </CodeGroup>
 
     ```json {{ title: 'Response 200' }}
@@ -291,7 +302,6 @@ The monitoring system supports various log types to represent different operatio
       "error": "Failed to create log"
     }
     ```
-
   </Col>
 </Row>
 
@@ -299,7 +309,6 @@ The monitoring system supports various log types to represent different operatio
 
 <Row>
   <Col>
-
     When logging prompt generations, you can include additional information about the prompt used. This allows you to track which prompts are being used and how they're performing.
     If you provide a prompt object, we will automatically retrieve the prompt from the Basalt platform and use it in the log.
     **If you want to provide custom prompt information that is not stored in Basalt you need to omit the prompt object.**
@@ -307,50 +316,46 @@ The monitoring system supports various log types to represent different operatio
     ### Prompt log structure
 
     For logs of type "generation", you can include a `prompt` object with the following properties:
-    
-    - `slug`: The unique identifier for the prompt
-    - `version` (optional): The specific version of the prompt used
-    - `tag` (optional): The tag of the prompt version used (e.g., "production", "staging")
-    
+
+    * `slug`: The unique identifier for the prompt
+    * `version` (optional): The specific version of the prompt used
+    * `tag` (optional): The tag of the prompt version used (e.g., "production", "staging")
+
     You can also include `variables` to record the values used to fill prompt templates.
-
   </Col>
+
   <Col sticky>
-
     <CodeGroup title="Prompt log example" tag="POST" label="/monitor/trace">
-
-    ```json {{ title: 'Prompt log in trace request' }}
-    {
-      "chainSlug": "customer-support",
-      "logs": [
-        {
-          "id": "client-log-1",
-          "type": "generation",
-          "name": "Customer Support Response",
-          "input": "How do I cancel my subscription?",
-          "output": "You can cancel your subscription by going to Settings > Subscription and clicking the Cancel button.",
-          "prompt": {
-            "slug": "subscription-help",
-            "version": "2.1",
-            "tag": "production"
-          },
-          "variables": [
-            {
-              "label": "inquiry",
-              "value": "How do I cancel my subscription?"
+      ```json {{ title: 'Prompt log in trace request' }}
+      {
+        "chainSlug": "customer-support",
+        "logs": [
+          {
+            "id": "client-log-1",
+            "type": "generation",
+            "name": "Customer Support Response",
+            "input": "How do I cancel my subscription?",
+            "output": "You can cancel your subscription by going to Settings > Subscription and clicking the Cancel button.",
+            "prompt": {
+              "slug": "subscription-help",
+              "version": "2.1",
+              "tag": "production"
             },
-            {
-              "label": "tone",
-              "value": "helpful"
-            }
-          ]
-        }
-      ]
-    }
-    ```
-
+            "variables": [
+              {
+                "label": "inquiry",
+                "value": "How do I cancel my subscription?"
+              },
+              {
+                "label": "tone",
+                "value": "helpful"
+              }
+            ]
+          }
+        ]
+      }
+      ```
     </CodeGroup>
-
   </Col>
 </Row>
 
@@ -358,67 +363,64 @@ The monitoring system supports various log types to represent different operatio
 
 <Row>
   <Col>
-
     The monitoring system supports nested logs to represent complex operations. By specifying a `parentId`, you can create a hierarchy of logs that shows the relationship between different operations.
 
     ### Creating nested logs
 
     There are two ways to create nested logs:
-    
+
     1. Include all logs in the initial trace creation request, with client-side IDs and parentId references
     2. Create logs separately and reference the parent log's ID in the `parentId` field
-    
+
     The system will automatically build the hierarchy based on these relationships.
-
   </Col>
+
   <Col sticky>
-
     <CodeGroup title="Nested logs example" tag="POST" label="/monitor/trace">
-
-    ```json {{ title: 'Nested logs in trace request' }}
-    {
-      "chainSlug": "customer-support",
-      "logs": [
-        {
-          "id": "span-1",
-          "type": "span",
-          "name": "Customer Support Response",
-          "input": "How do I cancel my subscription?",
-          "output": "You can cancel your subscription by going to Settings > Subscription and clicking the Cancel button."
-        },
-        {
-          "id": "span-2",
-          "type": "span",
-          "parentId": "span-1",
-          "name": "Classify question",
-          "input": "How do I cancel my subscription?"
-        },
-        {
-          "id": "log-1",
-          "parentId": "span-2",
-          "type": "generation",
-          "name": "Classifier LLM",
-          "input": "How do I cancel my subscription?",
-          "output": "subscription-related"
-        },
-        {
-          "id": "span-3",
-          "type": "span",
-          "parentId": "span-1",
-          "name": "Translation",
-          "input": "How do I cancel my subscription?"
-        },
-        {
-          "id": "log-2",
-          "parentId": "span-3",
-          "type": "generation",
-          "name": "Translation LLM",
-          "input": "How do I cancel my subscription?",
-          "output": "Comment puis-je annuler mon abonnement?"
-        }
-      ]
-    }
-    ```
+      ```json {{ title: 'Nested logs in trace request' }}
+      {
+        "chainSlug": "customer-support",
+        "logs": [
+          {
+            "id": "span-1",
+            "type": "span",
+            "name": "Customer Support Response",
+            "input": "How do I cancel my subscription?",
+            "output": "You can cancel your subscription by going to Settings > Subscription and clicking the Cancel button."
+          },
+          {
+            "id": "span-2",
+            "type": "span",
+            "parentId": "span-1",
+            "name": "Classify question",
+            "input": "How do I cancel my subscription?"
+          },
+          {
+            "id": "log-1",
+            "parentId": "span-2",
+            "type": "generation",
+            "name": "Classifier LLM",
+            "input": "How do I cancel my subscription?",
+            "output": "subscription-related"
+          },
+          {
+            "id": "span-3",
+            "type": "span",
+            "parentId": "span-1",
+            "name": "Translation",
+            "input": "How do I cancel my subscription?"
+          },
+          {
+            "id": "log-2",
+            "parentId": "span-3",
+            "type": "generation",
+            "name": "Translation LLM",
+            "input": "How do I cancel my subscription?",
+            "output": "Comment puis-je annuler mon abonnement?"
+          }
+        ]
+      }
+      ```
     </CodeGroup>
   </Col>
 </Row>
@@ -428,9 +430,10 @@ The monitoring system supports various log types to represent different operatio
 We're continuously enhancing our monitoring capabilities. For the latest updates:
 
 <div className="not-prose mt-4 flex gap-4">
-  <Button href="https://github.com/getbasalt" variant="text" arrow="right">
-    <>Follow us on GitHub</>
-  </Button>
+<Button href="https://github.com/getbasalt" variant="text" arrow="right">
+  <>Follow us on GitHub</>
+</Button>
+
 </div>
 
 For early access to our monitoring features or to discuss specific monitoring needs, please contact our [team](mailto:support@getbasalt.ai).
