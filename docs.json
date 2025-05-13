@@ -101,6 +101,13 @@
 					]
 				},
 				{
+					"group": "Monitor",
+					"pages": [
+						"api-reference/monitor/log",
+						"api-reference/monitor/trace"
+					]
+				},
+				{
 					"group": "Experiments",
 					"pages": [
 						"api-reference/experiments/create"

@@ -35,10 +35,10 @@
 			{
 			  "schema": {
 				"type": "string",
+				"description": "The feature slug to filter prompts by",
 				"example": "feature-slug"
 			  },
 			  "required": false,
-			  "description": "The feature slug to filter prompts by",
 			  "name": "featureSlug",
 			  "in": "query"
 			}
@@ -61,10 +61,12 @@
 								"string",
 								"null"
 							  ],
+							  "description": "The slug of the prompt",
 							  "example": "my-prompt"
 							},
 							"name": {
 							  "type": "string",
+							  "description": "The name of the prompt",
 							  "example": "My Prompt"
 							},
 							"status": {
@@ -73,6 +75,7 @@
 								"live",
 								"draft"
 							  ],
+							  "description": "The status of the prompt (live or draft)",
 							  "example": "live"
 							},
 							"description": {
@@ -80,6 +83,7 @@
 								"string",
 								"null"
 							  ],
+							  "description": "The description of the prompt",
 							  "example": "This is a description of the prompt"
 							},
 							"availableVersions": {
@@ -87,6 +91,7 @@
 							  "items": {
 								"type": "string"
 							  },
+							  "description": "The available versions of the prompt",
 							  "example": [
 								"1.0.0",
 								"1.0.1"
@@ -97,6 +102,7 @@
 							  "items": {
 								"type": "string"
 							  },
+							  "description": "The slug of the prompt to get",
 							  "example": [
 								"latest",
 								"production"
@@ -109,7 +115,24 @@
 							"availableVersions",
 							"availableTags"
 						  ]
-						}
+						},
+						"description": "The list of prompts",
+						"example": [
+						  {
+							"slug": "my-prompt",
+							"name": "My Prompt",
+							"status": "live",
+							"description": "This is a description of the prompt",
+							"availableVersions": [
+							  "1.0.0",
+							  "1.0.1"
+							],
+							"availableTags": [
+							  "latest",
+							  "production"
+							]
+						  }
+						]
 					  }
 					},
 					"required": [
@@ -133,30 +156,30 @@
 			{
 			  "schema": {
 				"type": "string",
+				"description": "The slug of the prompt to get",
 				"example": "my-slug"
 			  },
 			  "required": true,
-			  "description": "The slug of the prompt to get",
 			  "name": "slug",
 			  "in": "path"
 			},
 			{
 			  "schema": {
 				"type": "string",
+				"description": "The version to filter prompts by",
 				"example": "1.0.0"
 			  },
 			  "required": false,
-			  "description": "The version to filter prompts by",
 			  "name": "version",
 			  "in": "query"
 			},
 			{
 			  "schema": {
 				"type": "string",
+				"description": "The tag to filter prompts by",
 				"example": "latest"
 			  },
 			  "required": false,
-			  "description": "The tag to filter prompts by",
 			  "name": "tag",
 			  "in": "query"
 			}
@@ -170,21 +193,25 @@
 					"type": "object",
 					"properties": {
 					  "warning": {
-						"type": "string"
+						"type": "string",
+						"description": "A warning message"
 					  },
 					  "prompt": {
 						"type": "object",
 						"properties": {
 						  "text": {
 							"type": "string",
+							"description": "Can you help me with...",
 							"example": "Hello, how are you?"
 						  },
 						  "systemText": {
 							"type": "string",
+							"description": "You are an AI assistant that helps users with their tasks.",
 							"example": "You are a helpful assistant"
 						  },
 						  "version": {
 							"type": "string",
+							"description": "The version (snapshot) of the prompt",
 							"example": "1.0.0"
 						  },
 						  "model": {
@@ -198,14 +225,17 @@
 								  "mistral",
 								  "gemini"
 								],
+								"description": "The provider of the model",
 								"example": "open-ai"
 							  },
 							  "model": {
 								"type": "string",
+								"description": "The model name",
 								"example": "gpt-4o"
 							  },
 							  "version": {
 								"type": "string",
+								"description": "The version (snapshot) of the model",
 								"example": "latest"
 							  },
 							  "parameters": {
@@ -213,27 +243,33 @@
 								"properties": {
 								  "temperature": {
 									"type": "number",
+									"description": "The temperature of the model",
 									"example": 0.5
 								  },
 								  "topP": {
 									"type": "number",
+									"description": "The top P of the model",
 									"example": 0.5
 								  },
 								  "frequencyPenalty": {
 									"type": "number",
+									"description": "The frequency penalty of the model",
 									"example": 1
 								  },
 								  "maxLength": {
 									"type": "number",
+									"description": "The max length of the model",
 									"example": 100
 								  },
 								  "responseFormat": {
 									"type": "string",
+									"description": "The response format of the model",
 									"example": "json_object"
 								  },
 								  "jsonObject": {
 									"type": "object",
-									"additionalProperties": {}
+									"additionalProperties": {},
+									"description": "The JSON object of the model"
 								  }
 								},
 								"required": [
@@ -249,14 +285,43 @@
 							  "model",
 							  "version",
 							  "parameters"
-							]
+							],
+							"description": "The model used to generate the prompt",
+							"example": {
+							  "provider": "open-ai",
+							  "model": "gpt-4o",
+							  "version": "latest",
+							  "parameters": {
+								"maxLength": 100,
+								"temperature": 0.5,
+								"topP": 0.5,
+								"responseFormat": "json_object"
+							  }
+							}
 						  }
 						},
 						"required": [
 						  "text",
 						  "version",
 						  "model"
-						]
+						],
+						"description": "The prompt",
+						"example": {
+						  "text": "Hello, how are you?",
+						  "systemText": "You are a helpful assistant",
+						  "version": "1.0.0",
+						  "model": {
+							"provider": "open-ai",
+							"model": "gpt-4o",
+							"version": "latest",
+							"parameters": {
+							  "maxLength": 100,
+							  "temperature": 0.5,
+							  "topP": 0.5,
+							  "responseFormat": "json_object"
+							}
+						  }
+						}
 					  }
 					},
 					"required": [
@@ -270,15 +335,14 @@
 			  "description": "Bad Request - Invalid query parameters"
 			},
 			"404": {
-			  "description": "Not found",
+			  "description": "Not found - No prompt found for the given slug",
 			  "content": {
 				"application/json": {
 				  "schema": {
 					"type": "object",
 					"properties": {
 					  "error": {
-						"type": "string",
-						"example": "No prompt found with the given slug or no production version found or no prompt found with the given version or tag (production version also missing)"
+						"type": "string"
 					  }
 					},
 					"required": [
@@ -299,30 +363,30 @@
 			{
 			  "schema": {
 				"type": "string",
+				"description": "The slug of the prompt to describe",
 				"example": "my-slug"
 			  },
 			  "required": true,
-			  "description": "The slug of the prompt to describe",
 			  "name": "slug",
 			  "in": "path"
 			},
 			{
 			  "schema": {
 				"type": "string",
+				"description": "The version to filter prompts by",
 				"example": "1.0.0"
 			  },
 			  "required": false,
-			  "description": "The version to filter prompts by",
 			  "name": "version",
 			  "in": "query"
 			},
 			{
 			  "schema": {
 				"type": "string",
+				"description": "The tag to filter prompts by",
 				"example": "latest"
 			  },
 			  "required": false,
-			  "description": "The tag to filter prompts by",
 			  "name": "tag",
 			  "in": "query"
 			}
@@ -336,7 +400,8 @@
 					"type": "object",
 					"properties": {
 					  "warning": {
-						"type": "string"
+						"type": "string",
+						"description": "A warning message"
 					  },
 					  "prompt": {
 						"type": "object",
@@ -346,10 +411,12 @@
 							  "string",
 							  "null"
 							],
+							"description": "The slug of the prompt",
 							"example": "my-slug"
 						  },
 						  "name": {
 							"type": "string",
+							"description": "The name of the prompt",
 							"example": "My Prompt"
 						  },
 						  "status": {
@@ -358,6 +425,7 @@
 							  "live",
 							  "draft"
 							],
+							"description": "The status of the prompt",
 							"example": "live"
 						  },
 						  "description": {
@@ -365,6 +433,7 @@
 							  "string",
 							  "null"
 							],
+							"description": "The description of the prompt",
 							"example": "This is a description of the prompt"
 						  },
 						  "availableVersions": {
@@ -372,6 +441,7 @@
 							"items": {
 							  "type": "string"
 							},
+							"description": "The versions of the prompt",
 							"example": [
 							  "1.0.0",
 							  "1.0.1"
@@ -382,6 +452,7 @@
 							"items": {
 							  "type": "string"
 							},
+							"description": "The tags of the prompt",
 							"example": [
 							  "latest",
 							  "production",
@@ -395,14 +466,17 @@
 							  "properties": {
 								"label": {
 								  "type": "string",
+								  "description": "The label of the variable",
 								  "example": "Name"
 								},
 								"type": {
 								  "type": "string",
+								  "description": "The type of the variable",
 								  "example": "string"
 								},
 								"description": {
 								  "type": "string",
+								  "description": "The description of the variable",
 								  "example": "This is a description of the variable"
 								}
 							  },
@@ -419,7 +493,30 @@
 						  "availableVersions",
 						  "availableTags",
 						  "variables"
-						]
+						],
+						"description": "The prompt retrieved",
+						"example": {
+						  "slug": "my-slug",
+						  "name": "My Prompt",
+						  "status": "live",
+						  "description": "This is a description of the prompt",
+						  "availableVersions": [
+							"1.0.0",
+							"1.0.1"
+						  ],
+						  "availableTags": [
+							"latest",
+							"production",
+							"staging"
+						  ],
+						  "variables": [
+							{
+							  "label": "Name",
+							  "type": "string",
+							  "description": "This is a description of the variable"
+							}
+						  ]
+						}
 					  }
 					},
 					"required": [
@@ -433,15 +530,14 @@
 			  "description": "Bad Request - Invalid query parameters"
 			},
 			"404": {
-			  "description": "Not found",
+			  "description": "Not found - No prompt found for the given slug",
 			  "content": {
 				"application/json": {
 				  "schema": {
 					"type": "object",
 					"properties": {
 					  "error": {
-						"type": "string",
-						"example": "No prompt found with the given slug or no production version found or no prompt found with the given version or tag (production version also missing)"
+						"type": "string"
 					  }
 					},
 					"required": [
@@ -466,10 +562,12 @@
 				  "properties": {
 					"featureSlug": {
 					  "type": "string",
+					  "description": "The slug of the feature to create an experiment on",
 					  "example": "my-feature"
 					},
 					"name": {
 					  "type": "string",
+					  "description": "The name of the experiment",
 					  "example": "My Experiment"
 					}
 				  },
@@ -491,10 +589,12 @@
 					"properties": {
 					  "id": {
 						"type": "string",
+						"description": "The ID of the experiment",
 						"example": "123"
 					  },
 					  "name": {
 						"type": "string",
+						"description": "The name of the experiment",
 						"example": "My Experiment"
 					  },
 					  "featureSlug": {
@@ -502,10 +602,12 @@
 						  "string",
 						  "null"
 						],
+						"description": "The slug of the feature this experiment belongs to",
 						"example": "my-feature"
 					  },
 					  "createdAt": {
 						"type": "string",
+						"description": "The creation timestamp of the experiment",
 						"example": "2024-03-20T12:00:00Z"
 					  }
 					},
@@ -522,15 +624,755 @@
 			  "description": "Bad Request - Invalid body parameters"
 			},
 			"404": {
-			  "description": "Not found",
+			  "description": "Not found - No feature found for the given slug",
 			  "content": {
 				"application/json": {
 				  "schema": {
 					"type": "object",
 					"properties": {
 					  "error": {
-						"type": "string",
+						"type": "string"
+					  }
+					},
+					"required": [
+					  "error"
+					]
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/monitor/log": {
+		"post": {
+		  "summary": "Monitor a prompt output",
+		  "description": "Monitor a prompt output",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "type": "object",
+				  "properties": {
+					"name": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The name of the trace",
+					  "example": "qa-chatbot"
+					},
+					"slug": {
+					  "type": "string",
+					  "description": "The slug of the prompt",
+					  "example": "qa"
+					},
+					"version": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The version of the prompt",
+					  "example": "1.0.0"
+					},
+					"tag": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The tag of the prompt",
+					  "example": "production"
+					},
+					"input": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The input of the prompt.",
+					  "example": "What is the capital of France?"
+					},
+					"output": {
+					  "type": "string",
+					  "description": "The output of the prompt.",
+					  "example": "Paris"
+					},
+					"variables": {
+					  "type": [
+						"array",
+						"null"
+					  ],
+					  "items": {
+						"type": "object",
+						"properties": {
+						  "label": {
+							"type": "string"
+						  },
+						  "value": {
+							"type": [
+							  "string",
+							  "null"
+							]
+						  }
+						},
+						"required": [
+						  "label"
+						]
+					  },
+					  "description": "Variables used in the prompt.",
+					  "example": [
+						{
+						  "label": "question",
+						  "value": "What is the capital of France?"
+						}
+					  ]
+					},
+					"startTime": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The start time of the prompt.",
+					  "example": "2021-01-01T00:00:00Z"
+					},
+					"endTime": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The end time of the prompt.",
+					  "example": "2021-01-01T00:00:00Z"
+					},
+					"inputTokens": {
+					  "type": [
+						"number",
+						"null"
+					  ],
+					  "description": "The number of input tokens. If not provided, it will be computed based on the input",
+					  "example": 100
+					},
+					"outputTokens": {
+					  "type": [
+						"number",
+						"null"
+					  ],
+					  "description": "The number of output tokens. If not provided, it will be computed based on the output",
+					  "example": 100
+					},
+					"cost": {
+					  "type": [
+						"number",
+						"null"
+					  ],
+					  "description": "The cost of the prompt. If not provided, it will be computed based on the input and output tokens",
+					  "example": 100
+					},
+					"organization": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "properties": {
+						"id": {
+						  "type": "string",
+						  "description": "A unique identifier for the organization"
+						},
+						"name": {
+						  "type": "string",
+						  "description": "The name of the organization"
+						}
+					  },
+					  "required": [
+						"id",
+						"name"
+					  ],
+					  "description": "The organization related to the prompt. Used to identify the organization of the user that triggered the prompt.",
+					  "example": {
+						"id": "123",
+						"name": "ACME"
+					  }
+					},
+					"user": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "properties": {
+						"id": {
+						  "type": "string",
+						  "description": "A unique identifier for the user"
+						},
+						"name": {
+						  "type": "string",
+						  "description": "The name of the user"
+						}
+					  },
+					  "required": [
+						"id",
+						"name"
+					  ],
+					  "description": "The user related to the prompt. Used to identify the user that triggered the prompt.",
+					  "example": {
+						"id": "123",
+						"name": "John Doe"
+					  }
+					},
+					"metadata": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "additionalProperties": {},
+					  "description": "Additional metadata to be associated with the prompt.",
+					  "example": {
+						"sessionId": "456",
+						"userType": "admin"
+					  }
+					}
+				  },
+				  "required": [
+					"slug",
+					"output"
+				  ]
+				}
+			  }
+			}
+		  },
+		  "responses": {
+			"200": {
+			  "description": "The id of the created trace and log",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "trace": {
+						"type": "object",
+						"properties": {
+						  "id": {
+							"type": "string"
+						  }
+						},
+						"required": [
+						  "id"
+						],
+						"description": "The ID of the trace",
+						"example": {
+						  "id": "123"
+						}
+					  },
+					  "log": {
+						"type": "object",
+						"properties": {
+						  "id": {
+							"type": "string"
+						  }
+						},
+						"required": [
+						  "id"
+						],
+						"description": "The ID of the log",
+						"example": {
+						  "id": "123"
+						}
+					  },
+					  "warning": {
+						"type": [
+						  "string",
+						  "null"
+						],
+						"description": "The warning message",
 						"example": "No prompt found with the given slug or no production version found or no prompt found with the given version or tag (production version also missing)"
+					  }
+					},
+					"required": [
+					  "trace",
+					  "log"
+					]
+				  }
+				}
+			  }
+			},
+			"400": {
+			  "description": "Bad Request - Invalid query parameters"
+			},
+			"404": {
+			  "description": "Not found - No prompt found for the given slug",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "error": {
+						"type": "string"
+					  }
+					},
+					"required": [
+					  "error"
+					]
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/monitor/trace": {
+		"post": {
+		  "summary": "Create a trace",
+		  "description": "Create a trace",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "type": "object",
+				  "properties": {
+					"name": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The name of the trace",
+					  "example": "qa-chatbot"
+					},
+					"featureSlug": {
+					  "type": "string",
+					  "description": "The slug of the feature in Basalt.",
+					  "example": "qa-chatbot"
+					},
+					"chainSlug": {
+					  "type": "string",
+					  "description": "Deprecated: Use featureSlug instead. The slug of the feature in Basalt.",
+					  "example": "qa-chatbot",
+					  "deprecated": true
+					},
+					"input": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The input of the trace",
+					  "example": "What is the capital of France?"
+					},
+					"output": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The output of the trace",
+					  "example": "Paris"
+					},
+					"metadata": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "additionalProperties": {},
+					  "description": "Additional metadata to be associated with the trace.",
+					  "example": {
+						"sessionId": "456",
+						"userType": "admin"
+					  }
+					},
+					"organization": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "properties": {
+						"id": {
+						  "type": "string",
+						  "description": "A unique identifier for the organization"
+						},
+						"name": {
+						  "type": "string",
+						  "description": "The name of the organization"
+						}
+					  },
+					  "required": [
+						"id",
+						"name"
+					  ],
+					  "description": "The organization related to the trace. Used to identify the organization of the user that triggered the trace.",
+					  "example": {
+						"id": "123",
+						"name": "ACME"
+					  }
+					},
+					"user": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "properties": {
+						"id": {
+						  "type": "string",
+						  "description": "A unique identifier for the user"
+						},
+						"name": {
+						  "type": "string",
+						  "description": "The name of the user"
+						}
+					  },
+					  "required": [
+						"id",
+						"name"
+					  ],
+					  "description": "The user related to the trace. Used to identify the user that triggered the trace.",
+					  "example": {
+						"id": "123",
+						"name": "John Doe"
+					  }
+					},
+					"startTime": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The start time of the trace",
+					  "example": "2021-01-01T00:00:00Z"
+					},
+					"endTime": {
+					  "type": [
+						"string",
+						"null"
+					  ],
+					  "description": "The end time of the trace",
+					  "example": "2021-01-01T00:00:00Z"
+					},
+					"experiment": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "properties": {
+						"id": {
+						  "type": "string"
+						}
+					  },
+					  "required": [
+						"id"
+					  ],
+					  "description": "The experiment to append the trace to. You must create an experiment before.",
+					  "example": {
+						"id": "123"
+					  }
+					},
+					"logs": {
+					  "type": [
+						"array",
+						"null"
+					  ],
+					  "items": {
+						"type": "object",
+						"properties": {
+						  "id": {
+							"type": "string",
+							"description": "A unique identifier for the log",
+							"example": "log-123"
+						  },
+						  "type": {
+							"type": "string",
+							"enum": [
+							  "span",
+							  "generation",
+							  "function",
+							  "tool",
+							  "retrieval",
+							  "event"
+							],
+							"description": "The type of log",
+							"example": "generation"
+						  },
+						  "name": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"description": "The name of the log",
+							"example": "retrieval"
+						  },
+						  "startTime": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"description": "The start time of the log",
+							"example": "2021-01-01T00:00:00Z"
+						  },
+						  "endTime": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"description": "The end time of the log",
+							"example": "2021-01-01T00:00:00Z"
+						  },
+						  "metadata": {
+							"type": [
+							  "object",
+							  "null"
+							],
+							"additionalProperties": {},
+							"description": "The metadata of the log",
+							"example": {
+							  "sessionId": "456"
+							}
+						  },
+						  "parentId": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"description": "The parent ID of the log. Used to nest logs in a hierarchical structure.",
+							"example": "parent-123"
+						  },
+						  "input": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"description": "The input of the log",
+							"example": "What is the capital of France?"
+						  },
+						  "output": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"description": "The output of the log",
+							"example": "Paris"
+						  },
+						  "inputTokens": {
+							"type": [
+							  "number",
+							  "null"
+							],
+							"description": "The number of input tokens. If not provided, it will be computed based on the input",
+							"example": 100
+						  },
+						  "outputTokens": {
+							"type": [
+							  "number",
+							  "null"
+							],
+							"description": "The number of output tokens. If not provided, it will be computed based on the output",
+							"example": 100
+						  },
+						  "cost": {
+							"type": [
+							  "number",
+							  "null"
+							],
+							"example": 100
+						  },
+						  "variables": {
+							"type": [
+							  "array",
+							  "null"
+							],
+							"items": {
+							  "type": "object",
+							  "properties": {
+								"label": {
+								  "type": "string"
+								},
+								"value": {
+								  "type": [
+									"string",
+									"null"
+								  ]
+								}
+							  },
+							  "required": [
+								"label"
+							  ]
+							},
+							"example": [
+							  {
+								"label": "question",
+								"value": "What is the capital of France?"
+							  }
+							]
+						  },
+						  "prompt": {
+							"type": [
+							  "object",
+							  "null"
+							],
+							"properties": {
+							  "slug": {
+								"type": "string"
+							  },
+							  "version": {
+								"type": [
+								  "string",
+								  "null"
+								]
+							  },
+							  "tag": {
+								"type": [
+								  "string",
+								  "null"
+								]
+							  }
+							},
+							"required": [
+							  "slug"
+							],
+							"example": {
+							  "slug": "qa-prompt",
+							  "version": "1.0.0",
+							  "tag": "production"
+							}
+						  },
+						  "evaluators": {
+							"type": [
+							  "array",
+							  "null"
+							],
+							"items": {
+							  "type": "object",
+							  "properties": {
+								"slug": {
+								  "type": "string",
+								  "description": "The slug of the evaluator in Basalt.",
+								  "example": "hallucination"
+								}
+							  },
+							  "required": [
+								"slug"
+							  ]
+							},
+							"example": [
+							  {
+								"slug": "hallucination"
+							  }
+							]
+						  }
+						},
+						"required": [
+						  "id",
+						  "type"
+						]
+					  },
+					  "description": "The logs to append to the trace.",
+					  "example": [
+						{
+						  "id": "123",
+						  "type": "generation",
+						  "name": "qa-chatbot",
+						  "startTime": "2021-01-01T00:00:00Z",
+						  "endTime": "2021-01-01T00:00:00Z",
+						  "metadata": {
+							"sessionId": "456",
+							"userType": "admin"
+						  }
+						}
+					  ]
+					},
+					"evaluators": {
+					  "type": [
+						"array",
+						"null"
+					  ],
+					  "items": {
+						"type": "object",
+						"properties": {
+						  "slug": {
+							"type": "string",
+							"description": "The slug of the evaluator in Basalt.",
+							"example": "hallucination"
+						  }
+						},
+						"required": [
+						  "slug"
+						]
+					  },
+					  "description": "The evaluators used to generate the trace.",
+					  "example": [
+						{
+						  "slug": "hallucination"
+						}
+					  ]
+					},
+					"evaluationConfig": {
+					  "type": [
+						"object",
+						"null"
+					  ],
+					  "properties": {
+						"sampleRate": {
+						  "type": [
+							"number",
+							"null"
+						  ],
+						  "minimum": 0,
+						  "maximum": 1,
+						  "description": "The sample rate of the trace. If not provided, it will be computed based on the evaluators.",
+						  "example": 0.5
+						}
+					  },
+					  "description": "The evaluation configuration of the trace.",
+					  "example": {
+						"sampleRate": 0.5
+					  }
+					}
+				  }
+				}
+			  }
+			}
+		  },
+		  "responses": {
+			"200": {
+			  "description": "The trace created",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "trace": {
+						"type": "object",
+						"properties": {
+						  "id": {
+							"type": "string"
+						  }
+						},
+						"required": [
+						  "id"
+						],
+						"description": "The trace created",
+						"example": {
+						  "id": "123"
+						}
+					  },
+					  "warning": {
+						"type": [
+						  "string",
+						  "null"
+						],
+						"description": "The warning message",
+						"example": "No prompt found with the given slug or no production version found or no prompt found with the given version or tag (production version also missing)"
+					  }
+					},
+					"required": [
+					  "trace"
+					]
+				  }
+				}
+			  }
+			},
+			"400": {
+			  "description": "Bad Request - Invalid query parameters"
+			},
+			"404": {
+			  "description": "Not found - No feature found for the given slug",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "error": {
+						"type": "string"
 					  }
 					},
 					"required": [
