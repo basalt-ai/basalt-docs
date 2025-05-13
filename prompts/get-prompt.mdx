@@ -1,0 +1,186 @@
+---
+title: 'Get Prompt'
+description: 'Get your prompt using its slug, with a specific version or tag.'
+---
+
+
+Discover how to get your prompt. You can do it with a single line of code or specify a version or tag.
+
+### Single line of code
+You can get your prompt with a single line of code.
+
+<CodeGroup>
+```typescript TypeScript
+const { value } await basalt.prompt.get('my-prompt-slug')
+```
+
+```python Python
+error, prompt = basalt.prompt.get('my-prompt-slug')
+```
+</CodeGroup>
+
+### Get a specific Tag
+You can retrieve a specific tag of a prompt by providing the tag parameter.
+
+<CodeGroup>
+```typescript TypeScript
+// Using object syntax
+const { value } = await basalt.prompt.get({
+  slug: 'welcome-message',
+  tag: 'staging'
+})
+
+// Using parameter syntax
+const { value } = await basalt.prompt.get('welcome-message', {
+  tag: 'staging'
+})
+```
+
+```python Python
+# Using named parameters
+error, result = basalt.prompt.get(
+    slug='welcome-message',
+    tag='staging'
+)
+```
+</CodeGroup>
+
+<Info>
+If both version and tag are provided, version takes precedence.
+If neither is provided, the system attempts to find the `production` tagged version
+</Info>
+
+
+## Get a specific Version
+You can retrieve a specific version of a prompt by providing the version parameter.
+
+<CodeGroup>
+```typescript TypeScript
+// Using object syntax
+const { value } = await basalt.prompt.get({
+  slug: 'welcome-message',
+  version: '1.0.0'
+})
+
+// Using parameter syntax
+const { value } = await basalt.prompt.get('welcome-message', {
+  version: '1.0.0'
+})
+```
+
+```python Python
+# Using named parameters
+error, result = basalt.prompt.get(
+    slug='welcome-message',
+    version='1.0.0'
+)
+```
+</CodeGroup>
+
+## Replace Variables
+If your prompt contains variables (e.g., `{{name}}`), you can replace them with actual values when retrieving the prompt:
+
+<CodeGroup>
+```typescript TypeScript
+const { value } = await basalt.prompt.get({
+  slug: 'welcome-message',
+  variables: {
+    name: 'John Doe',
+    company: 'Acme Inc'
+  }
+})
+
+// The variables can also be provided with the parameter syntax
+const { value } = await basalt.prompt.get('welcome-message', {
+  variables: {
+    name: 'John Doe'
+  }
+})
+```
+
+```python Python
+error, result = basalt.prompt.get(
+    slug='welcome-message',
+    variables={
+        'name': 'John Doe',
+        'company': 'Acme Inc'
+    }
+)
+```
+</CodeGroup>
+
+## Returned data
+When you retrieve a prompt, the SDK returns the prompt (user and system) along with its model configuration.
+
+<CodeGroup>
+```typescript TypeScript
+interface PromptResult {
+	text: string; // User Prompt
+	systemText: string | undefined; // System Prompt
+	model: {
+		provider: 'anthropic' | 'open-ai' | 'mistral' | 'gemini';
+		model: string;
+		version: string | 'latest';
+		parameters: {
+			temperature: number;
+			topP: number;
+			frequencyPenalty?: number;
+			presencePenalty?: number;
+			topK?: number;
+			maxLength: number;
+			responseFormat: ResponseFormat;
+			jsonObject?: Record<string, any>;
+		};
+	};
+}
+```
+
+```python Python
+class PromptResult:
+    text: str  # User Prompt
+    systemText: str | None  # System Prompt
+    model: dict[str, Union[str, dict]]  # Model configuration with:
+                                       # provider: Literal['anthropic', 'open-ai', 'mistral', 'gemini']
+                                       # model: str
+                                       # version: Union[str, Literal['latest']]
+                                       # parameters: dict containing:
+                                       #   temperature: float
+                                       #   topP: float
+                                       #   frequencyPenalty: Optional[float]
+                                       #   presencePenalty: Optional[float]
+                                       #   topK: Optional[int]
+                                       #   maxLength: int
+                                       #   responseFormat: ResponseFormat
+                                       #   jsonObject: Optional[dict]
+```
+</CodeGroup>
+
+
+### Example response
+``` json Response example
+{
+  "text": "Can you help me with...",
+  "systemText": "You are an AI assistant that helps users with their tasks.",
+  "model": {
+    "provider": "open-ai",
+    "model": "4.1-nano",
+    "version": "latest",
+    "parameters": {
+      "temperature": 0.7,
+      "topP": 0.95,
+      "frequencyPenalty": 1,
+      "presencePenalty": 1,
+      "topK": 40,
+      "maxLength": 1000,
+      "responseFormat": "text",
+      "jsonObject": null
+    }
+  }
+}
+```
+
+## Error handling
+Discover how to properly handle errors comming from the SDK and/or the API by checking the [Error Handling documentation](/prompts/error-handling)
+
+## Caching
+

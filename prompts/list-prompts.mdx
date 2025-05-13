@@ -1,0 +1,89 @@
+---
+title: 'List Prompts'
+description: 'List all prompts in your workspace or within a specific feature.'
+---
+
+Discover how to list your prompts. You can retrieve all prompts in your workspace or filter them by feature.
+
+### List all prompts
+You can list all prompts in your workspace with a single line of code.
+
+<CodeGroup>
+```typescript TypeScript
+const { value } = await basalt.prompt.list()
+```
+
+```python Python
+error, prompts = basalt.prompt.list()
+```
+</CodeGroup>
+
+### List prompts in a specific feature
+You can retrieve prompts from a specific feature by providing the feature slug.
+
+<CodeGroup>
+```typescript TypeScript
+// Using object syntax
+const { value } = await basalt.prompt.list({
+  featureSlug: 'onboarding'
+})
+```
+
+```python Python
+# Using named parameters
+error, prompts = basalt.prompt.list(
+    feature_slug='onboarding'
+)
+```
+</CodeGroup>
+
+## Returned data
+When you list prompts, the SDK returns an array of prompt metadata objects.
+
+<CodeGroup>
+```typescript TypeScript
+interface PromptListResponse {
+  slug?: string;
+  status: 'live' | 'draft';
+  name: string;
+  description?: string;
+  availableVersions: string[];
+  availableTags: string[];
+}
+```
+
+```python Python
+class PromptListResponse:
+    slug: Optional[str]
+    status: Literal['live', 'draft']
+    name: str
+    description: Optional[str]
+    availableVersions: List[str]
+    availableTags: List[str]
+```
+</CodeGroup>
+
+### Example response
+```json Response example
+[
+  {
+    "slug": "welcome-message",
+    "status": "live",
+    "name": "Welcome Message",
+    "description": "A friendly welcome message for new users",
+    "availableVersions": ["1.0.0", "1.1.0", "2.0.0"],
+    "availableTags": ["production", "staging"]
+  },
+  {
+    "slug": "help-guide",
+    "status": "draft",
+    "name": "Help Guide",
+    "description": "Comprehensive help documentation",
+    "availableVersions": ["0.1.0"],
+    "availableTags": ["development"]
+  }
+]
+```
+
+## Error handling
+Discover how to properly handle errors coming from the SDK and/or the API by checking the [Error Handling documentation](/prompts/error-handling)

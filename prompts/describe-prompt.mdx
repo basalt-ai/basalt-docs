@@ -1,0 +1,145 @@
+---
+title: 'Describe Prompt'
+description: 'Get detailed information about a prompt, including its variables and available versions.'
+---
+
+Discover how to get detailed information about your prompt, including metadata, available versions, tags, and variable definitions.
+
+### Get prompt details
+You can get detailed information about a prompt by providing its slug.
+
+<CodeGroup>
+```typescript TypeScript
+const { value } = await basalt.prompt.describe('my-prompt-slug')
+```
+
+```python Python
+error, prompt_details = basalt.prompt.describe('my-prompt-slug')
+```
+</CodeGroup>
+
+### Describe a specific Version
+You can retrieve details about a specific version of a prompt by providing the version parameter.
+
+<CodeGroup>
+```typescript TypeScript
+// Using object syntax
+const { value } = await basalt.prompt.describe({
+  slug: 'welcome-message',
+  version: '1.0.0'
+})
+
+// Using parameter syntax
+const { value } = await basalt.prompt.describe('welcome-message', {
+  version: '1.0.0'
+})
+```
+
+```python Python
+# Using named parameters
+error, prompt_details = basalt.prompt.describe(
+    slug='welcome-message',
+    version='1.0.0'
+)
+```
+</CodeGroup>
+
+<Info>
+If both version and tag are provided, version takes precedence.
+If neither is provided, the system attempts to find the `production` tagged version
+</Info>
+
+
+### Describe a specific Tag
+You can retrieve details about a specific tag of a prompt by providing the tag parameter.
+
+<CodeGroup>
+```typescript TypeScript
+// Using object syntax
+const { value } = await basalt.prompt.describe({
+  slug: 'welcome-message',
+  tag: 'staging'
+})
+
+// Using parameter syntax
+const { value } = await basalt.prompt.describe('welcome-message', {
+  tag: 'staging'
+})
+```
+
+```python Python
+# Using named parameters
+error, prompt_details = basalt.prompt.describe(
+    slug='welcome-message',
+    tag='staging'
+)
+```
+</CodeGroup>
+
+## Returned data
+When you describe a prompt, the SDK returns detailed information about the prompt, including its metadata, variables, and available versions and tags.
+
+<CodeGroup>
+```typescript TypeScript
+interface PromptDetailResponse {
+  slug?: string;
+  status: 'live' | 'draft';
+  name: string;
+  description?: string;
+  availableVersions: string[];
+  availableTags: string[];
+  variables: {
+    label: string;
+    description?: string;
+    type: string;
+  }[];
+  version: string;
+  tag?: string;
+}
+```
+
+```python Python
+class PromptDetailResponse:
+    slug: Optional[str]
+    status: Literal['live', 'draft']
+    name: str
+    description: Optional[str]
+    availableVersions: List[str]
+    availableTags: List[str]
+    variables: List[Dict[str, Union[str, Optional[str]]]]  # Each dict contains:
+                                                          # label: str
+                                                          # description: Optional[str]
+                                                          # type: str
+    version: str
+    tag: Optional[str]
+```
+</CodeGroup>
+
+### Example response
+```json Response example
+{
+  "slug": "welcome-message",
+  "status": "live",
+  "name": "Welcome Message",
+  "description": "A friendly welcome message for new users",
+  "availableVersions": ["1.0.0", "1.1.0", "2.0.0"],
+  "availableTags": ["production", "staging"],
+  "variables": [
+    {
+      "label": "name",
+      "description": "The user's full name",
+      "type": "string"
+    },
+    {
+      "label": "company",
+      "description": "The user's company name",
+      "type": "string"
+    }
+  ],
+  "version": "2.0.0",
+  "tag": "production"
+}
+```
+
+## Error handling
+Discover how to properly handle errors coming from the SDK and/or the API by checking the [Error Handling documentation](/prompts/error-handling)

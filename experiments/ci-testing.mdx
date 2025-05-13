@@ -1,0 +1,532 @@
+---
+title: 'Using Experiments in CI/CD and Testing'
+description: 'Learn how to leverage Basalt Experiments for automated testing and quality assurance in AI workflows.'
+---
+
+Experiments in Basalt are not just for comparing different variants of your AI workflows—they also provide powerful capabilities for automated testing, continuous integration/continuous deployment (CI/CD), and quality assurance. This guide explores how to effectively use experiments in your testing and deployment pipelines.
+
+## Automating Quality Assurance for AI
+
+Traditional software testing methods don't always translate well to AI applications. LLMs can produce variable outputs for the same input, making deterministic testing challenging. Basalt Experiments solve this problem by enabling:
+
+- Systematic testing of AI workflows against known inputs
+- Statistical evaluation of output quality rather than exact matching
+- Detection of regressions in AI performance
+- Objective quality measurements through evaluators
+
+## Setting Up Experiments for Testing
+
+### Basic Test Setup
+
+The fundamental pattern for using experiments in testing is:
+
+<CodeGroup>
+```typescript TypeScript
+async function testAIWorkflow() {
+  // 1. Create a single experiment for this test run
+  const { value: experiment, error } = await basalt.monitor.createExperiment(
+    'feature-slug',
+    { name: `Test Run - ${new Date().toISOString()}` }
+  )
+  
+  if (error) {
+    throw new Error(`Failed to create experiment: ${error.message}`)
+  }
+  
+  // 2. Define test cases
+  const testCases = [
+    { input: 'Test input 1', expectedProperties: ['clarity', 'conciseness'] },
+    { input: 'Test input 2', expectedProperties: ['detail', 'accuracy'] },
+    // Add more test cases...
+  ]
+  
+  // 3. Run each test case with the same experiment
+  for (const testCase of testCases) {
+    await runTestCase(testCase, experiment)
+  }
+  
+  return experiment.id
+}
+
+async function runTestCase(testCase, experiment) {
+  // Create a trace for this test case
+  const trace = basalt.monitor.createTrace('feature-slug', {
+    name: `Test: ${testCase.input.substring(0, 20)}...`,
+    experiment: experiment,
+    metadata: {
+      testCase: testCase,
+      executionTime: new Date().toISOString()
+    },
+    evaluators: [
+      { slug: 'quality-score' }
+    ]
+  })
+  
+  try {
+    // Run the actual AI workflow
+    const result = await yourAIWorkflow(testCase.input)
+    
+    // End the trace with the result
+    trace.end(result)
+  } catch (error) {
+    trace.update({
+      metadata: { error: error.message }
+    })
+    trace.end(`Error: ${error.message}`)
+  }
+}
+```
+
+```python Python
+async def test_ai_workflow():
+  # 1. Create a single experiment for this test run
+  error, experiment = basalt.monitor.create_experiment(
+    'feature-slug',
+    { 'name': f'Test Run - {datetime.now().isoformat()}' }
+  )
+  
+  if error:
+    raise Exception(f'Failed to create experiment: {error}')
+  
+  # 2. Define test cases
+  test_cases = [
+    { 'input': 'Test input 1', 'expectedProperties': ['clarity', 'conciseness'] },
+    { 'input': 'Test input 2', 'expectedProperties': ['detail', 'accuracy'] },
+    # Add more test cases...
+  ]
+  
+  # 3. Run each test case with the same experiment
+  for test_case in test_cases:
+    await run_test_case(test_case, experiment)
+  
+  return experiment.id
+
+async def run_test_case(test_case, experiment):
+  # Create a trace for this test case
+  trace = basalt.monitor.create_trace('feature-slug', {
+    'name': f'Test: {test_case["input"][:20]}...',
+    'experiment': experiment,
+    'metadata': {
+      'testCase': test_case,
+      'executionTime': datetime.now().isoformat()
+    },
+    'evaluators': [
+      { 'slug': 'quality-score' }
+    ]
+  })
+  
+  try:
+    # Run the actual AI workflow
+    result = await your_ai_workflow(test_case['input'])
+    
+    # End the trace with the result
+    trace.end(result)
+  except Exception as error:
+    trace.update({
+      'metadata': { 'error': str(error) }
+    })
+    trace.end(f'Error: {str(error)}')
+```
+</CodeGroup>
+
+### Mock Data Testing
+
+For controlled testing environments, you can use mock data to ensure consistent inputs:
+
+<CodeGroup>
+```typescript TypeScript
+async function runMockTests() {
+  // Load mock data from your test fixtures
+  const mockData = loadMockData()
+  
+  // Create an experiment for this test run
+  const { value: experiment } = await basalt.monitor.createExperiment(
+    'content-generation',
+    { name: `Mock Test - ${new Date().toISOString()}` }
+  )
+  
+  for (const mockItem of mockData) {
+    const trace = basalt.monitor.createTrace('content-generation', {
+      experiment: experiment,
+      metadata: { 
+        mockId: mockItem.id,
+        category: mockItem.category
+      }
+    })
+    
+    // Use mock data instead of real API calls
+    const mockPrompt = createMockPrompt(mockItem)
+    const mockLLMResponse = getMockLLMResponse(mockItem)
+    
+    // Create generations with the mock data
+    const generation = trace.createGeneration({
+      name: 'mock-generation',
+      input: mockPrompt,
+      metadata: { mockResponseId: mockLLMResponse.id }
+    })
+    
+    // Record the mock response
+    generation.end(mockLLMResponse.content)
+    
+    // Process the response with your real business logic
+    const processedResult = yourBusinessLogic(mockLLMResponse.content)
+    
+    // End the trace with the final result
+    trace.end(processedResult)
+  }
+}
+```
+
+```python Python
+async def run_mock_tests():
+  # Load mock data from your test fixtures
+  mock_data = load_mock_data()
+  
+  # Create an experiment for this test run
+  error, experiment = basalt.monitor.create_experiment(
+    'content-generation',
+    { 'name': f'Mock Test - {datetime.now().isoformat()}' }
+  )
+  
+  for mock_item in mock_data:
+    trace = basalt.monitor.create_trace('content-generation', {
+      'experiment': experiment,
+      'metadata': { 
+        'mockId': mock_item.id,
+        'category': mock_item.category
+      }
+    })
+    
+    # Use mock data instead of real API calls
+    mock_prompt = create_mock_prompt(mock_item)
+    mock_llm_response = get_mock_llm_response(mock_item)
+    
+    # Create generations with the mock data
+    generation = trace.create_generation({
+      'name': 'mock-generation',
+      'input': mock_prompt,
+      'metadata': { 'mockResponseId': mock_llm_response.id }
+    })
+    
+    # Record the mock response
+    generation.end(mock_llm_response.content)
+    
+    # Process the response with your real business logic
+    processed_result = your_business_logic(mock_llm_response.content)
+    
+    # End the trace with the final result
+    trace.end(processed_result)
+```
+</CodeGroup>
+
+## Integrating with CI/CD Pipelines
+
+### GitHub Actions Example
+
+Here's how to integrate Basalt Experiments into a GitHub Actions workflow:
+
+<CodeGroup>
+```yaml GitHub Actions
+name: AI Workflow Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-ai-workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run AI workflow tests
+        env:
+          BASALT_API_KEY: ${{ secrets.BASALT_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npm run test:ai-workflows
+        
+      - name: Post experiment results
+        run: node scripts/post-experiment-results.js
+```
+</CodeGroup>
+
+Your test script would create an experiment, run the tests, and write the experiment ID to an output file that the post-results script could use.
+
+## Regression Testing
+
+Regression testing ensures that improvements or changes to your AI workflows don't negatively impact performance or quality:
+
+<CodeGroup>
+```typescript TypeScript
+async function runRegressionTest() {
+  // Create an experiment for this regression test
+  const { value: experiment } = await basalt.monitor.createExperiment(
+    'customer-support',
+    { name: `Regression Test - ${new Date().toISOString()}` }
+  )
+  
+  // Load a set of benchmark queries that should produce good results
+  const benchmarkQueries = loadBenchmarkQueries()
+  
+  // Run each benchmark query
+  for (const query of benchmarkQueries) {
+    const trace = basalt.monitor.createTrace('customer-support', {
+      name: `Regression: ${query.id}`,
+      experiment: experiment,
+      evaluators: [
+        { slug: 'accuracy' },
+        { slug: 'helpfulness' }
+      ]
+    })
+    
+    try {
+      // Run the current version of your workflow
+      const result = await customerSupportWorkflow(query.text)
+      
+      // Record the result
+      trace.end(result)
+    } catch (error) {
+      trace.update({
+        metadata: { error: error.message }
+      })
+      trace.end(`Error: ${error.message}`)
+    }
+  }
+  
+  // You would implement your own logic to compare 
+  // current results with your baseline results
+  
+  return {
+    experimentId: experiment.id
+  }
+}
+```
+
+```python Python
+async def run_regression_test():
+  # Create an experiment for this regression test
+  error, experiment = basalt.monitor.create_experiment(
+    'customer-support',
+    { 'name': f'Regression Test - {datetime.now().isoformat()}' }
+  )
+  
+  # Load a set of benchmark queries that should produce good results
+  benchmark_queries = load_benchmark_queries()
+  
+  # Run each benchmark query
+  for query in benchmark_queries:
+    trace = basalt.monitor.create_trace('customer-support', {
+      'name': f'Regression: {query.id}',
+      'experiment': experiment,
+      'evaluators': [
+        { 'slug': 'accuracy' },
+        { 'slug': 'helpfulness' }
+      ]
+    })
+    
+    try:
+      # Run the current version of your workflow
+      result = await customer_support_workflow(query.text)
+      
+      # Record the result
+      trace.end(result)
+    except Exception as error:
+      trace.update({
+        'metadata': { 'error': str(error) }
+      })
+      trace.end(f'Error: {str(error)}')
+  
+  # You would implement your own logic to compare 
+  # current results with your baseline results
+  
+  return {
+    'experimentId': experiment.id,
+  }
+```
+</CodeGroup>
+
+## Production Validation
+
+Before deploying new AI workflows to production, you can validate them with experiments:
+
+<CodeGroup>
+```typescript TypeScript
+async function validateForProduction() {
+  // Create an experiment for pre-production validation
+  const { value: experiment } = await basalt.monitor.createExperiment(
+    'product-recommendation',
+    { name: `Pre-Production Validation - ${new Date().toISOString()}` }
+  )
+  
+  // Load production-like test cases
+  const validationCases = loadProductionValidationCases()
+  
+  // Define minimum acceptable scores for each evaluator
+  const minimumScores = {
+    'relevance': 0.7,
+    'safety': 0.95,
+    'helpfulness': 0.8
+  }
+
+  let results = []
+  
+  // Run each validation case
+  for (const testCase of validationCases) {
+    const trace = basalt.monitor.createTrace('product-recommendation', {
+      name: `Validation: ${testCase.category}`,
+      experiment: experiment,
+      metadata: {
+        category: testCase.category,
+        difficulty: testCase.difficulty
+      },
+      evaluators: [
+        { slug: 'relevance' },
+        { slug: 'safety' },
+        { slug: 'helpfulness' }
+      ]
+    })
+    
+    try {
+      // Run the workflow that's about to be deployed
+      const result = await productRecommendationWorkflow(testCase.input)
+      
+      // Record the result
+      trace.end(result)
+      results.push(result)
+      
+      // Store metadata about this test case
+      trace.update({
+        metadata: {
+          input: testCase.input,
+          output: result
+        }
+      })
+    } catch (error) {
+      trace.update({
+        metadata: {
+          error: error.message,
+        }
+      })
+      trace.end(`Error: ${error.message}`)
+    }
+  }
+  
+  // Your own logic to determine if the workflow is ready for production
+  // based on the results
+  
+  return {
+    experimentId: experiment.id,
+    results: results
+  }
+}
+```
+
+```python Python
+async def validate_for_production():
+  # Create an experiment for pre-production validation
+  error, experiment = basalt.monitor.create_experiment(
+    'product-recommendation',
+    { 'name': f'Pre-Production Validation - {datetime.now().isoformat()}' }
+  )
+  
+  # Load production-like test cases
+  validation_cases = load_production_validation_cases()
+  
+  # Define minimum acceptable scores for each evaluator
+  minimum_scores = {
+    'relevance': 0.7,
+    'safety': 0.95,
+    'helpfulness': 0.8
+  }
+  
+  results = []
+  
+  # Run each validation case
+  for test_case in validation_cases:
+    trace = basalt.monitor.create_trace('product-recommendation', {
+      'name': f'Validation: {test_case.category}',
+      'experiment': experiment,
+      'metadata': {
+        'category': test_case.category,
+        'difficulty': test_case.difficulty
+      },
+      'evaluators': [
+        { 'slug': 'relevance' },
+        { 'slug': 'safety' },
+        { 'slug': 'helpfulness' }
+      ]
+    })
+    
+    try:
+      # Run the workflow that's about to be deployed
+      result = await product_recommendation_workflow(test_case.input)
+      
+      # Record the result
+      trace.end(result)
+      results.append(result)
+      
+      # Store metadata about this test case
+      trace.update({
+        'metadata': {
+          'input': test_case.input,
+          'output': result
+        }
+      })
+    except Exception as error:
+      trace.update({
+        'metadata': {
+          'error': str(error),
+        }
+      })
+      trace.end(f'Error: {str(error)}')
+  
+  # Your own logic to determine if the workflow is ready for production
+  # based on the results
+  
+  return {
+    'experimentId': experiment.id,
+    'results': results
+  }
+```
+</CodeGroup>
+
+## Best Practices for CI/CD and Testing
+
+### 1. Experiment Naming Conventions
+
+Establish clear naming conventions for your experiments:
+
+- Include build numbers or commit hashes in experiment names for traceability
+- Use prefixes like `test-`, `regression-`, or `validation-` to indicate the experiment purpose
+- Add timestamps to make experiments easily identifiable in chronological order
+
+### 2. Metadata Standardization
+
+Standardize metadata across your traces to enable consistent analysis:
+
+- Include relevant build information in all traces (e.g., version, environment)
+- Define expected outcomes in metadata for easier comparison
+
+### 3. Automation Best Practices
+
+- Create dedicated CI/CD jobs for different types of AI tests (unit, integration, regression)
+- Run critical tests on every PR, but reserve extensive testing for nightly builds
+- Archive experiment IDs in your CI/CD system for future reference
+- Set up automated notifications for test failures or regressions
+
+### 4. Statistical Considerations
+
+- Ensure sample sizes are large enough to draw meaningful conclusions
+- Account for LLM variability by using thresholds rather than exact matching
+- Track trends over time rather than focusing on individual test runs
+- Consider statistical significance when comparing experiments

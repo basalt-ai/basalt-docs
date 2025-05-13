@@ -1,0 +1,344 @@
+---
+title: 'Evaluations'
+description: 'Automatically assess the quality of your AI outputs using Basalt Evaluations.'
+---
+
+import { Button } from '/snippets/button.mdx'
+
+Evaluations allow you to automatically assess the quality and characteristics of your AI outputs. By integrating evaluators into your workflows, you can monitor for issues, gather metrics, and ensure your AI-generated content meets your standards.
+
+## Overview
+
+Basalt's evaluation system works by attaching evaluators to your traces and generations. These evaluators run automatically when generations complete, analyzing the input and output to produce objective metrics about the content.
+
+<Info>
+  Evaluations help you answer questions like: "Is this content factually accurate?", "Does it contain harmful content?", "Is it relevant to the original query?", or any other quality metrics important to your application.
+</Info>
+
+## Creating Evaluators
+
+To use evaluations in Basalt, you'll need to create your own evaluators through the Basalt application interface. These evaluators can be designed to measure specific aspects of your AI-generated content that are important to your use case.
+
+<Info>
+  Evaluators are created and managed through the Basalt app. Once created, they can be referenced in your code by their slug.
+</Info>
+
+
+<Button
+variant='link'
+value='Create an evaluator'
+href='https://app.getbasalt.ai'
+icon="arrow-right"
+/>
+
+## Adding Evaluators to Traces
+
+You can add evaluators at the trace level to have them automatically apply to all generations within that trace:
+
+<CodeGroup>
+```typescript TypeScript
+// Add evaluators when creating a trace
+const trace = basalt.monitor.createTrace('content-workflow', {
+  name: 'Content Processing Workflow',
+  evaluators: [
+    { slug: 'hallucination' },
+    { slug: 'toxicity' },
+    { slug: 'relevance' }
+  ],
+  evaluationConfig: {
+    sampleRate: 0.25  // Run evaluations on 25% of traces
+  }
+})
+```
+
+```python Python
+# Add evaluators when creating a trace
+trace = basalt.monitor.create_trace('content-workflow', {
+  'name': 'Content Processing Workflow',
+  'evaluators': [
+    { 'slug': 'hallucination' },
+    { 'slug': 'toxicity' },
+    { 'slug': 'relevance' }
+  ],
+  'evaluationConfig': {
+    'sampleRate': 0.25  # Run evaluations on 25% of traces
+  }
+})
+```
+</CodeGroup>
+
+Adding evaluators at the trace level is efficient when you want consistent evaluation across all generations within a workflow.
+
+## Adding Evaluators to Generations
+
+For more targeted evaluation, you can add evaluators directly to specific generations:
+
+<CodeGroup>
+```typescript TypeScript
+// Add evaluators when creating a generation
+const generation = trace.createGeneration({
+  name: 'product-description',
+  prompt: {
+    slug: 'product-describer'
+  },
+  input: 'Describe this smartphone...',
+  evaluators: [
+    { slug: 'completeness' },
+    { slug: 'sentiment' }
+  ]
+})
+
+// Add an evaluator to an existing generation
+generation.addEvaluator({ slug: 'coherence' })
+```
+
+```python Python
+# Add evaluators when creating a generation
+generation = trace.create_generation({
+  'name': 'product-description',
+  'prompt': {
+    'slug': 'product-describer'
+  },
+  'input': 'Describe this smartphone...',
+  'evaluators': [
+    { 'slug': 'completeness' },
+    { 'slug': 'sentiment' }
+  ]
+})
+
+# Add an evaluator to an existing generation
+generation.add_evaluator({ 'slug': 'coherence' })
+```
+</CodeGroup>
+
+Adding evaluators at the generation level allows you to apply specific evaluations to particular types of content.
+
+## Evaluation Configuration
+
+The `evaluationConfig` parameter gives you control over how evaluations are applied:
+
+<CodeGroup>
+```typescript TypeScript
+// Configure evaluations at the trace level
+const trace = basalt.monitor.createTrace('content-workflow', {
+  evaluators: [
+    { slug: 'hallucination' },
+    { slug: 'toxicity' }
+  ],
+  evaluationConfig: {
+    sampleRate: 0.1  // Run evaluations on 10% of traces
+  }
+})
+
+// Configure after creation
+trace.setEvaluationConfig({
+  sampleRate: 0.1  // Run evaluations on 10% of traces
+})
+```
+
+```python Python
+# Configure evaluations at the trace level
+trace = basalt.monitor.create_trace('content-workflow', {
+  'evaluators': [
+    { 'slug': 'hallucination' },
+    { 'slug': 'toxicity' }
+  ],
+  'evaluationConfig': {
+    'sampleRate': 0.1  # Run evaluations on 10% of traces
+  }
+})
+
+# Configure after creation
+trace.set_evaluation_config({
+  'sampleRate': 0.1  # Run evaluations on 10% of traces
+})
+```
+</CodeGroup>
+
+### Sample Rate
+
+The `sampleRate` parameter controls how often evaluations are run:
+
+- Value range: `0.0` to `1.0` (0% to 100%)
+- Default value: `0.1` (10%)
+
+Sample rates allow you to balance evaluation coverage with cost efficiency. For example:
+
+- `sampleRate: 1.0` - Evaluate every trace (100%)
+- `sampleRate: 0.5` - Evaluate approximately half of all traces (50%)
+- `sampleRate: 0.1` - Evaluate approximately one in ten traces (10%)
+- `sampleRate: 0.01` - Evaluate approximately one in a hundred traces (1%)
+
+<Info>
+  Sampling is applied at the trace level. When a trace is selected for evaluation, all evaluators assigned to that trace and its generations will run. This ensures you get complete evaluation data for the sampled traces rather than patchy data across all traces.
+</Info>
+
+<Warning>
+  In experiment mode (when a trace is attached to an experiment), the sample rate is always set to 1.0 (100%) regardless of the configured value, ensuring complete evaluation coverage for experimental workflows.
+</Warning>
+
+## Example: Multi-Faceted Evaluation
+
+Here's an example of using multiple evaluators to comprehensively assess content:
+
+<CodeGroup>
+```typescript TypeScript
+async function generateProductDescription(productData) {
+  // Create a trace with multiple evaluators
+  const trace = basalt.monitor.createTrace('product-content', {
+    name: 'Product Description Generation',
+    metadata: {
+      productId: productData.id,
+      category: productData.category
+    },
+    evaluators: [
+      { slug: 'brand-compliance' },
+      { slug: 'message-clarity' }
+    ],
+    evaluationConfig: {
+      sampleRate: 0.25  // 25% sample rate
+    }
+  })
+  
+  try {
+    // Get product description prompt
+    const { value: promptTemplate, error, generation } = 
+      await basalt.prompt.get('product-description', {
+        variables: {
+          name: productData.name,
+          features: productData.features.join(', '),
+          price: productData.price.toString()
+        }
+      })
+    
+    if (error) {
+      throw error
+    }
+    
+    // Append the generation to our trace
+    trace.append(generation)
+    
+    // Add content-specific evaluators
+    generation.addEvaluator({ slug: 'tone-check' })
+    generation.addEvaluator({ slug: 'feature-coverage' })
+    
+    // Generate the description
+    const description = await yourLLMProvider.complete(promptTemplate.text)
+    
+    // End the generation with output
+    generation.end(description)
+    
+    // End the trace
+    trace.end(description)
+    
+    return {
+      description,
+      metadata: {
+        evaluationEnabled: true,
+        sampleRate: 0.25
+      }
+    }
+  } catch (error) {
+    trace.update({
+      metadata: {
+        error: error.message
+      }
+    })
+    trace.end()
+    throw error
+  }
+}
+```
+
+```python Python
+async def generate_product_description(product_data):
+  # Create a trace with multiple evaluators
+  trace = basalt.monitor.create_trace('product-content', {
+    'name': 'Product Description Generation',
+    'metadata': {
+      'productId': product_data['id'],
+      'category': product_data['category']
+    },
+    'evaluators': [
+      { 'slug': 'brand-compliance' },
+      { 'slug': 'message-clarity' }
+    ],
+    'evaluationConfig': {
+      'sampleRate': 0.25  # 25% sample rate
+    }
+  })
+  
+  try:
+    # Get product description prompt
+    error, result = basalt.prompt.get('product-description', {
+      'variables': {
+        'name': product_data['name'],
+        'features': ', '.join(product_data['features']),
+        'price': str(product_data['price'])
+      }
+    })
+    
+    if error:
+      raise error
+      
+    prompt_template = result.value
+    generation = result.generation
+    
+    # Append the generation to our trace
+    trace.append(generation)
+    
+    # Add content-specific evaluators
+    generation.add_evaluator({ 'slug': 'tone-check' })
+    generation.add_evaluator({ 'slug': 'feature-coverage' })
+    
+    # Generate the description
+    description = await your_llm_provider.complete(prompt_template.text)
+    
+    # End the generation with output
+    generation.end(description)
+    
+    # End the trace
+    trace.end(description)
+    
+    return {
+      'description': description,
+      'metadata': {
+        'evaluationEnabled': True,
+        'sampleRate': 0.25
+      }
+    }
+  except Exception as error:
+    trace.update({
+      'metadata': {
+        'error': str(error)
+      }
+    })
+    trace.end()
+    raise error
+```
+</CodeGroup>
+
+In this example:
+1. We create a trace with evaluators for brand compliance and message clarity
+2. We add content-specific evaluators to the generation for tone and feature coverage
+3. The evaluations will run on approximately 25% of traces due to the `sampleRate` setting
+
+## Best Practices
+
+To get the most value from evaluations:
+
+1. **Start with a baseline**: Begin with a modest set of evaluators to establish baseline metrics before adding more.
+
+2. **Choose appropriate sample rates**: High-volume applications may only need a small sample rate (1-10%), while critical applications might warrant higher rates (50-100%).
+
+3. **Combine evaluators strategically**: Different evaluators measure different aspects of quality; use combinations that address your specific concerns.
+
+4. **Use contextual evaluators**: Different content types may need different evaluations; tailor your evaluator selection to the specific content.
+
+## Related Topics
+
+To further enhance your understanding and use of evaluations:
+
+- [Experiments](/experiments/introduction) - Compare evaluation results between different workflow versions
+- [Tracing](/monitoring/tracing) - Add evaluators to more complex workflows
+- [Prompt Management](/prompts/introduction) - Improve prompts based on evaluation feedback

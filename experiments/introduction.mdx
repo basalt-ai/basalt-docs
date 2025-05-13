@@ -1,0 +1,78 @@
+---
+title: 'Introduction'
+description: 'Learn how Basalt Experiments help you optimize and improve your AI workflows.'
+---
+
+import { Button } from '/snippets/button.mdx'
+
+Experiments are a powerful feature of Basalt that allow you to systematically test, compare, and optimize your AI workflows. Whether you're fine-tuning prompts, evaluating different model parameters, or implementing A/B tests, experiments provide the structure and tools you need to make data-driven decisions.
+
+## What are Experiments?
+
+In Basalt, an experiment is a collection of traces that are grouped together for comparison and analysis. When you attach a trace to an experiment, the trace data goes to the experiment instead of the regular monitoring system. This separation allows you to:
+
+- Run controlled tests with multiple variations
+- Collect consistent metrics across different runs
+- Compare performance between different approaches
+- Analyze the impact of changes on output quality
+- Make evidence-based decisions about your AI implementations
+
+<Info>
+  Think of experiments as scientific trials for your AI workflows. Just as scientists run controlled experiments to test hypotheses, you can use Basalt experiments to test ideas and measure their impact.
+</Info>
+
+## Why Use Experiments?
+
+Complex AI workflows often combine multiple AI components with business logic code. When iterating on these workflows, it can be difficult to know whether changes improve the overall result. Experiments provide a structured way to compare different versions of your workflow:
+
+### A/B Testing Workflows
+
+Experiments are ideal for A/B testing different versions of complex workflows. For example, you can test whether:
+
+- A different prompt formulation improves the quality of generated content
+- A new retrieval method provides more relevant context
+- Adding a classification step improves final output accuracy
+- Changing model parameters affects the overall performance
+
+By running the same set of inputs through different workflow variations within an experiment, you can see which version produces better results and make data-driven decisions about which approach to implement in production.
+
+## How Experiments Work
+
+When you create an experiment in Basalt:
+
+1. You define a unique experiment with a name and feature slug
+2. You create traces and attach them to the experiment
+3. You run your AI workflows with these traces
+4. Basalt collects all the trace data in the experiment
+5. You analyze the results in the Basalt dashboard
+
+Importantly, **experiments don't change your regular monitoring** - they provide a separate space for testing and comparison and be safely plugged in to your real monitoring.
+
+## Viewing Experiment Results
+
+After running an experiment, you can view and analyze the results in the Basalt application:
+
+1. Navigate to the Experiments section in the Basalt dashboard
+2. Select your experiment from the list
+3. View aggregated metrics for all runs in the experiment
+4. Compare different variants side by side using charts and tables
+5. Drill down into individual traces for detailed analysis
+
+The dashboard provides powerful visualization tools that help you identify patterns, spot outliers, and draw conclusions from your experimental data.
+
+<Button
+variant='link'
+value='View experiment results'
+href='https://app.getbasalt.ai'
+icon="arrow-right"
+/>
+
+<Info>
+  The experiment interface is designed to help you answer the question: "Which version of my workflow performs better on the metrics I care about?"
+</Info>
+
+## Getting Started
+
+To start using experiments, learn how to [create experiments](/experiments/create-experiment) in your code.
+
+By integrating experiments into your AI development process, you'll gain deeper insights, make better decisions, and continuously improve your AI applications based on evidence rather than assumptions.

@@ -1,0 +1,1012 @@
+---
+title: 'Tracing'
+description: 'Track and monitor complex workflows with the Basalt Tracing system.'
+---
+
+Tracing allows you to monitor and analyze complex workflows in your AI applications. Unlike basic monitoring, tracing provides a comprehensive framework for tracking multi-step processes, nested operations, and complex interactions across your entire application.
+
+<Info>
+  While basic monitoring is designed for simple prompt-to-response interactions, tracing is ideal for complex workflows involving multiple steps, parallel processes, and branching logic. Tracing gives you deeper visibility into your AI application's behavior and performance.
+</Info>
+
+## Create a Trace
+
+A trace represents a complete user interaction or process flow and serves as the top-level container for all monitoring activities. To create a trace, you'll use the `createTrace` method:
+
+<CodeGroup>
+```typescript TypeScript
+const trace = basalt.monitor.createTrace('feature-slug', {
+  name: 'Human-readable name', // Optional, defaults to feature-slug
+  input: 'Initial input',      // Optional
+  metadata: {                  // Optional
+    userId: 'user123',
+    contentType: 'article'
+  }
+})
+```
+
+```python Python
+trace = basalt.monitor.create_trace('feature-slug', {
+  'name': 'Human-readable name',  # Optional, defaults to feature-slug
+  'input': 'Initial input',       # Optional
+  'metadata': {                   # Optional
+    'userId': 'user123',
+    'contentType': 'article'
+  }
+})
+```
+</CodeGroup>
+
+The `feature-slug` is a unique identifier that helps you categorize and group related traces in your analytics dashboard. The trace becomes the parent container for all logs and generations in your workflow.
+
+<Warning>
+  It's essential to call the `end()` method on your trace when the workflow is complete. Without calling `end()`, the trace data will not be sent to Basalt for analysis. This applies even if an error occurs in your workflow.
+</Warning>
+
+## User and Organization Identification
+
+You can associate a trace with specific users and organizations to enable more powerful analytics, filtering, and user-specific insights:
+
+<CodeGroup>
+```typescript TypeScript
+// When creating the trace
+const trace = basalt.monitor.createTrace('feature-slug', {
+  user: {
+    id: 'user123',
+    name: 'John Doe',
+    email: 'john@example.com' // Optional
+  },
+  organization: {
+    id: 'org456',
+    name: 'Acme Inc.'
+  }
+})
+
+// Or later using the identify method
+trace.identify({
+  user: {
+    id: 'user123',
+    name: 'John Doe'
+  },
+  organization: {
+    id: 'org456',
+    name: 'Acme Inc.'
+  }
+})
+```
+
+```python Python
+# When creating the trace
+trace = basalt.monitor.create_trace('feature-slug', {
+  'user': {
+    'id': 'user123',
+    'name': 'John Doe',
+    'email': 'john@example.com'  # Optional
+  },
+  'organization': {
+    'id': 'org456',
+    'name': 'Acme Inc.'
+  }
+})
+
+# Or later using the identify method
+trace.identify({
+  'user': {
+    'id': 'user123',
+    'name': 'John Doe'
+  },
+  'organization': {
+    'id': 'org456',
+    'name': 'Acme Inc.'
+  }
+})
+```
+</CodeGroup>
+
+The `identify` method allows you to add or update user and organization information at any point during the trace's lifecycle. This is particularly useful when user details become available partway through a workflow.
+
+## Adding Metadata
+
+Metadata provides additional context that helps you understand what happened during your workflow. You can add metadata when creating components or update it later:
+
+<CodeGroup>
+```typescript TypeScript
+// Initial metadata when creating the trace
+const trace = basalt.monitor.createTrace('feature-slug', {
+  metadata: {
+    source: 'web-app',
+    region: 'us-west',
+    priority: 'high'
+  }
+})
+
+// Update or add metadata using setMetadata
+trace.setMetadata({
+  processingTime: 1250, // ms
+  tokenCount: 1024,
+  modelVersion: 'gpt-4o'
+})
+
+// Alternatively, use the update method
+trace.update({
+  metadata: {
+    status: 'completed',
+    successRate: 0.95
+  }
+})
+```
+
+```python Python
+# Initial metadata when creating the trace
+trace = basalt.monitor.create_trace('feature-slug', {
+  'metadata': {
+    'source': 'web-app',
+    'region': 'us-west',
+    'priority': 'high'
+  }
+})
+
+# Update or add metadata using set_metadata
+trace.set_metadata({
+  'processingTime': 1250,  # ms
+  'tokenCount': 1024,
+  'modelVersion': 'gpt-4o'
+})
+
+# Alternatively, use the update method
+trace.update({
+  'metadata': {
+    'status': 'completed',
+    'successRate': 0.95
+  }
+})
+```
+</CodeGroup>
+
+Metadata is flexible and can include any JSON-serializable data. Good metadata makes debugging, analysis, and optimization much easier, so consider adding relevant context at each step of your workflow.
+
+## Create Logs (Spans)
+
+Logs represent discrete operations or steps within your workflow. In tracing terminology, these are often called "spans", and Basalt supports several specific types of logs for different purposes.
+
+### Available Log Types
+
+The `type` parameter defines the nature of the operation being logged:
+
+- `span`: A general-purpose operation or step in your workflow
+- `function`: A specific function call or computation
+- `tool`: External tool usage (like a database query or API call)
+- `retrieval`: Data retrieval operations (like RAG or knowledge base lookups)
+- `event`: Notable events or state changes in your application
+
+### Basic Log Creation
+
+<CodeGroup>
+```typescript TypeScript
+// Create a log within a trace
+const log = trace.createLog({
+  name: 'data-processing',
+  type: 'span',             // One of the available types
+  input: 'Raw input data',  // Optional
+  metadata: {               // Optional
+    processingType: 'text-analysis',
+    priority: 'medium'
+  }
+})
+```
+
+```python Python
+# Create a log within a trace
+log = trace.create_log({
+  'name': 'data-processing',
+  'type': 'span',              # One of the available types
+  'input': 'Raw input data',   # Optional
+  'metadata': {                # Optional
+    'processingType': 'text-analysis',
+    'priority': 'medium'
+  }
+})
+```
+</CodeGroup>
+
+### Log Lifecycle Methods
+
+Logs have methods to track their lifecycle:
+
+<CodeGroup>
+```typescript TypeScript
+// Start the log (automatically called if not explicitly started)
+log.start()
+
+// Add or update metadata
+log.setMetadata({
+  status: 'processing',
+  progress: 50
+})
+
+// End the log with optional output
+log.end('Processed output data')
+```
+
+```python Python
+# Start the log (automatically called if not explicitly started)
+log.start()
+
+# Add or update metadata
+log.set_metadata({
+  'status': 'processing',
+  'progress': 50
+})
+
+# End the log with optional output
+log.end('Processed output data')
+```
+</CodeGroup>
+
+### Creating Nested Logs
+
+You can create hierarchical structures by nesting logs:
+
+<CodeGroup>
+```typescript TypeScript
+// Create a nested log within another log
+const nestedLog = parentLog.createLog({
+  name: 'validation-step',
+  type: 'function'
+})
+```
+
+```python Python
+# Create a nested log within another log
+nested_log = parent_log.create_log({
+  'name': 'validation-step',
+  'type': 'function'
+})
+```
+</CodeGroup>
+
+## Create Generations
+
+Generations represent AI model completions within your workflow. The Basalt SDK provides several ways to create and manage generations.
+
+### Basic Generation Creation
+
+<CodeGroup>
+```typescript TypeScript
+// Create a generation within a trace or log
+const generation = trace.createGeneration({
+  name: 'text-completion',
+  input: 'Generate an article about AI monitoring'
+})
+```
+
+```python Python
+# Create a generation within a trace or log
+generation = trace.create_generation({
+  'name': 'text-completion',
+  'input': 'Generate an article about AI monitoring'
+})
+```
+</CodeGroup>
+
+### Prompt Parameters
+
+When using Basalt-managed prompts, you can reference them directly:
+
+<CodeGroup>
+```typescript TypeScript
+const generation = trace.createGeneration({
+  name: 'text-completion',
+  prompt: {                     // Reference to a Basalt-managed prompt
+    slug: 'article-generator',  // Required
+    version: '1.2.0',           // Optional
+    tag: 'production'           // Optional
+  },
+  input: 'Generate an article about AI monitoring'
+})
+```
+
+```python Python
+generation = trace.create_generation({
+  'name': 'text-completion',
+  'prompt': {                      # Reference to a Basalt-managed prompt
+    'slug': 'article-generator',   # Required
+    'version': '1.2.0',            # Optional
+    'tag': 'production'            # Optional
+  },
+  'input': 'Generate an article about AI monitoring'
+})
+```
+</CodeGroup>
+
+### Variables and Metadata
+
+You can include variables for prompt templates and additional metadata:
+
+<CodeGroup>
+```typescript TypeScript
+const generation = trace.createGeneration({
+  name: 'text-completion',
+  prompt: {
+    slug: 'article-generator'
+  },
+  input: 'Generate an article about AI monitoring',
+  variables: {                  // Variables for prompt templates
+    topic: 'AI monitoring',
+    tone: 'informative',
+    length: 'medium'
+  },
+  metadata: {                   // Additional context
+    modelName: 'gpt-4o',
+    temperature: 0.7,
+    priority: 'high'
+  }
+})
+```
+
+```python Python
+generation = trace.create_generation({
+  'name': 'text-completion',
+  'prompt': {
+    'slug': 'article-generator'
+  },
+  'input': 'Generate an article about AI monitoring',
+  'variables': {                   # Variables for prompt templates
+    'topic': 'AI monitoring',
+    'tone': 'informative',
+    'length': 'medium'
+  },
+  'metadata': {                    # Additional context
+    'modelName': 'gpt-4o',
+    'temperature': 0.7,
+    'priority': 'high'
+  }
+})
+```
+</CodeGroup>
+
+In Python, the variables are converted to a standardized format internally, but you can provide them as a simple dictionary as shown above.
+
+### Ending Generations
+
+There are multiple ways to end a generation depending on what information you have available:
+
+<CodeGroup>
+```typescript TypeScript
+// Basic ending with just the output text
+generation.end('The generated text response from the LLM')
+
+// Ending with detailed metrics
+generation.end({
+  output: 'The generated text response from the LLM',
+  inputTokens: 150,    // Optional: number of tokens in the input
+  outputTokens: 450,   // Optional: number of tokens in the output 
+  cost: 0.0125         // Optional: cost of the generation in USD
+})
+```
+
+```python Python
+# Basic ending with just the output text
+generation.end('The generated text response from the LLM')
+
+# Ending with detailed metrics
+generation.end({
+  'output': 'The generated text response from the LLM',
+  'inputTokens': 150,    # Optional: number of tokens in the input
+  'outputTokens': 450,   # Optional: number of tokens in the output
+  'cost': 0.0125         # Optional: cost of the generation in USD
+})
+```
+</CodeGroup>
+
+If you don't provide token counts or cost information, Basalt will attempt to calculate these values automatically based on the input and output text. However, providing these values directly is more accurate, especially if you have this information from your LLM provider.
+
+## Nesting Logs and Generations
+
+Basalt's tracing system allows you to create hierarchical structures that accurately represent the flow of your application.
+
+### Creating Nested Structures
+
+<CodeGroup>
+```typescript TypeScript
+// Create a parent log
+const parentLog = trace.createLog({
+  name: 'data-processing',
+  type: 'span'
+})
+
+// Create a nested log within the parent log
+const nestedLog = parentLog.createLog({
+  name: 'validation',
+  type: 'function'
+})
+
+// Create a generation within the nested log
+const generation = nestedLog.createGeneration({
+  name: 'validation-check',
+  input: 'Validate this data structure'
+})
+```
+
+```python Python
+# Create a parent log
+parent_log = trace.create_log({
+  'name': 'data-processing',
+  'type': 'span'
+})
+
+# Create a nested log within the parent log
+nested_log = parent_log.create_log({
+  'name': 'validation',
+  'type': 'function'
+})
+
+# Create a generation within the nested log
+generation = nested_log.create_generation({
+  'name': 'validation-check',
+  'input': 'Validate this data structure'
+})
+```
+</CodeGroup>
+
+### Appending Existing Generations
+
+You can append existing generations (such as those from `prompt.get()`) to logs or traces:
+
+<CodeGroup>
+```typescript TypeScript
+// Get a prompt from Basalt, which returns a generation object
+const { value, error, generation } = await basalt.prompt.get('article-generator', {
+  variables: {
+    topic: 'AI monitoring'
+  }
+})
+
+// Append this generation to a log
+myLog.append(generation)
+
+// or directly to the trace
+trace.append(generation)
+```
+
+```python Python
+# Get a prompt from Basalt, which returns a generation object
+error, result = basalt.prompt.get('article-generator', {
+  'variables': {
+    'topic': 'AI monitoring'
+  }
+})
+value, generation = result.value, result.generation
+
+# Append this generation to a log
+my_log.append(generation)
+
+# or directly to the trace
+trace.append(generation)
+```
+</CodeGroup>
+
+The `append` method is particularly useful when integrating Basalt-managed prompts into your tracing workflow. When you append a generation to a log or trace, the generation is properly associated with its new parent, maintaining the hierarchical structure of your workflow.
+
+## Using Evaluators
+
+Evaluators automatically assess the quality of your generations based on predefined criteria. This provides objective metrics about your AI outputs.
+
+<CodeGroup>
+```typescript TypeScript
+// Add evaluators when creating a trace
+const trace = basalt.monitor.createTrace('content-processing', {
+  evaluators: [
+    { slug: 'hallucination' },
+    { slug: 'toxicity' }
+  ],
+  evaluationConfig: {
+    sampleRate: 0.1  // Run evaluations on 10% of traces
+  }
+})
+
+// Add evaluators to a specific generation
+const generation = trace.createGeneration({
+  name: 'content-generation',
+  evaluators: [
+    { slug: 'sentiment-analysis' }
+  ]
+})
+
+// Add evaluators later
+generation.addEvaluator({ slug: 'factual-consistency' })
+```
+
+```python Python
+# Add evaluators when creating a trace
+trace = basalt.monitor.create_trace('content-processing', {
+  'evaluators': [
+    { 'slug': 'hallucination' },
+    { 'slug': 'toxicity' }
+  ],
+  'evaluationConfig': {
+    'sampleRate': 0.1  # Run evaluations on 10% of traces
+  }
+})
+
+# Add evaluators to a specific generation
+generation = trace.create_generation({
+  'name': 'content-generation',
+  'evaluators': [
+    { 'slug': 'sentiment-analysis' }
+  ]
+})
+
+# Add evaluators later
+generation.add_evaluator({ 'slug': 'factual-consistency' })
+```
+</CodeGroup>
+
+Evaluators run automatically when the trace or generation ends. The `sampleRate` parameter controls how often evaluations are run, which can help manage costs for large-scale applications.
+
+For more information on available evaluators and how to create custom ones, see the [Evaluation](/monitoring/evaluation) documentation.
+
+## Complete Example
+
+Here's a complete example of using tracing to monitor a content processing workflow:
+
+<CodeGroup>
+```typescript TypeScript
+async function processUserContent(user, content) {
+  // Create the main trace for the entire content processing workflow
+  const mainTrace = basalt.monitor.createTrace('content-workflow', {
+    name: 'Content Processing Workflow',
+    input: content,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    },
+    organization: {
+      id: user.organizationId,
+      name: user.organizationName
+    },
+    metadata: {
+      contentType: 'article',
+      contentLength: content.length,
+      requestTimestamp: new Date().toISOString()
+    }
+  })
+  
+  try {
+    // Step 1: Content Analysis
+    const analysisLog = mainTrace.createLog({
+      name: 'content-analysis',
+      type: 'span',
+      input: content
+    })
+    
+    // Get a prompt from Basalt for topic extraction
+    const { value: topicPrompt, error: promptError, generation: topicGeneration } = 
+      await basalt.prompt.get('topic-extractor', {
+        variables: {
+          content: content
+        }
+      })
+    
+    if (promptError) {
+      throw promptError
+    }
+    
+    // Append the generation to our analysis log
+    analysisLog.append(topicGeneration)
+    
+    // Call your LLM provider
+    const topics = await yourLLMProvider.complete(topicPrompt.text)
+    
+    // Record the generation result
+    topicGeneration.end(topics)
+    
+    // Update analysis log with results
+    analysisLog.update({
+      metadata: {
+        topicsIdentified: topics.split(',').length,
+        mainTopic: topics.split(',')[0]
+      }
+    })
+    
+    analysisLog.end(`Identified topics: ${topics}`)
+    
+    // Step 2: Run enhancement and translation in parallel
+    const parallelLog = mainTrace.createLog({
+      name: 'parallel-processing',
+      type: 'span',
+      input: content,
+      metadata: {
+        operations: ['enhancement', 'translation']
+      }
+    })
+    
+    // Create two tasks that will run in parallel
+    const enhancementPromise = enhanceContent(content, parallelLog)
+    const translationPromise = translateContent(content, parallelLog)
+    
+    // Wait for both operations to complete
+    const [enhancedContent, translatedContent] = await Promise.all([
+      enhancementPromise, 
+      translationPromise
+    ])
+    
+    parallelLog.end()
+    
+    // Step 3: Summarization
+    const summaryGeneration = mainTrace.createGeneration({
+      name: 'content-summarization',
+      prompt: {
+        slug: 'summarizer'
+      },
+      input: enhancedContent,
+      variables: {
+        length: 'short',
+        style: 'professional'
+      },
+      metadata: {
+        originalContentLength: content.length,
+        enhancedContentLength: enhancedContent.length
+      }
+    })
+    
+    // Generate the summary
+    const summary = await yourLLMProvider.complete({
+      prompt: `Summarize the following content: ${enhancedContent}`,
+      model: 'gpt-4o'
+    })
+    
+    // Record the summary with token counts and cost
+    summaryGeneration.end({
+      output: summary,
+      inputTokens: calculateTokens(enhancedContent),
+      outputTokens: calculateTokens(summary),
+      cost: 0.02  // Example cost in USD
+    })
+    
+    // Complete the main trace with final results
+    mainTrace.update({
+      metadata: {
+        processingSteps: 3,
+        totalProcessingTime: new Date().getTime() - new Date(mainTrace.startTime).getTime(),
+        enhancedContentAvailable: true,
+        translationAvailable: true,
+        summaryAvailable: true
+      }
+    })
+    
+    // End the trace with the final output
+    mainTrace.end(summary)
+    
+    return {
+      topics,
+      enhancedContent,
+      translatedContent,
+      summary
+    }
+  } catch (error) {
+    // Record the error
+    mainTrace.update({
+      metadata: {
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        },
+        status: 'failed'
+      }
+    })
+    
+    // Always end the trace, even in error cases
+    mainTrace.end(`Error: ${error.message}`)
+    throw error
+  }
+}
+
+// Helper functions for the content processing
+async function enhanceContent(content, parentLog) {
+  const enhancementLog = parentLog.createLog({
+    name: 'content-enhancement',
+    type: 'span',
+    input: content
+  })
+  
+  const generation = enhancementLog.createGeneration({
+    name: 'enhance-text',
+    prompt: {
+      slug: 'content-enhancer'
+    },
+    input: content
+  })
+  
+  // Call your LLM provider
+  const enhancedContent = await yourLLMProvider.complete({
+    prompt: `Enhance the following content: ${content}`,
+    model: 'gpt-4o'
+  })
+  
+  generation.end(enhancedContent)
+  enhancementLog.end(enhancedContent)
+  
+  return enhancedContent
+}
+
+async function translateContent(content, parentLog) {
+  const translationLog = parentLog.createLog({
+    name: 'content-translation',
+    type: 'span',
+    input: content
+  })
+  
+  const generation = translationLog.createGeneration({
+    name: 'translate-text',
+    prompt: {
+      slug: 'translator'
+    },
+    input: content,
+    variables: {
+      targetLanguage: 'Spanish'
+    }
+  })
+  
+  // Call your LLM provider
+  const translatedContent = await yourLLMProvider.complete({
+    prompt: `Translate the following content to Spanish: ${content}`,
+    model: 'gpt-4o'
+  })
+  
+  // Let Basalt calculate tokens and cost automatically
+  generation.end(translatedContent)
+  translationLog.end(translatedContent)
+  
+  return translatedContent
+}
+```
+
+```python Python
+async def process_user_content(user, content):
+  # Create the main trace for the entire content processing workflow
+  main_trace = basalt.monitor.create_trace('content-workflow', {
+    'name': 'Content Processing Workflow',
+    'input': content,
+    'user': {
+      'id': user.id,
+      'name': user.name,
+      'email': user.email
+    },
+    'organization': {
+      'id': user.organization_id,
+      'name': user.organization_name
+    },
+    'metadata': {
+      'contentType': 'article',
+      'contentLength': len(content),
+      'requestTimestamp': datetime.now().isoformat()
+    }
+  })
+  
+  try:
+    # Step 1: Content Analysis
+    analysis_log = main_trace.create_log({
+      'name': 'content-analysis',
+      'type': 'span',
+      'input': content
+    })
+    
+    # Get a prompt from Basalt for topic extraction
+    error, result = basalt.prompt.get('topic-extractor', {
+      'variables': {
+        'content': content
+      }
+    })
+    
+    if error:
+      raise error
+      
+    topic_prompt = result.value
+    topic_generation = result.generation
+    
+    # Append the generation to our analysis log
+    analysis_log.append(topic_generation)
+    
+    # Call your LLM provider
+    topics = await your_llm_provider.complete(topic_prompt.text)
+    
+    # Record the generation result
+    topic_generation.end(topics)
+    
+    # Update analysis log with results
+    analysis_log.update({
+      'metadata': {
+        'topicsIdentified': len(topics.split(',')),
+        'mainTopic': topics.split(',')[0]
+      }
+    })
+    
+    analysis_log.end(f"Identified topics: {topics}")
+    
+    # Step 2: Run enhancement and translation in parallel
+    parallel_log = main_trace.create_log({
+      'name': 'parallel-processing',
+      'type': 'span',
+      'input': content,
+      'metadata': {
+        'operations': ['enhancement', 'translation']
+      }
+    })
+    
+    # Create two tasks that will run in parallel
+    enhancement_promise = enhance_content(content, parallel_log)
+    translation_promise = translate_content(content, parallel_log)
+    
+    # Wait for both operations to complete
+    enhanced_content, translated_content = await asyncio.gather(
+      enhancement_promise, 
+      translation_promise
+    )
+    
+    parallel_log.end()
+    
+    # Step 3: Summarization
+    summary_generation = main_trace.create_generation({
+      'name': 'content-summarization',
+      'prompt': {
+        'slug': 'summarizer'
+      },
+      'input': enhanced_content,
+      'variables': {
+        'length': 'short',
+        'style': 'professional'
+      },
+      'metadata': {
+        'originalContentLength': len(content),
+        'enhancedContentLength': len(enhanced_content)
+      }
+    })
+    
+    # Generate the summary
+    summary = await your_llm_provider.complete({
+      'prompt': f"Summarize the following content: {enhanced_content}",
+      'model': 'gpt-4o'
+    })
+    
+    # Record the summary with token counts and cost
+    summary_generation.end({
+      'output': summary,
+      'inputTokens': calculate_tokens(enhanced_content),
+      'outputTokens': calculate_tokens(summary),
+      'cost': 0.02  # Example cost in USD
+    })
+    
+    # Complete the main trace with final results
+    main_trace.update({
+      'metadata': {
+        'processingSteps': 3,
+        'totalProcessingTime': (datetime.now() - main_trace.start_time).total_seconds() * 1000,
+        'enhancedContentAvailable': True,
+        'translationAvailable': True,
+        'summaryAvailable': True
+      }
+    })
+    
+    # End the trace with the final output
+    main_trace.end(summary)
+    
+    return {
+      'topics': topics,
+      'enhanced_content': enhanced_content,
+      'translated_content': translated_content,
+      'summary': summary
+    }
+  except Exception as error:
+    # Record the error
+    main_trace.update({
+      'metadata': {
+        'error': {
+          'name': error.__class__.__name__,
+          'message': str(error),
+          'traceback': traceback.format_exc()
+        },
+        'status': 'failed'
+      }
+    })
+    
+    # Always end the trace, even in error cases
+    main_trace.end(f"Error: {str(error)}")
+    raise error
+
+# Helper functions for the content processing
+async def enhance_content(content, parent_log):
+  enhancement_log = parent_log.create_log({
+    'name': 'content-enhancement',
+    'type': 'span',
+    'input': content
+  })
+  
+  generation = enhancement_log.create_generation({
+    'name': 'enhance-text',
+    'prompt': {
+      'slug': 'content-enhancer'
+    },
+    'input': content
+  })
+  
+  # Call your LLM provider
+  enhanced_content = await your_llm_provider.complete({
+    'prompt': f"Enhance the following content: {content}",
+    'model': 'gpt-4o'
+  })
+  
+  generation.end(enhanced_content)
+  enhancement_log.end(enhanced_content)
+  
+  return enhanced_content
+
+async def translate_content(content, parent_log):
+  translation_log = parent_log.create_log({
+    'name': 'content-translation',
+    'type': 'span',
+    'input': content
+  })
+  
+  generation = translation_log.create_generation({
+    'name': 'translate-text',
+    'prompt': {
+      'slug': 'translator'
+    },
+    'input': content,
+    'variables': {
+      'targetLanguage': 'Spanish'
+    }
+  })
+  
+  # Call your LLM provider
+  translated_content = await your_llm_provider.complete({
+    'prompt': f"Translate the following content to Spanish: {content}",
+    'model': 'gpt-4o'
+  })
+  
+  # Let Basalt calculate tokens and cost automatically
+  generation.end(translated_content)
+  translation_log.end(translated_content)
+  
+  return translated_content
+```
+</CodeGroup>
+
+This example demonstrates:
+1. Creating a main trace for the entire workflow
+2. Using specific log types for different operations
+3. Appending generations from `prompt.get()`
+4. Parallel processing with multiple logs
+5. Different ways to end generations (with and without token/cost data)
+6. Proper error handling and ensuring the trace is always ended
+7. Recording rich metadata at each step
+
+## Best Practices
+
+For effective tracing:
+
+1. **Always end your traces**: Make sure to call `end()` for all traces, even in error cases, or the data won't be sent to Basalt.
+
+2. **Choose meaningful names**: Use descriptive names that clearly communicate the purpose of each component.
+
+3. **Add relevant metadata**: Include information that will help with debugging and analysis later.
+
+4. **Use the right log types**: Choose the appropriate type (`span`, `function`, `tool`, etc.) for each operation to improve analytics.
+
+5. **Structure nested components logically**: Create a hierarchy that reflects the logical flow of your application.
+
+6. **Handle errors properly**: Record errors in your trace metadata and ensure traces are ended even when errors occur.
+
+7. **Consider evaluation needs**: Apply evaluators strategically to assess the quality of critical generations.
+
+8. **Optimize sample rates**: Adjust evaluation sample rates based on your volume and budget.
+
+## Advanced Topics
+
+For more advanced tracing capabilities, explore:
+
+- [Evaluation](/monitoring/evaluation) - Assess the quality of your AI outputs
+- [Experiments](/experiments/introduction) - Compare different workflow versions

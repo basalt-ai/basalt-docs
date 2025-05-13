@@ -1,0 +1,244 @@
+---
+title: 'FAQ'
+description: 'Frequently asked questions about Basalt SDK and platform.'
+---
+
+<AccordionGroup>
+
+<Accordion icon="key" title="How do I authenticate with Basalt?">
+  To authenticate with Basalt, you'll need an API key which you can generate from your Basalt dashboard. Then initialize the SDK with your API key:
+  
+  ```typescript
+  const basalt = new Basalt({
+    apiKey: 'your-api-key'
+  });
+  ```
+  
+  Keep your API key secure and avoid hardcoding it in your application. Use environment variables or a secure secret manager in production environments.
+</Accordion>
+
+<Accordion icon="code" title="What languages does Basalt SDK support?">
+  The Basalt SDK is available for both TypeScript/JavaScript and Python. Both versions provide the same core functionality with language-specific implementations. Choose the one that best fits your tech stack.
+  
+  All examples in our documentation include code snippets for both languages.
+</Accordion>
+
+<Accordion icon="file-pen" title="How do I manage prompts with Basalt?">
+  Basalt provides a complete prompt management system. You can create and edit prompts in the Basalt web application, then retrieve them in your code using the SDK:
+  
+  ```typescript
+  const { value, error } = await basalt.prompt.get('my-prompt-slug');
+  
+  if (error) {
+    console.error('Failed to get prompt:', error);
+    return;
+  }
+  
+  // Use the prompt with your LLM provider
+  const response = await yourLLMProvider.complete(value.text);
+  ```
+  
+  Prompts can be versioned, tagged, and include variables that you can replace at runtime.
+</Accordion>
+
+<Accordion icon="magnifying-glass-chart" title="What is the difference between basic monitoring and tracing?">
+  **Basic monitoring** is the simplest way to track individual AI interactions, automatically enabled when you use `basalt.prompt.get()`. It's ideal for simple workflows that use a single prompt to generate a response.
+  
+  **Tracing** is a more comprehensive system for monitoring complex workflows with multiple steps, branching logic, and/or parallel processes. It gives you deeper visibility into each step of your AI application and requires more explicit code to create traces, logs, and generations.
+  
+  Use basic monitoring for simple use cases and tracing for complex workflows where you need to understand what happens at each step.
+</Accordion>
+
+<Accordion icon="flask" title="How do experiments work in Basalt?">
+  Experiments allow you to group multiple traces together for comparison. When you create an experiment and attach traces to it, those traces are collected for analysis rather than sent to regular monitoring.
+  
+  This is useful for A/B testing different versions of your workflows, evaluating prompt changes, or optimizing model parameters.
+  
+  ```typescript
+  // Create an experiment
+  const { value: experiment } = await basalt.monitor.createExperiment(
+    'feature-slug',
+    { name: 'My Experiment' }
+  );
+  
+  // Create a trace attached to the experiment
+  const trace = basalt.monitor.createTrace('feature-slug', {
+    experiment: experiment
+  });
+  ```
+  
+  You can then view and analyze the results in the Basalt application.
+</Accordion>
+
+<Accordion icon="ruler" title="How does evaluation work in Basalt?">
+  Evaluators are tools that automatically assess the quality of your AI outputs based on specific criteria. You can add evaluators to traces or generations:
+  
+  ```typescript
+  const trace = basalt.monitor.createTrace('feature-slug', {
+    evaluators: [
+      { slug: 'accuracy-evaluator' }
+    ]
+  });
+  ```
+  
+  Evaluators are run at sample rates you can configure, except in experiments where they always run at 100% to ensure complete data for comparison. You can create custom evaluators in the Basalt application.
+</Accordion>
+
+<Accordion icon="database" title="What is the purpose of caching in the SDK?">
+  The SDK includes a built-in caching system with two main components:
+  
+  - **API cache**: Ensures high availability of prompts even during service disruptions
+  - **Local SDK cache**: Reduces network requests by storing recently retrieved prompts
+  
+  By default, caching is enabled with a 5-minute duration. You can disable it for specific requests:
+  
+  ```typescript
+  const result = await basalt.prompt.get('welcome-message', {
+    cache: false
+  });
+  ```
+  
+  Best practice is to keep caching enabled in production for performance and disable it in development to always get the latest versions.
+</Accordion>
+
+<Accordion icon="circle-nodes" title="How do I monitor a complex workflow with multiple steps?">
+  For complex workflows, use Basalt's tracing system:
+  
+  1. Create a main trace for the overall workflow:
+     ```typescript
+     const trace = basalt.monitor.createTrace('feature-slug');
+     ```
+  
+  2. Create logs for each major step:
+     ```typescript
+     const processingLog = trace.createLog({
+       name: 'data-processing',
+       type: 'function'
+     });
+     ```
+  
+  3. Create generations for AI interactions:
+     ```typescript
+     const generation = processingLog.createGeneration({
+       name: 'summarization',
+       prompt: { slug: 'text-summarizer' }
+     });
+     ```
+  
+  4. End each component when complete:
+     ```typescript
+     generation.end(generatedSummary);
+     processingLog.end();
+     trace.end(finalResult);
+     ```
+  
+  This creates a hierarchical structure that represents your workflow.
+</Accordion>
+
+<Accordion icon="bug" title="How should I handle errors with the SDK?">
+  The Basalt SDK uses a consistent error handling pattern. All methods return an object with `value` and `error` properties:
+  
+  ```typescript
+  const { value, error } = await basalt.prompt.get('my-prompt');
+  
+  if (error) {
+    // Handle the error appropriately
+    console.error('Failed to get prompt:', error.message);
+    return;
+  }
+  
+  // Value is guaranteed to be defined if no error
+  const prompt = value;
+  ```
+  
+  For traces, make sure to end them even when errors occur:
+  
+  ```typescript
+  try {
+    // Your workflow code
+  } catch (error) {
+    trace.update({
+      metadata: { error: error.message }
+    });
+    trace.end(`Error: ${error.message}`);
+    throw error;
+  }
+  ```
+</Accordion>
+
+<Accordion icon="user" title="How do I associate user information with traces?">
+  You can associate user and organization information with traces for better analytics:
+  
+  ```typescript
+  // When creating a trace
+  const trace = basalt.monitor.createTrace('feature-slug', {
+    user: {
+      id: 'user-123',
+      name: 'John Doe'
+    },
+    organization: {
+      id: 'org-456',
+      name: 'Acme Inc'
+    }
+  });
+  
+  // Or later using the identify method
+  trace.identify({
+    user: {
+      id: 'user-123',
+      name: 'John Doe'
+    }
+  });
+  ```
+  
+  This allows you to filter and analyze traces by user or organization in the Basalt dashboard.
+</Accordion>
+
+<Accordion icon="tags" title="How do I use prompt versions and tags?">
+  Basalt supports versioning and tagging for prompts. You can request specific versions or tags:
+  
+  ```typescript
+  // Get a specific version
+  const { value } = await basalt.prompt.get({
+    slug: 'welcome-message',
+    version: '1.0.0'
+  });
+  
+  // Get a specific tag
+  const { value } = await basalt.prompt.get({
+    slug: 'welcome-message',
+    tag: 'production'
+  });
+  ```
+  
+  Versions are immutable and represent specific points in a prompt's history. Tags are mutable pointers to versions, useful for environment management (e.g., 'production', 'staging').
+</Accordion>
+
+<Accordion icon="gauge-high" title="How can I improve performance with the SDK?">
+  To optimize performance:
+  
+  1. **Keep caching enabled** in production (the default)
+  
+  2. **Use appropriate evaluation sample rates** to balance insight with cost
+  
+  3. **Batch similar operations** where possible
+  
+  4. **End traces and generations promptly** to ensure data is sent efficiently
+  
+  5. **Add detailed metadata** to help with filtering and analysis
+  
+  6. **Structure your traces hierarchically** to represent your workflow accurately
+</Accordion>
+
+<Accordion icon="database" title="When will the Datasets feature be available?">
+  The Datasets feature is currently in development and will be available soon. This feature will allow you to:
+  
+  - Store collections of inputs and expected outputs
+  - Create standardized test sets for evaluation
+  - Run experiments against consistent data
+  - Compare different approaches using the same baseline
+  
+  Stay tuned for announcements about the release date.
+</Accordion>
+
+</AccordionGroup>

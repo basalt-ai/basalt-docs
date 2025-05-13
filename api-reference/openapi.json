@@ -1,217 +1,548 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
-  },
-  "servers": [
-    {
-      "url": "http://sandbox.mintlify.com"
-    }
-  ],
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ],
-  "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
-        "requestBody": {
-          "description": "Plant added to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
-          }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
-      }
-    }
+	"openapi": "3.1.0",
+	"security": [
+	  {
+		"bearerAuth": []
+	  }
+	],
+	"servers": [
+	  {
+		"url": "https://api.getbasalt.ai",
+		"description": "Basalt Endpoint API"
+	  }
+	],
+	"info": {
+	  "title": "Basalt API",
+	  "description": "Basalt API",
+	  "version": "0.2.1"
+	},
+	"components": {
+	  "securitySchemes": {
+		"bearerAuth": {
+		  "type": "http",
+		  "scheme": "bearer"
+		}
+	  },
+	  "schemas": {},
+	  "parameters": {}
+	},
+	"paths": {
+	  "/prompts": {
+		"get": {
+		  "summary": "List all prompts",
+		  "description": "List all prompts",
+		  "parameters": [
+			{
+			  "schema": {
+				"type": "string",
+				"example": "feature-slug"
+			  },
+			  "required": false,
+			  "description": "The feature slug to filter prompts by",
+			  "name": "featureSlug",
+			  "in": "query"
+			}
+		  ],
+		  "responses": {
+			"200": {
+			  "description": "Array of prompts.",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "prompts": {
+						"type": "array",
+						"items": {
+						  "type": "object",
+						  "properties": {
+							"slug": {
+							  "type": [
+								"string",
+								"null"
+							  ],
+							  "example": "my-prompt"
+							},
+							"name": {
+							  "type": "string",
+							  "example": "My Prompt"
+							},
+							"status": {
+							  "type": "string",
+							  "enum": [
+								"live",
+								"draft"
+							  ],
+							  "example": "live"
+							},
+							"description": {
+							  "type": [
+								"string",
+								"null"
+							  ],
+							  "example": "This is a description of the prompt"
+							},
+							"availableVersions": {
+							  "type": "array",
+							  "items": {
+								"type": "string"
+							  },
+							  "example": [
+								"1.0.0",
+								"1.0.1"
+							  ]
+							},
+							"availableTags": {
+							  "type": "array",
+							  "items": {
+								"type": "string"
+							  },
+							  "example": [
+								"latest",
+								"production"
+							  ]
+							}
+						  },
+						  "required": [
+							"name",
+							"status",
+							"availableVersions",
+							"availableTags"
+						  ]
+						}
+					  }
+					},
+					"required": [
+					  "prompts"
+					]
+				  }
+				}
+			  }
+			},
+			"400": {
+			  "description": "Bad Request - Invalid query parameters"
+			}
+		  }
+		}
+	  },
+	  "/prompts/{slug}": {
+		"get": {
+		  "summary": "Get a prompt by its slug",
+		  "description": "Get a prompt by its slug",
+		  "parameters": [
+			{
+			  "schema": {
+				"type": "string",
+				"example": "my-slug"
+			  },
+			  "required": true,
+			  "description": "The slug of the prompt to get",
+			  "name": "slug",
+			  "in": "path"
+			},
+			{
+			  "schema": {
+				"type": "string",
+				"example": "1.0.0"
+			  },
+			  "required": false,
+			  "description": "The version to filter prompts by",
+			  "name": "version",
+			  "in": "query"
+			},
+			{
+			  "schema": {
+				"type": "string",
+				"example": "latest"
+			  },
+			  "required": false,
+			  "description": "The tag to filter prompts by",
+			  "name": "tag",
+			  "in": "query"
+			}
+		  ],
+		  "responses": {
+			"200": {
+			  "description": "The prompt with all its parameters",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "warning": {
+						"type": "string"
+					  },
+					  "prompt": {
+						"type": "object",
+						"properties": {
+						  "text": {
+							"type": "string",
+							"example": "Hello, how are you?"
+						  },
+						  "systemText": {
+							"type": "string",
+							"example": "You are a helpful assistant"
+						  },
+						  "version": {
+							"type": "string",
+							"example": "1.0.0"
+						  },
+						  "model": {
+							"type": "object",
+							"properties": {
+							  "provider": {
+								"type": "string",
+								"enum": [
+								  "anthropic",
+								  "open-ai",
+								  "mistral",
+								  "gemini"
+								],
+								"example": "open-ai"
+							  },
+							  "model": {
+								"type": "string",
+								"example": "gpt-4o"
+							  },
+							  "version": {
+								"type": "string",
+								"example": "latest"
+							  },
+							  "parameters": {
+								"type": "object",
+								"properties": {
+								  "temperature": {
+									"type": "number",
+									"example": 0.5
+								  },
+								  "topP": {
+									"type": "number",
+									"example": 0.5
+								  },
+								  "frequencyPenalty": {
+									"type": "number",
+									"example": 1
+								  },
+								  "maxLength": {
+									"type": "number",
+									"example": 100
+								  },
+								  "responseFormat": {
+									"type": "string",
+									"example": "json_object"
+								  },
+								  "jsonObject": {
+									"type": "object",
+									"additionalProperties": {}
+								  }
+								},
+								"required": [
+								  "temperature",
+								  "topP",
+								  "maxLength",
+								  "responseFormat"
+								]
+							  }
+							},
+							"required": [
+							  "provider",
+							  "model",
+							  "version",
+							  "parameters"
+							]
+						  }
+						},
+						"required": [
+						  "text",
+						  "version",
+						  "model"
+						]
+					  }
+					},
+					"required": [
+					  "prompt"
+					]
+				  }
+				}
+			  }
+			},
+			"400": {
+			  "description": "Bad Request - Invalid query parameters"
+			},
+			"404": {
+			  "description": "Not found",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "error": {
+						"type": "string",
+						"example": "No prompt found with the given slug or no production version found or no prompt found with the given version or tag (production version also missing)"
+					  }
+					},
+					"required": [
+					  "error"
+					]
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/prompts/{slug}/describe": {
+		"get": {
+		  "summary": "Describe a prompt by its slug",
+		  "description": "Describe a prompt by its slug",
+		  "parameters": [
+			{
+			  "schema": {
+				"type": "string",
+				"example": "my-slug"
+			  },
+			  "required": true,
+			  "description": "The slug of the prompt to describe",
+			  "name": "slug",
+			  "in": "path"
+			},
+			{
+			  "schema": {
+				"type": "string",
+				"example": "1.0.0"
+			  },
+			  "required": false,
+			  "description": "The version to filter prompts by",
+			  "name": "version",
+			  "in": "query"
+			},
+			{
+			  "schema": {
+				"type": "string",
+				"example": "latest"
+			  },
+			  "required": false,
+			  "description": "The tag to filter prompts by",
+			  "name": "tag",
+			  "in": "query"
+			}
+		  ],
+		  "responses": {
+			"200": {
+			  "description": "The prompt with all its parameters",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "warning": {
+						"type": "string"
+					  },
+					  "prompt": {
+						"type": "object",
+						"properties": {
+						  "slug": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"example": "my-slug"
+						  },
+						  "name": {
+							"type": "string",
+							"example": "My Prompt"
+						  },
+						  "status": {
+							"type": "string",
+							"enum": [
+							  "live",
+							  "draft"
+							],
+							"example": "live"
+						  },
+						  "description": {
+							"type": [
+							  "string",
+							  "null"
+							],
+							"example": "This is a description of the prompt"
+						  },
+						  "availableVersions": {
+							"type": "array",
+							"items": {
+							  "type": "string"
+							},
+							"example": [
+							  "1.0.0",
+							  "1.0.1"
+							]
+						  },
+						  "availableTags": {
+							"type": "array",
+							"items": {
+							  "type": "string"
+							},
+							"example": [
+							  "latest",
+							  "production",
+							  "staging"
+							]
+						  },
+						  "variables": {
+							"type": "array",
+							"items": {
+							  "type": "object",
+							  "properties": {
+								"label": {
+								  "type": "string",
+								  "example": "Name"
+								},
+								"type": {
+								  "type": "string",
+								  "example": "string"
+								},
+								"description": {
+								  "type": "string",
+								  "example": "This is a description of the variable"
+								}
+							  },
+							  "required": [
+								"label",
+								"type"
+							  ]
+							}
+						  }
+						},
+						"required": [
+						  "name",
+						  "status",
+						  "availableVersions",
+						  "availableTags",
+						  "variables"
+						]
+					  }
+					},
+					"required": [
+					  "prompt"
+					]
+				  }
+				}
+			  }
+			},
+			"400": {
+			  "description": "Bad Request - Invalid query parameters"
+			},
+			"404": {
+			  "description": "Not found",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "error": {
+						"type": "string",
+						"example": "No prompt found with the given slug or no production version found or no prompt found with the given version or tag (production version also missing)"
+					  }
+					},
+					"required": [
+					  "error"
+					]
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  },
+	  "/monitor/experiments": {
+		"post": {
+		  "summary": "Create an experiment",
+		  "description": "Create an experiment",
+		  "requestBody": {
+			"content": {
+			  "application/json": {
+				"schema": {
+				  "type": "object",
+				  "properties": {
+					"featureSlug": {
+					  "type": "string",
+					  "example": "my-feature"
+					},
+					"name": {
+					  "type": "string",
+					  "example": "My Experiment"
+					}
+				  },
+				  "required": [
+					"featureSlug",
+					"name"
+				  ]
+				}
+			  }
+			}
+		  },
+		  "responses": {
+			"200": {
+			  "description": "The created experiment",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "id": {
+						"type": "string",
+						"example": "123"
+					  },
+					  "name": {
+						"type": "string",
+						"example": "My Experiment"
+					  },
+					  "featureSlug": {
+						"type": [
+						  "string",
+						  "null"
+						],
+						"example": "my-feature"
+					  },
+					  "createdAt": {
+						"type": "string",
+						"example": "2024-03-20T12:00:00Z"
+					  }
+					},
+					"required": [
+					  "id",
+					  "name",
+					  "createdAt"
+					]
+				  }
+				}
+			  }
+			},
+			"400": {
+			  "description": "Bad Request - Invalid body parameters"
+			},
+			"404": {
+			  "description": "Not found",
+			  "content": {
+				"application/json": {
+				  "schema": {
+					"type": "object",
+					"properties": {
+					  "error": {
+						"type": "string",
+						"example": "No prompt found with the given slug or no production version found or no prompt found with the given version or tag (production version also missing)"
+					  }
+					},
+					"required": [
+					  "error"
+					]
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  }
+	},
+	"webhooks": {}
   }
-}

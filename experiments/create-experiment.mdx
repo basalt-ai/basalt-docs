@@ -1,0 +1,335 @@
+---
+title: 'Create Experiment'
+description: 'Run and compare different variants of your AI workflows with Basalt Experiments.'
+---
+
+import { Button } from '/snippets/button.mdx'
+
+Experiments allow you to compare different versions of your AI workflows by running multiple traces under controlled conditions. This feature is particularly useful for A/B testing prompt changes, evaluating different model configurations, or optimizing your AI application's performance.
+
+## Creating an Experiment
+
+To create an experiment, use the `createExperiment` method:
+
+<CodeGroup>
+```typescript TypeScript
+const { value: experiment, error } = await basalt.monitor.createExperiment(
+  'feature-slug',
+  { name: 'My Test Experiment' }
+)
+
+if (error) {
+  console.error('Failed to create experiment:', error)
+  return
+}
+
+console.log('Experiment created:', experiment.id)
+```
+
+```python Python
+error, experiment = basalt.monitor.create_experiment(
+  'feature-slug',
+  { 'name': 'My Test Experiment' }
+)
+
+if error:
+  print(f'Failed to create experiment: {error}')
+  return
+
+print(f'Experiment created: {experiment.id}')
+```
+</CodeGroup>
+
+Parameters:
+- `feature-slug`: The slug of the feature this experiment is associated with
+- `name`: A descriptive name for the experiment (visible in the UI)
+
+The `createExperiment` method returns an experiment object with the following properties:
+- `id`: Unique identifier for the experiment
+- `name`: The name you provided
+- `featureSlug`: The feature slug this experiment is associated with
+- `createdAt`: Timestamp when the experiment was created
+
+## Attaching Traces to an Experiment
+
+Once you have created an experiment, you can attach traces to it by passing the experiment object to the `createTrace` method:
+
+<CodeGroup>
+```typescript TypeScript
+// Create a trace and attach it to the experiment
+const trace = basalt.monitor.createTrace('feature-slug', {
+  name: 'Experimental Workflow Run',
+  experiment: experiment,
+  evaluators: [
+    { slug: 'response-quality' }
+  ]
+})
+
+// Run your workflow...
+const result = await yourWorkflow()
+
+// End the trace
+trace.end(result)
+```
+
+```python Python
+# Create a trace and attach it to the experiment
+trace = basalt.monitor.create_trace('feature-slug', {
+  'name': 'Experimental Workflow Run',
+  'experiment': experiment,
+  'evaluators': [
+    { 'slug': 'response-quality' }
+  ]
+})
+
+# Run your workflow...
+result = await your_workflow()
+
+# End the trace
+trace.end(result)
+```
+</CodeGroup>
+
+You can also set an experiment on an existing trace:
+
+<CodeGroup>
+```typescript TypeScript
+// Create a trace first
+const trace = basalt.monitor.createTrace('feature-slug')
+
+// Later set the experiment
+trace.setExperiment(experiment)
+```
+
+```python Python
+# Create a trace first
+trace = basalt.monitor.create_trace('feature-slug')
+
+# Later set the experiment
+trace.set_experiment(experiment)
+```
+</CodeGroup>
+
+<Warning>
+  The feature slug of the experiment must match the feature slug of the trace. If they don't match, the experiment will be ignored and the trace will go to regular monitoring instead.
+</Warning>
+
+## Evaluation in Experiments
+
+When you attach evaluators to traces in an experiment, they run with special behavior:
+
+<CodeGroup>
+```typescript TypeScript
+// Create a trace with evaluators in an experiment
+const trace = basalt.monitor.createTrace('feature-slug', {
+  experiment: experiment,
+  evaluators: [
+    { slug: 'accuracy' },
+    { slug: 'coherence' }
+  ]
+})
+```
+
+```python Python
+# Create a trace with evaluators in an experiment
+trace = basalt.monitor.create_trace('feature-slug', {
+  'experiment': experiment,
+  'evaluators': [
+    { 'slug': 'accuracy' },
+    { 'slug': 'coherence' }
+  ],
+})
+```
+</CodeGroup>
+
+<Info>
+  When traces are attached to an experiment, evaluators will run on **100% of the traces** regardless of the sampleRate setting. This ensures you get complete evaluation data for all experimental runs, which is essential for meaningful comparisons.
+</Info>
+
+This behavior allows you to:
+- Get evaluation scores for every single experimental run
+- Compare evaluation metrics between different variants 
+- Ensure statistical significance in your evaluation results
+- Draw reliable conclusions from your experiments
+
+## Using Experiments in CI/CD and Testing
+
+Experiments are an excellent tool for implementing automated testing and quality control in your AI workflows. You can create a single experiment and run multiple traces against it, which is particularly useful in CI/CD pipelines:
+
+<CodeGroup>
+```typescript TypeScript
+async function testWorkflowInCI() {
+  // Create a single experiment for this test run
+  const { value: experiment, error } = await basalt.monitor.createExperiment(
+    'product-description',
+    { name: `CI Test Run - ${new Date().toISOString()}` }
+  )
+  
+  if (error) {
+    console.error('Failed to create experiment:', error)
+    return false
+  }
+  
+  // Load test cases
+  const testCases = loadTestCases()
+  let passedTests = 0
+  
+  // Run each test case against the experiment
+  for (const testCase of testCases) {
+    const trace = basalt.monitor.createTrace('product-description', {
+      name: `Test Case: ${testCase.name}`,
+      experiment: experiment,
+      metadata: {
+        testCase: testCase.name,
+        expectedResult: testCase.expectedOutput
+      },
+      evaluators: [
+        { slug: 'accuracy-check' }
+      ]
+    })
+    
+    try {
+      // Run the workflow with test data
+      const result = await runProductDescriptionWorkflow(testCase.input)
+      
+      // Record the result
+      trace.end(result)
+      
+      // Check if test passed
+      const passed = matchesExpectedOutput(result, testCase.expectedOutput)
+      
+      if (passed) {
+        passedTests++
+      }
+      
+      trace.update({
+        metadata: {
+          testPassed: passed
+        }
+      })
+    } catch (error) {
+      trace.update({
+        metadata: {
+          error: error.message,
+          testPassed: false
+        }
+      })
+      trace.end(`Error: ${error.message}`)
+    }
+  }
+  
+  // Return success/failure based on test results
+  return passedTests === testCases.length
+}
+```
+
+```python Python
+async def test_workflow_in_ci():
+  # Create a single experiment for this test run
+  error, experiment = basalt.monitor.create_experiment(
+    'product-description',
+    { 'name': f'CI Test Run - {datetime.now().isoformat()}' }
+  )
+  
+  if error:
+    print(f'Failed to create experiment: {error}')
+    return False
+  
+  # Load test cases
+  test_cases = load_test_cases()
+  passed_tests = 0
+  
+  # Run each test case against the experiment
+  for test_case in test_cases:
+    trace = basalt.monitor.create_trace('product-description', {
+      'name': f'Test Case: {test_case.name}',
+      'experiment': experiment,
+      'metadata': {
+        'testCase': test_case.name,
+        'expectedResult': test_case.expected_output
+      },
+      'evaluators': [
+        { 'slug': 'accuracy-check' }
+      ]
+    })
+    
+    try:
+      # Run the workflow with test data
+      result = await run_product_description_workflow(test_case.input)
+      
+      # Record the result
+      trace.end(result)
+      
+      # Check if test passed
+      passed = matches_expected_output(result, test_case.expected_output)
+      
+      if passed:
+        passed_tests += 1
+      
+      trace.update({
+        'metadata': {
+          'testPassed': passed
+        }
+      })
+    except Exception as error:
+      trace.update({
+        'metadata': {
+          'error': str(error),
+          'testPassed': False
+        }
+      })
+      trace.end(f'Error: {str(error)}')
+  
+  # Return success/failure based on test results
+  return passed_tests == len(test_cases)
+```
+</CodeGroup>
+
+### Benefits of Using Experiments for Testing
+
+Using experiments for testing provides several advantages:
+
+1. **Centralized Results**: All test runs are grouped together in a single experiment, making it easy to analyze the results.
+
+2. **Workflow Validation**: You can validate that your AI workflows produce the expected outputs for a variety of inputs.
+
+3. **Quality Regression Detection**: By running experiments regularly (e.g., on every PR or nightly), you can detect regressions in your AI workflows.
+
+4. **Evaluation Integration**: Automatic evaluators provide objective metrics about the quality of your AI outputs.
+
+5. **Mock Data Support**: You can run experiments with mock data or synthetic inputs to test specific scenarios.
+
+6. **Historical Comparisons**: Compare current performance against previous runs to ensure your changes improve quality.
+
+<Info>
+  In CI/CD environments, it's often helpful to include build or commit information in the experiment name or metadata to easily trace results back to specific code versions.
+</Info>
+
+## Experiment Best Practices
+
+To get the most out of experiments:
+
+1. **Run enough samples**: Aim for at least 50-100 runs per variant to get statistically significant results.
+
+2. **Control your variables**: Change only one thing at a time between variants to isolate the impact of that change.
+
+3. **Add detailed metadata**: Include information that will help you analyze the results later, such as variant identifiers and relevant parameters.
+
+4. **Include evaluators**: Add evaluators to automatically assess the quality of outputs from different variants.
+
+5. **Use the same feature slug**: Make sure the experiment and all traces use the same feature slug.
+
+6. **Add error handling**: Ensure all traces are ended properly, even if errors occur.
+
+7. **Name your variants**: Consistently name your variants to make it easy to identify them in the results.
+
+## Viewing Experiment Results
+
+After running an experiment, you can view and analyze the results in the Basalt dashboard. The dashboard provides tools to compare metrics between different variants, visualize performance differences, and make data-driven decisions about which approach works best.
+
+<Button
+variant='link'
+value='View experiment results'
+href='https://app.getbasalt.ai'
+icon="arrow-right"
+/>

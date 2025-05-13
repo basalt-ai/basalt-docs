@@ -1,0 +1,79 @@
+---
+title: 'Introduction'
+description: 'Understand the purpose and benefits of monitoring your AI applications with Basalt.'
+---
+
+Monitoring is a crucial component of any AI application, providing visibility into how your LLMs are performing in production. Basalt's monitoring system helps you track, analyze, and optimize your AI interactions to ensure they're delivering value to your users.
+
+## Why Monitor AI Applications?
+
+AI applications present unique monitoring challenges compared to traditional software. Large language models can be unpredictable, produce varying outputs for similar inputs, and their behavior can evolve over time. Effective monitoring helps you:
+
+- **Identify issues** before they impact users
+- **Track performance** metrics like response time and token usage
+- **Detect unexpected behaviors** such as hallucinations or inappropriate content
+- **Optimize costs** by identifying inefficient processes
+
+## Monitoring Approaches in Basalt
+
+Basalt offers two main approaches to monitoring:
+
+### 1. Basic Monitoring
+
+Basic monitoring is the simplest way to track AI interactions. It's automatically included when you use Basalt-managed prompts and requires minimal code changes:
+
+```typescript
+// Get a prompt from Basalt (includes monitoring)
+const { value, generation } = await basalt.prompt.get('prompt-slug')
+
+// Use the prompt with your LLM provider
+const response = await yourLLM.generate(value.text)
+
+// Record the completion
+generation.end(response)
+```
+
+This approach is ideal for simple workflows where you're using a single prompt to generate a response.
+
+### 2. Tracing
+
+For more complex workflows involving multiple steps, parallel processes, or branching logic, Basalt offers a comprehensive tracing system:
+
+```typescript
+// Create a trace for a multi-step workflow
+const trace = basalt.monitor.createTrace('feature-slug')
+
+// Add logs and generations to track each step
+const classificationLog = trace.createLog({ name: 'classify-input' })
+const generationLog = trace.createGeneration({ name: 'generate-response' })
+
+// Record results at each step
+classificationLog.end(classificationResult)
+generationLog.end(generatedResponse)
+
+// End the trace when the workflow completes
+trace.end(finalResult)
+```
+
+Tracing gives you deeper visibility into your AI application's behavior and performance, allowing you to identify bottlenecks and optimize each step of your workflow.
+
+## Key Monitoring Features
+
+Basalt's monitoring system includes several powerful features:
+
+- **Evaluations**: Automatically assess the quality of your AI outputs
+- **User identification**: Track which users are using your AI features
+- **Organization tracking**: Monitor usage patterns across different organizations
+- **Metadata collection**: Record custom metadata at each step of your workflow
+- **Performance metrics**: Track response times, token usage, and costs
+
+## Getting Started
+
+To start monitoring your AI applications with Basalt:
+
+1. For simple workflows, use [Basic Monitoring](/monitoring/basic-monitoring)
+2. For complex workflows, use [Tracing](/monitoring/tracing)
+3. Add [Evaluations](/monitoring/evaluation) to automatically assess output quality
+4. Explore [Monitoring Examples](/monitoring/examples) for practical patterns you can adapt
+
+By integrating monitoring into your AI applications from the beginning, you'll gain valuable insights that help you deliver more reliable, performant, and cost-effective AI experiences to your users.

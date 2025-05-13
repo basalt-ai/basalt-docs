@@ -1,102 +1,136 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
-  "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "introduction",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Essentials",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/settings",
-              "essentials/navigation",
-              "essentials/reusable-snippets"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "groups": [
-          {
-            "group": "API Documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint Examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
-  }
+	"$schema": "https://mintlify.com/docs.json",
+	"theme": "maple",
+	"name": "Basalt Documentation",
+	"colors": {
+		"primary": "#db5704",
+		"light": "#d5e347",
+		"dark": "#221f1d"
+	},
+	"favicon": "/favicon.svg",
+	"navigation": {
+		"tabs": [
+			{
+				"tab": "Documentation",
+				"versions": [
+					{
+						"version": "0.2.x",
+						"groups": [
+							{
+								"group": "Getting Started",
+								"pages": [
+									"introduction",
+									"quickstart",
+									"installation"
+								]
+							},
+							{
+								"group": "Guides",
+								"pages": [
+									{
+										"group": "Prompts",
+										"icon": "comment-dots",
+										"pages": [
+											"prompts/introduction",
+											"prompts/get-prompt",
+											"prompts/list-prompts",
+											"prompts/describe-prompt",
+											"prompts/caching-policy",
+											"prompts/error-handling",
+											"prompts/examples"
+										]
+									},
+									{
+										"group": "Monitoring",
+										"icon": "chart-line",
+										"pages": [
+											"monitoring/introduction",
+											"monitoring/basic-monitoring",
+											"monitoring/tracing",
+											"monitoring/evaluation",
+											"monitoring/examples"
+										]
+									},
+									{
+										"group": "Experiments",
+										"icon": "flask",
+										"pages": [
+											"experiments/introduction",
+											"experiments/create-experiment",
+											"experiments/ci-testing"
+										]
+									},
+									{
+										"group": "Datasets",
+										"icon": "database",
+										"pages": [
+											"datasets/introduction"
+										]
+									}
+								]
+							},
+							{
+								"group": "Learn more",
+								"pages": [
+									"changelog",
+									"faq",
+									"getting-help"
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+			"tab": "API Reference",
+			"icon": "terminal",
+			"groups": [
+				{
+					"group": "API Documentation",
+					"pages": [
+						"api-reference/introduction",
+						"api-reference/authentication"
+					]
+				},
+				{
+					"group": "Prompts",
+					"pages": [
+						"api-reference/prompts/get",
+						"api-reference/prompts/list",
+						"api-reference/prompts/describe"
+					]
+				},
+				{
+					"group": "Experiments",
+					"pages": [
+						"api-reference/experiments/create"
+					]
+				}
+			]
+			}
+		]
+		},
+		"logo": {
+		"light": "/logo/light.svg",
+		"dark": "/logo/dark.svg"
+		},
+		"navbar": {
+		"links": [
+			{
+			"label": "Support",
+			"href": "mailto:support@getbasalt.ai"
+			},
+			{
+			"label": "Dashboard",
+			"href": "https://app.getbasalt.ai"
+			}
+		]
+	},
+	"footer": {
+		"socials": {
+			"x": "https://x.com/mintlify",
+			"github": "https://github.com/mintlify",
+			"linkedin": "https://linkedin.com/company/mintlify"
+		}
+	}
 }

@@ -1,0 +1,142 @@
+---
+title: 'Error Handling'
+description: 'Learn how to properly handle errors in the Basalt SDK.'
+---
+
+
+The Basalt SDK uses a consistent error handling pattern across all methods. This guide explains how to properly handle errors when using the SDK.
+
+## Error Pattern
+
+All SDK methods return an object / tuple containing two properties:
+- `value`: The result of the operation when successful
+- `error`: An error object when the operation fails
+
+This pattern allows you to easily check if an operation succeeded or failed before proceeding.
+
+### General Pattern
+
+<CodeGroup>
+```typescript TypeScript
+const { value, error } = await basalt.someMethod()
+
+if (error) {
+  // Handle the error
+  console.error('Operation failed:', error.message)
+  throw error // Or handle it in another way
+}
+
+// If no error, value is guaranteed to be defined
+const result = value
+```
+
+```python Python
+error, value = basalt.some_method()
+
+if error:
+    # Handle the error
+    print(f"Operation failed: {error.message}")
+    raise error  # Or handle it in another way
+
+# If no error, value is guaranteed to be defined
+result = value
+```
+</CodeGroup>
+
+## Error Types
+
+The SDK can return different types of errors:
+
+- `NotFoundError`: When a requested resource doesn't exist
+- `ValidationError`: When the provided parameters are invalid
+- `AuthenticationError`: When there's an issue with authentication
+- `NetworkError`: When there's a problem with the network connection
+- `ServerError`: When the server encounters an issue
+- `UnknownError`: For unexpected errors
+
+## Examples
+
+### Getting a Prompt
+
+<CodeGroup>
+```typescript TypeScript
+const { value, error } = await basalt.prompt.get({
+slug: 'welcome-message'
+})
+
+if (error) {
+throw error
+}
+
+// Use the prompt safely
+console.log(`Retrieved prompt: ${value.text}`)
+```
+
+```python Python
+error, prompt = basalt.prompt.get(slug='welcome-message')
+
+if error:
+	raise error
+
+# Use the prompt safely
+print(f"Retrieved prompt: {prompt.text}")
+```
+</CodeGroup>
+
+### Listing Prompts
+
+<CodeGroup>
+```typescript TypeScript
+const { value, error } = await basalt.prompt.list({
+featureSlug: 'onboarding'
+})
+
+if (error) {
+throw error
+}
+
+// Use the prompt list safely
+console.log(`Found ${value.length} prompts`)
+```
+
+```python Python
+error, value = basalt.prompt.list(feature_slug='onboarding')
+
+if error:
+	raise error
+
+# Use the prompt list safely
+print(f"Found {len(value)} prompts")
+```
+</CodeGroup>
+
+### Describing a Prompt
+
+<CodeGroup>
+```typescript TypeScript
+const { value, error } = await basalt.prompt.describe({
+	slug: 'welcome-message',
+	version: '1.0.0'
+})
+
+if (error) {
+	throw error
+}
+
+// Use the prompt details safely
+console.log(`Prompt name: ${value.name}, Version: ${value.version}`)
+```
+
+```python Python
+error, value = basalt.prompt.describe(
+    slug='welcome-message',
+    version='1.0.0'
+)
+
+if error:
+	raise error
+
+# Use the prompt details safely
+print(f"Prompt name: {value.name}, Version: {value.version}")
+```
+</CodeGroup>

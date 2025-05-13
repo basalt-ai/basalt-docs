@@ -1,0 +1,696 @@
+---
+title: 'Examples'
+description: 'Practical examples of monitoring AI interactions with Basalt.'
+---
+
+This page provides practical examples of how to use Basalt's monitoring capabilities in common scenarios. These examples demonstrate different approaches to monitoring based on your specific use case.
+
+## Basic Prompt Monitoring
+
+The simplest way to monitor AI interactions is with the basic monitoring approach when using Basalt-managed prompts:
+
+<CodeGroup>
+```typescript TypeScript
+// Get a prompt from Basalt (already includes monitoring)
+const { value, generation } = await basalt.prompt.get('customer-reply', {
+  variables: {
+    customerName: 'John Smith',
+    inquiry: 'When will my order arrive?'
+  }
+})
+
+// Generate content with your LLM provider
+const response = await generateWithLLM(value.text)
+
+// Record the completion
+generation.end(response)
+```
+
+```python Python
+# Get a prompt from Basalt (already includes monitoring)
+error, result = basalt.prompt.get('customer-reply', {
+  'variables': {
+    'customerName': 'John Smith',
+    'inquiry': 'When will my order arrive?'
+  }
+})
+
+value, generation = result.value, result.generation
+
+# Generate content with your LLM provider
+response = generate_with_llm(value.text)
+
+# Record the completion
+generation.end(response)
+```
+</CodeGroup>
+
+## Customer Support Workflow
+
+This example monitors a customer support interaction with user identification:
+
+<CodeGroup>
+```typescript TypeScript
+async function handleCustomerQuery(user, query) {
+  // Create a trace for the entire interaction
+  const trace = basalt.monitor.createTrace('customer-support', {
+    name: 'Customer Support Interaction',
+    input: query,
+    user: {
+      id: user.id,
+      name: user.name
+    },
+    organization: {
+      id: user.companyId,
+      name: user.companyName
+    }
+  })
+  
+  try {
+    // Get the query classification prompt
+    const { value: classifierPrompt, generation: classifyGeneration } = 
+      await basalt.prompt.get('query-classifier')
+    
+    // Append the generation to our trace
+    trace.append(classifyGeneration)
+    
+    // Classify the query
+    const category = await classifyQuery(query, classifierPrompt.text)
+    
+    // Record the classification result
+    classifyGeneration.end(category)
+    
+    // Create a response generation
+    const responseLog = trace.createGeneration({
+      name: 'generate-response',
+      prompt: {
+        slug: 'support-response',
+        tag: category
+      },
+      input: query,
+      variables: {
+        query: query,
+        category: category,
+        userName: user.name
+      }
+    })
+    
+    // Generate the response
+    const responseText = await generateResponse(query, category, user.name)
+    
+    // Record the response generation
+    responseLog.end(responseText)
+    
+    // End the trace
+    trace.end(responseText)
+    
+    return {
+      category: category,
+      response: responseText
+    }
+  } catch (error) {
+    trace.update({
+      metadata: {
+        error: error.message
+      }
+    })
+    trace.end(`Error: ${error.message}`)
+    throw error
+  }
+}
+```
+
+```python Python
+async def handle_customer_query(user, query):
+  # Create a trace for the entire interaction
+  trace = basalt.monitor.create_trace('customer-support', {
+    'name': 'Customer Support Interaction',
+    'input': query,
+    'user': {
+      'id': user.id,
+      'name': user.name
+    },
+    'organization': {
+      'id': user.company_id,
+      'name': user.company_name
+    }
+  })
+  
+  try:
+    # Get the query classification prompt
+    error, result = basalt.prompt.get('query-classifier')
+    classifierPrompt, classifyGeneration = result.value, result.generation
+    
+    # Append the generation to our trace
+    trace.append(classifyGeneration)
+    
+    # Classify the query
+    category = await classify_query(query, classifierPrompt.text)
+    
+    # Record the classification result
+    classifyGeneration.end(category)
+    
+    # Create a response generation
+    responseLog = trace.create_generation({
+      'name': 'generate-response',
+      'prompt': {
+        'slug': 'support-response',
+        'tag': category
+      },
+      'input': query,
+      'variables': {
+        'query': query,
+        'category': category,
+        'userName': user.name
+      }
+    })
+    
+    # Generate the response
+    response_text = await generate_response(query, category, user.name)
+    
+    # Record the response generation
+    responseLog.end(response_text)
+    
+    # End the trace
+    trace.end(response_text)
+    
+    return {
+      'category': category,
+      'response': response_text
+    }
+  except Exception as error:
+    trace.update({
+      'metadata': {
+        'error': str(error)
+      }
+    })
+    trace.end(f"Error: {str(error)}")
+    raise error
+```
+</CodeGroup>
+
+## Content Moderation
+
+This example monitors content moderation with evaluation:
+
+<CodeGroup>
+```typescript TypeScript
+async function moderateUserContent(content) {
+  // Create a trace for content moderation
+  const trace = basalt.monitor.createTrace('content-moderation', {
+    name: 'Content Moderation',
+    input: content,
+    evaluators: [
+      { slug: 'content-policy' }
+    ]
+  })
+  
+  // Create a generation for moderation check
+  const generation = trace.createGeneration({
+    name: 'moderation-check',
+    prompt: {
+      slug: 'content-moderator'
+    },
+    input: content
+  })
+  
+  try {
+    // Check content with your moderation system
+    const result = await checkContentModeration(content)
+    const isSafe = result.includes('safe')
+    
+    // Record the moderation result with metadata
+    generation.end({
+      output: result,
+      metadata: {
+        isSafe: isSafe,
+        contentType: 'text'
+      }
+    })
+    
+    // End the trace
+    trace.end(result)
+    
+    return {
+      isSafe: isSafe,
+      result: result
+    }
+  } catch (error) {
+    generation.end({
+      output: `Error: ${error.message}`,
+      metadata: {
+        error: error.message
+      }
+    })
+    trace.end(`Error: ${error.message}`)
+    throw error
+  }
+}
+```
+
+```python Python
+async def moderate_user_content(content):
+  # Create a trace for content moderation
+  trace = basalt.monitor.create_trace('content-moderation', {
+    'name': 'Content Moderation',
+    'input': content,
+    'evaluators': [
+      { 'slug': 'content-policy' }
+    ]
+  })
+  
+  # Create a generation for moderation check
+  generation = trace.create_generation({
+    'name': 'moderation-check',
+    'prompt': {
+      'slug': 'content-moderator'
+    },
+    'input': content
+  })
+  
+  try:
+    # Check content with your moderation system
+    result = await check_content_moderation(content)
+    is_safe = 'safe' in result
+    
+    # Record the moderation result with metadata
+    generation.end({
+      'output': result,
+      'metadata': {
+        'isSafe': is_safe,
+        'contentType': 'text'
+      }
+    })
+    
+    # End the trace
+    trace.end(result)
+    
+    return {
+      'isSafe': is_safe,
+      'result': result
+    }
+  except Exception as error:
+    generation.end({
+      'output': f"Error: {str(error)}",
+      'metadata': {
+        'error': str(error)
+      }
+    })
+    trace.end(f"Error: {str(error)}")
+    raise error
+```
+</CodeGroup>
+
+## Document Processing
+
+This example tracks a simple document processing workflow:
+
+<CodeGroup>
+```typescript TypeScript
+async function processDocument(document) {
+  // Create a trace for document processing
+  const trace = basalt.monitor.createTrace('document-processing', {
+    name: 'Document Processing',
+    input: document.title,
+    metadata: {
+      documentId: document.id,
+      documentType: document.type
+    }
+  })
+  
+  try {
+    // Create a log for text extraction
+    const extractionLog = trace.createLog({
+      name: 'text-extraction',
+      type: 'function',
+      input: `Document: ${document.title}`
+    })
+    
+    // Extract key information
+    const extractedInfo = await extractDocumentInfo(document)
+    
+    // Record extraction
+    extractionLog.end(extractedInfo)
+    
+    // Create a generation for summary
+    const summaryGeneration = trace.createGeneration({
+      name: 'document-summary',
+      prompt: {
+        slug: 'document-summarizer'
+      },
+      input: extractedInfo,
+      variables: {
+        documentType: document.type,
+        maxLength: '250 words'
+      }
+    })
+    
+    // Generate summary
+    const summaryText = await generateSummary(extractedInfo)
+    
+    // Record summary generation
+    summaryGeneration.end(summaryText)
+    
+    // End trace
+    trace.end(summaryText)
+    
+    return {
+      extractedInfo: extractedInfo,
+      summary: summaryText
+    }
+  } catch (error) {
+    trace.update({
+      metadata: {
+        error: error.message,
+        status: 'failed'
+      }
+    })
+    
+    trace.end(`Error: ${error.message}`)
+    throw error
+  }
+}
+```
+
+```python Python
+async def process_document(document):
+  # Create a trace for document processing
+  trace = basalt.monitor.create_trace('document-processing', {
+    'name': 'Document Processing',
+    'input': document.title,
+    'metadata': {
+      'documentId': document.id,
+      'documentType': document.type
+    }
+  })
+  
+  try:
+    # Create a log for text extraction
+    extraction_log = trace.create_log({
+      'name': 'text-extraction',
+      'type': 'function',
+      'input': f'Document: {document.title}'
+    })
+    
+    # Extract key information
+    extracted_info = await extract_document_info(document)
+    
+    # Record extraction
+    extraction_log.end(extracted_info)
+    
+    # Create a generation for summary
+    summary_generation = trace.create_generation({
+      'name': 'document-summary',
+      'prompt': {
+        'slug': 'document-summarizer'
+      },
+      'input': extracted_info,
+      'variables': {
+        'documentType': document.type,
+        'maxLength': '250 words'
+      }
+    })
+    
+    # Generate summary
+    summary_text = await generate_summary(extracted_info)
+    
+    # Record summary generation
+    summary_generation.end(summary_text)
+    
+    # End trace
+    trace.end(summary_text)
+    
+    return {
+      'extractedInfo': extracted_info,
+      'summary': summary_text
+    }
+  except Exception as error:
+    trace.update({
+      'metadata': {
+        'error': str(error),
+        'status': 'failed'
+      }
+    })
+    
+    trace.end(f"Error: {str(error)}")
+    raise error
+```
+</CodeGroup>
+
+## RAG Application
+
+This example tracks a simple Retrieval-Augmented Generation (RAG) application:
+
+<CodeGroup>
+```typescript TypeScript
+async function answerWithRAG(question) {
+  // Create a trace for the RAG workflow
+  const trace = basalt.monitor.createTrace('rag-query', {
+    name: 'RAG Query Processing',
+    input: question
+  })
+  
+  try {
+    // Create a log for retrieval
+    const retrievalLog = trace.createLog({
+      name: 'document-retrieval',
+      type: 'retrieval',
+      input: question
+    })
+    
+    // Retrieve relevant documents
+    const relevantDocs = await retrieveDocuments(question)
+    
+    // Record retrieval metrics
+    retrievalLog.update({
+      metadata: {
+        documentCount: relevantDocs.length
+      }
+    })
+    
+    // Compile context from retrieved documents
+    const context = combineDocuments(relevantDocs)
+    retrievalLog.end(context)
+    
+    // Create a generation for answer
+    const answerGeneration = trace.createGeneration({
+      name: 'answer-generation',
+      prompt: {
+        slug: 'rag-answer-generator'
+      },
+      input: question,
+      variables: {
+        question: question,
+        context: context
+      }
+    })
+    
+    // Generate answer using retrieved context
+    const answerText = await generateAnswer(question, context)
+    
+    // Record answer generation
+    answerGeneration.end(answerText)
+    
+    // End trace
+    trace.end(answerText)
+    
+    return {
+      answer: answerText,
+      sources: relevantDocs.map(doc => doc.title)
+    }
+  } catch (error) {
+    trace.update({
+      metadata: {
+        error: error.message
+      }
+    })
+    trace.end(`Error: ${error.message}`)
+    throw error
+  }
+}
+```
+
+```python Python
+async def answer_with_rag(question):
+  # Create a trace for the RAG workflow
+  trace = basalt.monitor.create_trace('rag-query', {
+    'name': 'RAG Query Processing',
+    'input': question
+  })
+  
+  try:
+    # Create a log for retrieval
+    retrieval_log = trace.create_log({
+      'name': 'document-retrieval',
+      'type': 'retrieval',
+      'input': question
+    })
+    
+    # Retrieve relevant documents
+    relevant_docs = await retrieve_documents(question)
+    
+    # Record retrieval metrics
+    retrieval_log.update({
+      'metadata': {
+        'documentCount': len(relevant_docs)
+      }
+    })
+    
+    # Compile context from retrieved documents
+    context = combine_documents(relevant_docs)
+    retrieval_log.end(context)
+    
+    # Create a generation for answer
+    answer_generation = trace.create_generation({
+      'name': 'answer-generation',
+      'prompt': {
+        'slug': 'rag-answer-generator'
+      },
+      'input': question,
+      'variables': {
+        'question': question,
+        'context': context
+      }
+    })
+    
+    # Generate answer using retrieved context
+    answer_text = await generate_answer(question, context)
+    
+    # Record answer generation
+    answer_generation.end(answer_text)
+    
+    # End trace
+    trace.end(answer_text)
+    
+    return {
+      'answer': answer_text,
+      'sources': [doc.title for doc in relevant_docs]
+    }
+  except Exception as error:
+    trace.update({
+      'metadata': {
+        'error': str(error)
+      }
+    })
+    trace.end(f"Error: {str(error)}")
+    raise error
+```
+</CodeGroup>
+
+## Chat Interface
+
+This example tracks a simple chat conversation:
+
+<CodeGroup>
+```typescript TypeScript
+async function processChatMessage(userId, sessionId, message, history) {
+  // Create or get trace for this chat session
+  let trace = sessionTraces[sessionId] || basalt.monitor.createTrace('chat-session', {
+    name: 'Chat Conversation',
+    input: message,
+    user: { id: userId }
+  })
+  
+  if (!sessionTraces[sessionId]) {
+    sessionTraces[sessionId] = trace
+  }
+  
+  // Create a log for this message exchange
+  const turnLog = trace.createLog({
+    name: `message-exchange`,
+    type: 'span',
+    input: message
+  })
+  
+  try {
+    // Create a generation for the assistant's response
+    const responseGeneration = turnLog.createGeneration({
+      name: 'assistant-response',
+      prompt: { slug: 'chat-response' },
+      variables: {
+        userMessage: message,
+        chatHistory: formatHistory(history)
+      }
+    })
+    
+    // Generate the response
+    const responseText = await generateChatResponse(message, history)
+    
+    // Record the response
+    responseGeneration.end(responseText)
+    turnLog.end(responseText)
+    
+    // Add to history
+    history.push({
+      user: message,
+      assistant: responseText
+    })
+    
+    return responseText
+  } catch (error) {
+    turnLog.end(`Error: ${error.message}`)
+    throw error
+  }
+}
+
+// Storage for session traces
+const sessionTraces = {}
+```
+
+```python Python
+# Storage for session traces
+session_traces = {}
+
+async def process_chat_message(user_id, session_id, message, history):
+  # Create or get trace for this chat session
+  if session_id in session_traces:
+    trace = session_traces[session_id]
+  else:
+    trace = basalt.monitor.create_trace('chat-session', {
+      'name': 'Chat Conversation',
+      'input': message,
+      'user': { 'id': user_id }
+    })
+    session_traces[session_id] = trace
+  
+  # Create a log for this message exchange
+  turn_log = trace.create_log({
+    'name': 'message-exchange',
+    'type': 'span',
+    'input': message
+  })
+  
+  try:
+    # Create a generation for the assistant's response
+    response_generation = turn_log.create_generation({
+      'name': 'assistant-response',
+      'prompt': { 'slug': 'chat-response' },
+      'variables': {
+        'userMessage': message,
+        'chatHistory': format_history(history)
+      }
+    })
+    
+    # Generate the response
+    response_text = await generate_chat_response(message, history)
+    
+    # Record the response
+    response_generation.end(response_text)
+    turn_log.end(response_text)
+    
+    # Add to history
+    history.append({
+      'user': message,
+      'assistant': response_text
+    })
+    
+    return response_text
+  except Exception as error:
+    turn_log.end(f"Error: {str(error)}")
+    raise error
+```
+</CodeGroup>
+
+These examples demonstrate different ways to use Basalt's monitoring capabilities across various common use cases. You can adapt these patterns to your specific needs, combining approaches as needed.
+
+For more complex scenarios, refer to the [Tracing](/monitoring/tracing) and [Evaluations](/monitoring/evaluation) documentation.

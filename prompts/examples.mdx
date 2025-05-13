@@ -1,0 +1,764 @@
+---
+title: 'Examples'
+description: 'Practical examples of using the Basalt SDK for prompt management.'
+---
+
+This guide provides practical examples of using the Basalt SDK for common prompt management scenarios. These examples demonstrate how to use the `get`, `list`, and `describe` methods effectively in your applications.
+
+## Getting Prompts
+
+### Basic Prompt Retrieval
+
+The simplest way to get a prompt is by its slug:
+
+<CodeGroup>
+```typescript TypeScript
+import { BasaltSDK } from '@basalt/sdk'
+
+const basalt = new BasaltSDK({ apiKey: process.env.BASALT_API_KEY })
+
+async function getBasicPrompt() {
+  const { value, error } = await basalt.prompt.get('welcome-message')
+  
+  if (error) {
+    console.error('Failed to get prompt:', error.message)
+    return null
+  }
+  
+  return value
+}
+```
+
+```python Python
+from basalt import BasaltSDK
+
+basalt = BasaltSDK(api_key=os.environ.get('BASALT_API_KEY'))
+
+def get_basic_prompt():
+    error, prompt = basalt.prompt.get('welcome-message')
+    
+    if error:
+        print(f"Failed to get prompt: {error.message}")
+        return None
+    
+    return prompt
+```
+</CodeGroup>
+
+### Getting a Specific Version
+
+When you need a specific version of a prompt:
+
+<CodeGroup>
+```typescript TypeScript
+async function getSpecificVersion() {
+  const { value, error } = await basalt.prompt.get({
+    slug: 'product-description',
+    version: '2.1.0'
+  })
+  
+  if (error) {
+    console.error('Failed to get prompt version:', error.message)
+    return null
+  }
+  
+  console.log(`Using prompt version: ${value.model.version}`)
+  return value
+}
+```
+
+```python Python
+def get_specific_version():
+    error, prompt = basalt.prompt.get(
+        slug='product-description',
+        version='2.1.0'
+    )
+    
+    if error:
+        print(f"Failed to get prompt version: {error.message}")
+        return None
+    
+    print(f"Using prompt version: {prompt.model.version}")
+    return prompt
+```
+</CodeGroup>
+
+### Using Environment-Specific Tags
+
+Get prompts with different tags based on your environment:
+
+<CodeGroup>
+```typescript TypeScript
+async function getEnvironmentSpecificPrompt() {
+  // Determine environment
+  const environment = process.env.NODE_ENV === 'production' ? 'production' : 'staging'
+  
+  const { value, error } = await basalt.prompt.get({
+    slug: 'checkout-flow',
+    tag: environment
+  })
+  
+  if (error) {
+    console.error(`Failed to get ${environment} prompt:`, error.message)
+    return null
+  }
+  
+  console.log(`Using ${environment} prompt variant`)
+  return value
+}
+```
+
+```python Python
+def get_environment_specific_prompt():
+    # Determine environment
+    environment = os.environ.get('ENVIRONMENT', 'staging')
+    is_prod = environment == 'production'
+    
+    tag = 'production' if is_prod else 'staging'
+    
+    error, prompt = basalt.prompt.get(
+        slug='checkout-flow',
+        tag=tag
+    )
+    
+    if error:
+        print(f"Failed to get {tag} prompt: {error.message}")
+        return None
+    
+    print(f"Using {tag} prompt variant")
+    return prompt
+```
+</CodeGroup>
+
+### Replacing Variables
+
+Replace placeholder variables with actual values:
+
+<CodeGroup>
+```typescript TypeScript
+async function getPersonalizedPrompt(userName: string, companyName: string) {
+  const { value, error } = await basalt.prompt.get({
+    slug: 'personalized-email',
+    variables: {
+      userName,
+      companyName,
+      date: new Date().toLocaleDateString()
+    }
+  })
+  
+  if (error) {
+    console.error('Failed to get personalized prompt:', error.message)
+    return null
+  }
+  
+  return value
+}
+```
+
+```python Python
+def get_personalized_prompt(user_name, company_name):
+    from datetime import datetime
+    
+    error, prompt = basalt.prompt.get(
+        slug='personalized-email',
+        variables={
+            'userName': user_name,
+            'companyName': company_name,
+            'date': datetime.now().strftime('%Y-%m-%d')
+        }
+    )
+    
+    if error:
+        print(f"Failed to get personalized prompt: {error.message}")
+        return None
+    
+    return prompt
+```
+</CodeGroup>
+
+### Combining Multiple Parameters
+
+Use multiple parameters together for precise control:
+
+<CodeGroup>
+```typescript TypeScript
+async function getComplexPrompt() {
+  const { value, error } = await basalt.prompt.get({
+    slug: 'product-recommendation',
+    version: '3.0.0',
+    variables: {
+      productCategory: 'electronics',
+      userPreferences: 'budget-friendly, high-quality',
+      maxResults: 5
+    },
+    cache: false // Always get the latest version
+  })
+  
+  if (error) {
+    console.error('Failed to get complex prompt:', error.message)
+    return null
+  }
+  
+  return value
+}
+```
+
+```python Python
+def get_complex_prompt():
+    error, prompt = basalt.prompt.get(
+        slug='product-recommendation',
+        version='3.0.0',
+        variables={
+            'productCategory': 'electronics',
+            'userPreferences': 'budget-friendly, high-quality',
+            'maxResults': 5
+        },
+        cache=False  # Always get the latest version
+    )
+    
+    if error:
+        print(f"Failed to get complex prompt: {error.message}")
+        return None
+    
+    return prompt
+```
+</CodeGroup>
+
+## Listing Prompts
+
+### List All Prompts
+
+Get a list of all available prompts:
+
+<CodeGroup>
+```typescript TypeScript
+async function listAllPrompts() {
+  const { value, error } = await basalt.prompt.list()
+  
+  if (error) {
+    console.error('Failed to list prompts:', error.message)
+    return []
+  }
+  
+  console.log(`Found ${value.length} prompts`)
+  return value
+}
+```
+
+```python Python
+def list_all_prompts():
+    error, prompts = basalt.prompt.list()
+    
+    if error:
+        print(f"Failed to list prompts: {error.message}")
+        return []
+    
+    print(f"Found {len(prompts)} prompts")
+    return prompts
+```
+</CodeGroup>
+
+### List Prompts by Feature
+
+Get prompts that belong to a specific feature:
+
+<CodeGroup>
+```typescript TypeScript
+async function listFeaturePrompts(featureSlug: string) {
+  const { value, error } = await basalt.prompt.list({
+    featureSlug
+  })
+  
+  if (error) {
+    console.error(`Failed to list prompts for feature ${featureSlug}:`, error.message)
+    return []
+  }
+  
+  console.log(`Found ${value.length} prompts for feature ${featureSlug}`)
+  return value
+}
+```
+
+```python Python
+def list_feature_prompts(feature_slug):
+    error, prompts = basalt.prompt.list(
+        feature_slug=feature_slug
+    )
+    
+    if error:
+        print(f"Failed to list prompts for feature {feature_slug}: {error.message}")
+        return []
+    
+    print(f"Found {len(prompts)} prompts for feature {feature_slug}")
+    return prompts
+```
+</CodeGroup>
+
+### Finding and Filtering Prompts
+
+List prompts and then filter them programmatically:
+
+<CodeGroup>
+```typescript TypeScript
+async function findLivePrompts() {
+  const { value, error } = await basalt.prompt.list()
+  
+  if (error) {
+    console.error('Failed to list prompts:', error.message)
+    return []
+  }
+  
+  // Find only live prompts
+  const livePrompts = value.filter(prompt => prompt.status === 'live')
+  
+  console.log(`Found ${livePrompts.length} live prompts out of ${value.length} total`)
+  return livePrompts
+}
+```
+
+```python Python
+def find_live_prompts():
+    error, prompts = basalt.prompt.list()
+    
+    if error:
+        print(f"Failed to list prompts: {error.message}")
+        return []
+    
+    # Find only live prompts
+    live_prompts = [prompt for prompt in prompts if prompt.status == 'live']
+    
+    print(f"Found {len(live_prompts)} live prompts out of {len(prompts)} total")
+    return live_prompts
+```
+</CodeGroup>
+
+### Finding Prompts with Specific Tags
+
+List prompts and filter by available tags:
+
+<CodeGroup>
+```typescript TypeScript
+async function findPromptsByTag(tagName: string) {
+  const { value, error } = await basalt.prompt.list()
+  
+  if (error) {
+    console.error('Failed to list prompts:', error.message)
+    return []
+  }
+  
+  // Find prompts that have the specified tag available
+  const promptsWithTag = value.filter(prompt => 
+    prompt.availableTags.includes(tagName)
+  )
+  
+  console.log(`Found ${promptsWithTag.length} prompts with tag "${tagName}"`)
+  return promptsWithTag
+}
+```
+
+```python Python
+def find_prompts_by_tag(tag_name):
+    error, prompts = basalt.prompt.list()
+    
+    if error:
+        print(f"Failed to list prompts: {error.message}")
+        return []
+    
+    # Find prompts that have the specified tag available
+    prompts_with_tag = [
+        prompt for prompt in prompts 
+        if tag_name in prompt.availableTags
+    ]
+    
+    print(f"Found {len(prompts_with_tag)} prompts with tag \"{tag_name}\"")
+    return prompts_with_tag
+```
+</CodeGroup>
+
+## Describing Prompts
+
+### Get Basic Prompt Details
+
+Get detailed information about a prompt:
+
+<CodeGroup>
+```typescript TypeScript
+async function getPromptDetails(promptSlug: string) {
+  const { value, error } = await basalt.prompt.describe(promptSlug)
+  
+  if (error) {
+    console.error(`Failed to describe prompt ${promptSlug}:`, error.message)
+    return null
+  }
+  
+  console.log(`Prompt: ${value.name}`)
+  console.log(`Status: ${value.status}`)
+  console.log(`Variables: ${value.variables.length}`)
+  
+  return value
+}
+```
+
+```python Python
+def get_prompt_details(prompt_slug):
+    error, details = basalt.prompt.describe(prompt_slug)
+    
+    if error:
+        print(f"Failed to describe prompt {prompt_slug}: {error.message}")
+        return None
+    
+    print(f"Prompt: {details.name}")
+    print(f"Status: {details.status}")
+    print(f"Variables: {len(details.variables)}")
+    
+    return details
+```
+</CodeGroup>
+
+### Extract Variable Names and Types
+
+Get information about a prompt's variables:
+
+<CodeGroup>
+```typescript TypeScript
+async function getPromptVariables(promptSlug: string) {
+  const { value, error } = await basalt.prompt.describe(promptSlug)
+  
+  if (error) {
+    console.error(`Failed to describe prompt ${promptSlug}:`, error.message)
+    return []
+  }
+  
+  // Map variables to a simpler format
+  const variables = value.variables.map(variable => ({
+    name: variable.label,
+    type: variable.type,
+    description: variable.description || 'No description provided'
+  }))
+  
+  console.log(`Prompt "${value.name}" has ${variables.length} variables:`)
+  variables.forEach(v => {
+    console.log(`- ${v.name} (${v.type}): ${v.description}`)
+  })
+  
+  return variables
+}
+```
+
+```python Python
+def get_prompt_variables(prompt_slug):
+    error, details = basalt.prompt.describe(prompt_slug)
+    
+    if error:
+        print(f"Failed to describe prompt {prompt_slug}: {error.message}")
+        return []
+    
+    # Map variables to a simpler format
+    variables = [{
+        'name': variable.label,
+        'type': variable.type,
+        'description': variable.description or 'No description provided'
+    } for variable in details.variables]
+    
+    print(f"Prompt \"{details.name}\" has {len(variables)} variables:")
+    for v in variables:
+        print(f"- {v['name']} ({v['type']}): {v['description']}")
+    
+    return variables
+```
+</CodeGroup>
+
+### Check Available Versions
+
+Get information about available versions of a prompt:
+
+<CodeGroup>
+```typescript TypeScript
+async function checkAvailableVersions(promptSlug: string) {
+  const { value, error } = await basalt.prompt.describe(promptSlug)
+  
+  if (error) {
+    console.error(`Failed to describe prompt ${promptSlug}:`, error.message)
+    return []
+  }
+  
+  console.log(`Prompt "${value.name}" has ${value.availableVersions.length} versions:`)
+  console.log(`- Current version: ${value.version}`)
+  console.log('- Available versions:')
+  value.availableVersions.forEach(v => {
+    const isCurrent = v === value.version ? ' (current)' : ''
+    console.log(`  - ${v}${isCurrent}`)
+  })
+  
+  return value.availableVersions
+}
+```
+
+```python Python
+def check_available_versions(prompt_slug):
+    error, details = basalt.prompt.describe(prompt_slug)
+    
+    if error:
+        print(f"Failed to describe prompt {prompt_slug}: {error.message}")
+        return []
+    
+    print(f"Prompt \"{details.name}\" has {len(details.availableVersions)} versions:")
+    print(f"- Current version: {details.version}")
+    print("- Available versions:")
+    for v in details.availableVersions:
+        is_current = " (current)" if v == details.version else ""
+        print(f"  - {v}{is_current}")
+    
+    return details.availableVersions
+```
+</CodeGroup>
+
+## Practical Application Examples
+
+### Building a Prompt Selection UI
+
+Use list and describe to build a prompt selection interface:
+
+<CodeGroup>
+```typescript TypeScript
+async function buildPromptSelectionData() {
+  // Step 1: Get all prompts
+  const { value: prompts, error: listError } = await basalt.prompt.list()
+  
+  if (listError) {
+    console.error('Failed to list prompts:', listError.message)
+    return null
+  }
+  
+  // Step 2: Collect detailed info about each prompt
+  const promptDetails = []
+  
+  for (const prompt of prompts) {
+    const { value: details, error: describeError } = await basalt.prompt.describe(prompt.slug)
+    
+    if (describeError) {
+      console.warn(`Couldn't get details for ${prompt.slug}:`, describeError.message)
+      continue
+    }
+    
+    promptDetails.push({
+      slug: details.slug,
+      name: details.name,
+      description: details.description || 'No description',
+      status: details.status,
+      variables: details.variables,
+      currentVersion: details.version,
+      versions: details.availableVersions,
+      tags: details.availableTags
+    })
+  }
+  
+  return promptDetails
+}
+```
+
+```python Python
+async def build_prompt_selection_data():
+    # Step 1: Get all prompts
+    error, prompts = basalt.prompt.list()
+    
+    if error:
+        print(f"Failed to list prompts: {error.message}")
+        return None
+    
+    # Step 2: Collect detailed info about each prompt
+    prompt_details = []
+    
+    for prompt in prompts:
+        desc_error, details = basalt.prompt.describe(prompt.slug)
+        
+        if desc_error:
+            print(f"Couldn't get details for {prompt.slug}: {desc_error.message}")
+            continue
+        
+        prompt_details.append({
+            'slug': details.slug,
+            'name': details.name,
+            'description': details.description or 'No description',
+            'status': details.status,
+            'variables': details.variables,
+            'currentVersion': details.version,
+            'versions': details.availableVersions,
+            'tags': details.availableTags
+        })
+    
+    return prompt_details
+```
+</CodeGroup>
+
+### Implementing a Prompt-Based Workflow
+
+Chain multiple prompts together for a workflow:
+
+<CodeGroup>
+```typescript TypeScript
+async function runSupportWorkflow(userQuery: string) {
+  // Step 1: Use classifier prompt to determine intent
+  const { value: classifierPrompt, error: classifierError } = await basalt.prompt.get({
+    slug: 'support-query-classifier',
+    variables: {
+      query: userQuery
+    }
+  })
+  
+  if (classifierError) {
+    console.error('Failed to get classifier prompt:', classifierError.message)
+    return null
+  }
+  
+  // Use the classifier prompt with your LLM provider...
+  const classificationResult = await yourLLMProvider.complete(classifierPrompt.text)
+  const intent = parseClassificationResult(classificationResult)
+  
+  // Step 2: Based on the intent, get the appropriate response prompt
+  const responseSlug = `support-response-${intent}`
+  
+  const { value: responsePrompt, error: responseError } = await basalt.prompt.get({
+    slug: responseSlug,
+    variables: {
+      query: userQuery,
+      // Additional context based on intent
+      ...getContextForIntent(intent)
+    }
+  })
+  
+  if (responseError) {
+    console.error(`Failed to get response prompt ${responseSlug}:`, responseError.message)
+    return null
+  }
+  
+  // Use the response prompt with your LLM provider...
+  const finalResponse = await yourLLMProvider.complete(responsePrompt.text)
+  
+  return {
+    intent,
+    response: finalResponse
+  }
+}
+```
+
+```python Python
+async def run_support_workflow(user_query):
+    # Step 1: Use classifier prompt to determine intent
+    error, classifier_prompt = basalt.prompt.get(
+        slug='support-query-classifier',
+        variables={
+            'query': user_query
+        }
+    )
+    
+    if error:
+        print(f"Failed to get classifier prompt: {error.message}")
+        return None
+    
+    # Use the classifier prompt with your LLM provider...
+    classification_result = await your_llm_provider.complete(classifier_prompt.text)
+    intent = parse_classification_result(classification_result)
+    
+    # Step 2: Based on the intent, get the appropriate response prompt
+    response_slug = f"support-response-{intent}"
+    
+    error, response_prompt = basalt.prompt.get(
+        slug=response_slug,
+        variables={
+            'query': user_query,
+            # Additional context based on intent
+            **get_context_for_intent(intent)
+        }
+    )
+    
+    if error:
+        print(f"Failed to get response prompt {response_slug}: {error.message}")
+        return None
+    
+    # Use the response prompt with your LLM provider...
+    final_response = await your_llm_provider.complete(response_prompt.text)
+    
+    return {
+        'intent': intent,
+        'response': final_response
+    }
+```
+</CodeGroup>
+
+### Feature Flag Integration
+
+Use prompt tags as feature flags:
+
+<CodeGroup>
+```typescript TypeScript
+async function getFeatureFlaggedPrompt(promptSlug: string) {
+  // Get user segment (e.g., from user profile)
+  const userSegment = await getUserSegment()
+  
+  // Map user segment to prompt tag
+  let promptTag
+  
+  switch (userSegment) {
+    case 'beta-tester':
+      promptTag = 'beta'
+      break
+    case 'premium':
+      promptTag = 'premium'
+      break
+    default:
+      promptTag = 'standard'
+  }
+  
+  // Get the appropriate prompt variant using tags
+  const { value, error } = await basalt.prompt.get({
+    slug: promptSlug,
+    tag: promptTag
+  })
+  
+  if (error) {
+    // Fall back to standard prompt if specific tag doesn't exist
+    if (error.name === 'NotFoundError' && promptTag !== 'standard') {
+      console.warn(`Tag ${promptTag} not found for ${promptSlug}, falling back to standard`)
+      return getFeatureFlaggedPrompt('standard')
+    }
+    
+    console.error(`Failed to get prompt ${promptSlug} with tag ${promptTag}:`, error.message)
+    return null
+  }
+  
+  return value
+}
+```
+
+```python Python
+async def get_feature_flagged_prompt(prompt_slug):
+    # Get user segment (e.g., from user profile)
+    user_segment = await get_user_segment()
+    
+    # Map user segment to prompt tag
+    if user_segment == 'beta-tester':
+        prompt_tag = 'beta'
+    elif user_segment == 'premium':
+        prompt_tag = 'premium'
+    else:
+        prompt_tag = 'standard'
+    
+    # Get the appropriate prompt variant using tags
+    error, prompt = basalt.prompt.get(
+        slug=prompt_slug,
+        tag=prompt_tag
+    )
+    
+    if error:
+        # Fall back to standard prompt if specific tag doesn't exist
+        if error.name == 'NotFoundError' and prompt_tag != 'standard':
+            print(f"Tag {prompt_tag} not found for {prompt_slug}, falling back to standard")
+            return await get_feature_flagged_prompt('standard')
+        
+        print(f"Failed to get prompt {prompt_slug} with tag {prompt_tag}: {error.message}")
+        return None
+    
+    return prompt
+```
+</CodeGroup>

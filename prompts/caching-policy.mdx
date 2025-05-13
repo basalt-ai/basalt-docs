@@ -1,0 +1,165 @@
+---
+title: 'Caching Policy'
+description: 'Learn how Basalt SDK uses caching to improve performance and reliability.'
+---
+
+# Caching Policy
+
+The Basalt SDK implements a two-level caching strategy to optimize performance and ensure high availability of your prompts.
+
+## Caching Architecture
+
+Basalt employs a dual-layer caching system:
+
+1. **API Cache**: Our backend maintains a distributed cache to ensure high availability and reliability, even during service disruptions.
+
+2. **SDK Local Cache**: The SDK includes a built-in local cache that stores recently retrieved prompts to minimize network requests and improve response times.
+
+## Default Behavior
+
+By default, the SDK's local cache is **enabled** with a **5-minute duration**. This means:
+
+- Repeated requests for the same prompt within a 5-minute window will be served from the local cache
+- After 5 minutes, the cache entry expires and a new request to the API will be made
+- The API may still serve a cached response if the prompt didn't change in the meantime
+
+## Disabling Cache
+
+You can disable the local SDK cache for specific requests when you need the most up-to-date version of a prompt:
+
+<CodeGroup>
+```typescript TypeScript
+// Disable caching for a specific get request
+const { value } = await basalt.prompt.get('welcome-message', {
+  cache: false
+})
+```
+
+```python Python
+# Disable caching for a specific get request
+error, value = basalt.prompt.get(
+    'welcome-message',
+    cache=False
+)
+```
+</CodeGroup>
+
+<Info>
+The local cache is currently available only on the `get` method. On the method `list` and `describe`, the API cache is entirely managing the requests.
+</Info>
+
+## Best Practices
+
+Here are some recommendations for effectively using the caching system:
+
+1. **Production Environments**: Keep caching enabled in production to maximize performance and reduce API calls.
+
+2. **Development Environments**: Consider disabling caching during development to ensure you're always working with the latest prompt versions:
+
+<CodeGroup>
+```typescript TypeScript
+// In development environments, globally disable caching
+const basalt = new BasaltSDK({
+  apiKey: 'your-api-key',
+  cacheEnabled: process.env.NODE_ENV !== 'development'
+})
+```
+
+```python Python
+# In development environments, globally disable caching
+is_dev = os.environ.get('ENVIRONMENT') == 'development'
+basalt = BasaltSDK(
+    api_key='your-api-key',
+    cache_enabled=not is_dev
+)
+```
+</CodeGroup>
+
+3. **Time-Sensitive Operations**: Disable caching for operations where having the absolute latest version is critical.
+
+4. **Burst Operations**: Keep caching enabled when making many requests in a short period to avoid rate limiting.
+
+## Global Cache Configuration
+
+You can configure global caching behavior when initializing the SDK:
+
+<CodeGroup>
+```typescript TypeScript
+// Disable caching globally
+const basalt = new BasaltSDK({
+  apiKey: 'your-api-key',
+  cacheEnabled: false
+})
+
+// Or customize cache duration (in milliseconds)
+const basalt = new BasaltSDK({
+  apiKey: 'your-api-key',
+  cacheDuration: 60000 // 1 minute
+})
+```
+
+```python Python
+# Disable caching globally
+basalt = BasaltSDK(
+    api_key='your-api-key',
+    cache_enabled=False
+)
+
+# Or customize cache duration (in seconds)
+basalt = BasaltSDK(
+    api_key='your-api-key',
+    cache_duration=60  # 1 minute
+)
+```
+</CodeGroup>
+
+## Cache Invalidation
+
+The SDK automatically handles cache invalidation in the following scenarios:
+
+1. When the cache duration expires (default: 5 minutes)
+2. When explicitly requested with `cache: false`
+3. When using the API to update or modify prompts (the API invalidates relevant cache entries)
+
+For manual cache control, you can use the cache management methods:
+
+<CodeGroup>
+```typescript TypeScript
+// Clear the entire cache
+await basalt.cache.clear()
+
+// Clear cache for a specific prompt
+await basalt.cache.invalidate('prompt', 'welcome-message')
+
+// Clear cache for a prompt category
+await basalt.cache.invalidate('feature', 'onboarding')
+```
+
+```python Python
+# Clear the entire cache
+basalt.cache.clear()
+
+# Clear cache for a specific prompt
+basalt.cache.invalidate('prompt', 'welcome-message')
+
+# Clear cache for a prompt category
+basalt.cache.invalidate('feature', 'onboarding')
+```
+</CodeGroup>
+
+## Benefits of Caching
+
+Utilizing the SDK's caching system provides several advantages:
+
+- **Improved Performance**: Reduced latency for frequently accessed prompts
+- **Reduced API Costs**: Fewer API calls means lower operational costs
+- **Network Resilience**: Ability to serve cached content during network disruptions
+- **Reduced Load**: Less strain on your application and our API servers
+
+## When Not to Use Caching
+
+While caching is beneficial in most scenarios, consider disabling it in these cases:
+
+- During active prompt development and testing
+- For prompts that must always reflect the latest updates
+- In CI/CD pipelines where reproducibility is essential

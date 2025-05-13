@@ -1,0 +1,75 @@
+---
+title: 'Introduction (Coming Soon)'
+description: 'A preview of the upcoming Datasets feature in Basalt.'
+---
+
+<Info>
+  The Datasets is not yet available in the SDK. It is currently in development and will be available soon. This page provides a preview of what's coming.
+
+  In the meantime, you can use the [Basalt App](https://app.getbasalt.ai) to create and manage datasets.
+</Info>
+
+## What are Datasets?
+
+Datasets in Basalt will provide a structured way to store, manage, and utilize collections of data for your AI workflows. This upcoming feature will enable you to:
+
+- Store representative examples of your inputs and expected outputs
+- Create standardized test sets for evaluating your AI systems
+- Run experiments against consistent data
+- Compare different approaches using the same baseline data
+
+## Planned Capabilities
+
+When the Datasets feature is released, you'll be able to:
+
+### Push Data to Datasets
+
+```typescript
+// Add examples to your dataset
+await basalt.datasets.add('customer-queries', [
+  { input: 'How do I reset my password?', category: 'account' },
+  { input: 'When will my order arrive?', category: 'orders' }
+])
+```
+
+### Use Datasets in Experiments
+
+```typescript
+// Create an experiment
+const experiment = await basalt.monitor.createExperiment('query-classification')
+
+// Run your workflow against a dataset
+await basalt.datasets.runExperiment({
+  datasetSlug: 'customer-queries',
+  experiment: experiment,
+  workflow: async (item) => {
+    // Your workflow code here, using the dataset item
+    return classifyQuery(item.input)
+  }
+})
+```
+
+### Retrieve Dataset Items
+
+```typescript
+// Get items from your dataset
+const items = await basalt.datasets.get('customer-queries', {
+  limit: 10,
+  shuffle: true
+})
+```
+
+## Benefits of Datasets
+
+The upcoming Datasets feature will help you:
+
+- **Ensure Consistency**: Test on the same data over time
+- **Improve Reproducibility**: Get reliable comparisons between different approaches
+- **Streamline Testing**: Automate experimentation with real-world examples
+- **Track Progress**: Measure improvements against a consistent benchmark
+
+## Stay Tuned
+
+We're excited to bring Datasets to Basalt soon! This feature will complement our existing monitoring and experimentation capabilities, creating a more comprehensive platform for developing, testing, and optimizing your AI applications.
+
+Follow our release announcements to be notified when Datasets become available.
