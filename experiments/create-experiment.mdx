@@ -148,144 +148,14 @@ trace = basalt.monitor.create_trace('feature-slug', {
 
 This behavior allows you to:
 - Get evaluation scores for every single experimental run
-- Compare evaluation metrics between different variants 
+- Compare evaluation metrics between different variants
 - Ensure statistical significance in your evaluation results
 - Draw reliable conclusions from your experiments
 
-## Using Experiments in CI/CD and Testing
 
-Experiments are an excellent tool for implementing automated testing and quality control in your AI workflows. You can create a single experiment and run multiple traces against it, which is particularly useful in CI/CD pipelines:
 
-<CodeGroup>
-```typescript TypeScript
-async function testWorkflowInCI() {
-  // Create a single experiment for this test run
-  const { value: experiment, error } = await basalt.monitor.createExperiment(
-    'product-description',
-    { name: `CI Test Run - ${new Date().toISOString()}` }
-  )
-  
-  if (error) {
-    console.error('Failed to create experiment:', error)
-    return false
-  }
-  
-  // Load test cases
-  const testCases = loadTestCases()
-  let passedTests = 0
-  
-  // Run each test case against the experiment
-  for (const testCase of testCases) {
-    const trace = basalt.monitor.createTrace('product-description', {
-      name: `Test Case: ${testCase.name}`,
-      experiment: experiment,
-      metadata: {
-        testCase: testCase.name,
-        expectedResult: testCase.expectedOutput
-      },
-      evaluators: [
-        { slug: 'accuracy-check' }
-      ]
-    })
-    
-    try {
-      // Run the workflow with test data
-      const result = await runProductDescriptionWorkflow(testCase.input)
-      
-      // Record the result
-      trace.end(result)
-      
-      // Check if test passed
-      const passed = matchesExpectedOutput(result, testCase.expectedOutput)
-      
-      if (passed) {
-        passedTests++
-      }
-      
-      trace.update({
-        metadata: {
-          testPassed: passed
-        }
-      })
-    } catch (error) {
-      trace.update({
-        metadata: {
-          error: error.message,
-          testPassed: false
-        }
-      })
-      trace.end(`Error: ${error.message}`)
-    }
-  }
-  
-  // Return success/failure based on test results
-  return passedTests === testCases.length
-}
-```
 
-```python Python
-async def test_workflow_in_ci():
-  # Create a single experiment for this test run
-  error, experiment = basalt.monitor.create_experiment(
-    'product-description',
-    { 'name': f'CI Test Run - {datetime.now().isoformat()}' }
-  )
-  
-  if error:
-    print(f'Failed to create experiment: {error}')
-    return False
-  
-  # Load test cases
-  test_cases = load_test_cases()
-  passed_tests = 0
-  
-  # Run each test case against the experiment
-  for test_case in test_cases:
-    trace = basalt.monitor.create_trace('product-description', {
-      'name': f'Test Case: {test_case.name}',
-      'experiment': experiment,
-      'metadata': {
-        'testCase': test_case.name,
-        'expectedResult': test_case.expected_output
-      },
-      'evaluators': [
-        { 'slug': 'accuracy-check' }
-      ]
-    })
-    
-    try:
-      # Run the workflow with test data
-      result = await run_product_description_workflow(test_case.input)
-      
-      # Record the result
-      trace.end(result)
-      
-      # Check if test passed
-      passed = matches_expected_output(result, test_case.expected_output)
-      
-      if passed:
-        passed_tests += 1
-      
-      trace.update({
-        'metadata': {
-          'testPassed': passed
-        }
-      })
-    except Exception as error:
-      trace.update({
-        'metadata': {
-          'error': str(error),
-          'testPassed': False
-        }
-      })
-      trace.end(f'Error: {str(error)}')
-  
-  # Return success/failure based on test results
-  return passed_tests == len(test_cases)
-```
-</CodeGroup>
-
-### Benefits of Using Experiments for Testing
+## Benefits of Using Experiments for Testing
 
 Using experiments for testing provides several advantages:
 
@@ -301,9 +171,6 @@ Using experiments for testing provides several advantages:
 
 6. **Historical Comparisons**: Compare current performance against previous runs to ensure your changes improve quality.
 
-<Info>
-  In CI/CD environments, it's often helpful to include build or commit information in the experiment name or metadata to easily trace results back to specific code versions.
-</Info>
 
 ## Experiment Best Practices
 

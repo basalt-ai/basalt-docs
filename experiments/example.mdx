@@ -1,0 +1,171 @@
+---
+title: 'Example: Running an Experiment with Mock Data'
+description: 'This example shows how to create an experiment and run it against a mock dataset.'
+---
+
+Here's an example of creating an experiment and running it against a mock dataset:
+
+<CodeGroup>
+```typescript TypeScript
+// Mock dataset with test queries
+const mockData = [
+  { userQuery: "What is the capital of France?" },
+  { userQuery: "How do I reset my password?" },
+  { userQuery: "When was the company founded?" },
+  { userQuery: "What are your business hours?" },
+  { userQuery: "How do I contact customer support?" },
+  // ... more test queries (50+ for statistical significance)
+]
+
+async function runExperimentWithMockData() {
+  // Create the experiment
+  const { value: experiment, error } = await basalt.monitor.createExperiment(
+    'query-answering',
+    { name: 'Response Quality Experiment' }
+  )
+
+  if (error) {
+    console.error('Failed to create experiment:', error)
+    return
+  }
+
+  console.log(`Experiment created: ${experiment.id}`)
+
+  // Run workflow for each item in the mock dataset
+  for (const item of mockData) {
+    await runMyWorkflow(item.userQuery, experiment)
+  }
+
+  console.log('Experiment complete! View results in the Basalt dashboard.')
+}
+
+// The workflow function that processes each query
+// Note how experiment is passed as a parameter
+async function runMyWorkflow(userQuery, experiment) {
+  // Create a trace and attach it to the experiment
+  const trace = basalt.monitor.createTrace('query-answering', {
+    name: 'Query Response',
+    input: userQuery,
+    experiment: experiment,  // Attach to the experiment
+    evaluators: [
+      { slug: 'relevance-score' },
+      { slug: 'accuracy-score' }
+    ]
+  })
+  
+  try {
+    // Workflow implementation...
+    const classification = await classifyQuery(userQuery)
+    
+    const responseGeneration = trace.createGeneration({
+      name: 'generate-response',
+      prompt: { 
+        slug: 'response-generator',
+        tag: classification
+      },
+      input: userQuery
+    })
+    
+    const response = await generateResponse(userQuery, classification)
+    responseGeneration.end(response)
+    
+    // End the trace with the final result
+    trace.end(response)
+    
+    return response
+  } catch (error) {
+    trace.update({
+      metadata: { error: error.message, status: 'failed' }
+    })
+    trace.end(`Error: ${error.message}`)
+    throw error
+  }
+}
+```
+
+```python Python
+# Mock dataset with test queries
+mock_data = [
+  { "userQuery": "What is the capital of France?" },
+  { "userQuery": "How do I reset my password?" },
+  { "userQuery": "When was the company founded?" },
+  { "userQuery": "What are your business hours?" },
+  { "userQuery": "How do I contact customer support?" },
+  # ... more test queries (50+ for statistical significance)
+]
+
+async def run_experiment_with_mock_data():
+  # Create the experiment
+  error, experiment = basalt.monitor.create_experiment(
+    'query-answering',
+    { 'name': 'Response Quality Experiment' }
+  )
+
+  if error:
+    print(f'Failed to create experiment: {error}')
+    return
+
+  print(f'Experiment created: {experiment.id}')
+
+  # Run workflow for each item in the mock dataset
+  for item in mock_data:
+    await run_my_workflow(item["userQuery"], experiment)
+
+  print('Experiment complete! View results in the Basalt dashboard.')
+
+# The workflow function that processes each query
+# Note how experiment is passed as a parameter
+async def run_my_workflow(user_query, experiment):
+  # Create a trace and attach it to the experiment
+  trace = basalt.monitor.create_trace('query-answering', {
+    'name': 'Query Response',
+    'input': user_query,
+    'experiment': experiment,  # Attach to the experiment
+    'evaluators': [
+      { 'slug': 'relevance-score' },
+      { 'slug': 'accuracy-score' }
+    ]
+  })
+  
+  try:
+    # Workflow implementation...
+    classification = await classify_query(user_query)
+    
+    response_generation = trace.create_generation({
+      'name': 'generate-response',
+      'prompt': { 
+        'slug': 'response-generator',
+        'tag': classification
+      },
+      'input': user_query
+    })
+    
+    response = await generate_response(user_query, classification)
+    response_generation.end(response)
+    
+    # End the trace with the final result
+    trace.end(response)
+    
+    return response
+  except Exception as error:
+    trace.update({
+      'metadata': { 'error': str(error), 'status': 'failed' }
+    })
+    trace.end(f"Error: {str(error)}")
+    raise error
+```
+</CodeGroup>
+
+This example demonstrates:
+1. Creating an experiment
+2. Setting up a mock dataset with test queries
+3. Running each query through your workflow
+4. Attaching all traces to the same experiment
+5. Adding evaluators to assess response quality
+6. Proper error handling
+
+By running your workflow against a consistent dataset, you can:
+- Benchmark your current implementation
+- Compare different approaches to see which performs better
+- Detect regressions when making changes
+- Gather statistically significant metrics across many examples

@@ -57,6 +57,7 @@
 										"pages": [
 											"experiments/introduction",
 											"experiments/create-experiment",
+											"experiments/example",
 											"experiments/ci-testing"
 										]
 									},

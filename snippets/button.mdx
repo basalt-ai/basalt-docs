@@ -1,10 +1,10 @@
-export const Button = ({ value, variant, icon }) => {
+export const Button = ({ value, variant, icon, href }) => {
 	const variants = {
 		primary: 'bg-[#000000] dark:text-primary-light text-white border border-transparent dark:border-primary-light shadow-sm [&>svg]:bg-primary-light',
 		brand: 'bg-primary dark:bg-primary-light text-white dark:text-gray-700 shadow-sm',
 		outline: 'text-gray-700 shadow-sm border dark:text-primary-light bg-white dark:bg-background-dark border border-gray-950/10 dark:border-white/10 hover:border-primary dark:hover:border-primary-light',
 		ghost: 'text-gray-700 dark:text-white',
-		link: 'text-primary dark:text-primary-light underline-offset-4 hover:underline pl-0',
+		link: 'text-primary dark:text-primary-light border-none pl-0',
 	}
 
 	const classVariant = variants[variant] ?? variants.primary
@@ -12,13 +12,13 @@ export const Button = ({ value, variant, icon }) => {
 	const className = `relative px-3 py-1.5 gap-2 inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${classVariant}`
 
 	return (
-		<button className={ className }>
+		<a href={ href } className={ className }>
 			{ value }
 			{
 				icon && (
 					<Icon icon={ icon } iconType="solid" />
 				)
 			}
-		</button>
+		</a>
 	)
 }
