@@ -1,34 +1,93 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
-icon: 'square-info'
+title: "Introduction"
+description: "Overview of the Basalt API"
+icon: "square-info"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+# Basalt API Reference
 
-## Welcome
+Welcome to the Basalt API reference documentation. This section provides detailed information about the Basalt API endpoints, request formats, and response structures to help you integrate Basalt's capabilities directly into your applications.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+## API Structure
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+The Basalt API is organized into several functional areas:
 
-## Authentication
+<CardGroup cols={3}>
+  <Card title="Prompts" icon="file-lines" href="/api-reference/prompts/get">
+    Endpoints for managing and retrieving prompts, versions, and tags
+  </Card>
+  <Card title="Monitor" icon="chart-line" href="/api-reference/monitor/log">
+    Endpoints for logging, tracing, and monitoring AI interactions
+  </Card>
+  <Card title="Experiments" icon="flask" href="/api-reference/experiments/create">
+    Endpoints for creating and managing experiments
+  </Card>
+</CardGroup>
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+## Getting Started
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+Before using the API, you'll need to:
+
+1. **Obtain an API Key**: All API requests require authentication using your API key
+2. **Understand Base URL**: All API requests are made to `https://api.getbasalt.ai`
+3. **Review Authentication**: See our [Authentication guide](/api-reference/authentication) for details on how to use your API key
+
+## Using the API
+
+The Basalt API follows RESTful principles with these standard conventions:
+
+- All requests and responses use JSON format
+- HTTP status codes indicate success or failure of requests
+- Error responses include a consistent structure with error details
+- Rate limits apply to protect the stability of the service
+
+### Example Request
+
+```bash
+curl https://api.getbasalt.ai/prompts/get \
+  -H "Authorization: Bearer your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "slug": "welcome-message",
+    "tag": "production"
+  }'
 ```
+
+## API vs SDK
+
+While the API gives you direct access to Basalt's capabilities, we also offer SDKs for TypeScript/JavaScript and Python that provide a more convenient, language-specific interface.
+
+<CardGroup cols={2}>
+  <Card title="API Benefits" icon="terminal">
+    - Direct access to all Basalt features
+    - Language-agnostic integration
+    - Fine-grained control over requests and responses
+    - Useful for custom integrations and platforms
+  </Card>
+  <Card title="SDK Benefits" icon="code">
+    - Higher-level abstractions
+    - Type safety and autocomplete
+    - Built-in error handling
+    - Automatic retries and caching
+    - Simplified authentication
+  </Card>
+</CardGroup>
+
+For most use cases, we recommend using our [SDKs](/sdk-overview), but the API is available for scenarios where direct access is preferred.
+
+## Error Handling
+
+The API uses standard HTTP status codes to indicate the success or failure of requests:
+
+- `2xx` codes indicate success
+- `4xx` codes indicate client errors (invalid requests)
+- `5xx` codes indicate server errors
+
+## Next Steps
+
+Explore the API reference documentation for each endpoint:
+
+- [Authentication](/api-reference/authentication) - How to authenticate your requests
+- [Prompts](/api-reference/prompts/get) - Manage and retrieve prompts
+- [Monitor](/api-reference/monitor/log) - Log and trace AI interactions
+- [Experiments](/api-reference/experiments/create) - Create and manage experiments
