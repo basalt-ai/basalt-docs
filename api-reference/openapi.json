@@ -219,13 +219,18 @@
 													"properties": {
 														"provider": {
 															"type": "string",
+															"description": "The provider of the model",
+															"example": "open-ai"
+														},
+														"client": {
+															"type": "string",
 															"enum": [
 																"anthropic",
 																"open-ai",
 																"mistral",
 																"gemini"
 															],
-															"description": "The provider of the model",
+															"description": "The client to use the model",
 															"example": "open-ai"
 														},
 														"model": {
@@ -282,6 +287,7 @@
 													},
 													"required": [
 														"provider",
+														"client",
 														"model",
 														"version",
 														"parameters"
@@ -289,6 +295,7 @@
 													"description": "The model used to generate the prompt",
 													"example": {
 														"provider": "open-ai",
+														"client": "open-ai",
 														"model": "gpt-4o",
 														"version": "latest",
 														"parameters": {
@@ -312,6 +319,7 @@
 												"version": "1.0.0",
 												"model": {
 													"provider": "open-ai",
+													"client": "open-ai",
 													"model": "gpt-4o",
 													"version": "latest",
 													"parameters": {
@@ -1366,6 +1374,488 @@
 					},
 					"404": {
 						"description": "Not found - No feature found for the given slug",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/datasets": {
+			"get": {
+				"summary": "List datasets",
+				"description": "Get a list of datasets within a workspace",
+				"responses": {
+					"200": {
+						"description": "List of datasets in the workspace",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"datasets": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"slug": {
+														"type": "string",
+														"description": "The slug of the dataset",
+														"example": "my-dataset"
+													},
+													"name": {
+														"type": "string",
+														"description": "The name of the dataset",
+														"example": "My Dataset"
+													},
+													"columns": {
+														"type": "array",
+														"items": {
+															"type": "string"
+														},
+														"description": "The columns of the dataset",
+														"example": [
+															"input",
+															"output"
+														]
+													}
+												},
+												"required": [
+													"slug",
+													"name",
+													"columns"
+												]
+											},
+											"description": "The list of datasets"
+										}
+									},
+									"required": [
+										"datasets"
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/datasets/{id}": {
+			"get": {
+				"summary": "Get a dataset by ID",
+				"description": "Get a dataset by its ID with its associated items",
+				"parameters": [
+					{
+						"schema": {
+							"type": "string",
+							"description": "The slug of the dataset to get",
+							"example": "my-slug"
+						},
+						"required": true,
+						"name": "slug",
+						"in": "path"
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "The dataset with its items",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"warning": {
+											"type": "string",
+											"description": "Warning message about columns that were omitted because they do not exist in the dataset",
+											"example": "Some rows contained columns that do not exist in the dataset and were omitted."
+										},
+										"dataset": {
+											"type": "object",
+											"properties": {
+												"slug": {
+													"type": "string",
+													"description": "The slug of the dataset",
+													"example": "my-dataset"
+												},
+												"name": {
+													"type": "string",
+													"description": "The name of the dataset",
+													"example": "My Dataset"
+												},
+												"columns": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													},
+													"description": "The columns of the dataset",
+													"example": [
+														"input",
+														"output"
+													]
+												},
+												"rows": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"values": {
+																"type": "object",
+																"additionalProperties": {
+																	"type": "string"
+																},
+																"description": "The values for each column in this dataset row",
+																"example": {
+																	"columnName1": "value1",
+																	"columnName2": "value2"
+																}
+															},
+															"idealOutput": {
+																"type": [
+																	"string",
+																	"null"
+																],
+																"description": "The ideal output for this dataset row, if any",
+																"example": "This is the expected output"
+															},
+															"metadata": {
+																"type": [
+																	"object",
+																	"null"
+																],
+																"additionalProperties": {},
+																"description": "Additional metadata for this dataset row",
+																"example": {
+																	"source": "user",
+																	"context": "testing"
+																}
+															}
+														},
+														"required": [
+															"values"
+														]
+													},
+													"description": "The rows in this dataset, if requested"
+												}
+											},
+											"required": [
+												"slug",
+												"name",
+												"columns"
+											],
+											"description": "The retrieved dataset"
+										}
+									},
+									"required": [
+										"dataset"
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Dataset not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/datasets/items/{slug}": {
+			"post": {
+				"summary": "Create a dataset item",
+				"description": "Create a new dataset item in the specified dataset",
+				"parameters": [
+					{
+						"schema": {
+							"type": "string",
+							"description": "The slug of the dataset to add an item to",
+							"example": "my-dataset"
+						},
+						"required": true,
+						"name": "slug",
+						"in": "path"
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": [
+											"string",
+											"null"
+										],
+										"description": "The name of the dataset row",
+										"example": "Test case 1"
+									},
+									"values": {
+										"type": "object",
+										"additionalProperties": {
+											"type": "string"
+										},
+										"description": "The values for each column in this dataset row",
+										"example": {
+											"columnName1": "value1",
+											"columnName2": "value2"
+										}
+									},
+									"idealOutput": {
+										"type": [
+											"string",
+											"null"
+										],
+										"description": "The ideal output for this dataset row, if any",
+										"example": "This is the expected output"
+									},
+									"metadata": {
+										"type": [
+											"object",
+											"null"
+										],
+										"additionalProperties": {},
+										"description": "Additional metadata for this dataset row",
+										"example": {
+											"source": "api",
+											"context": "testing"
+										}
+									},
+									"isPlayground": {
+										"type": "boolean",
+										"default": false,
+										"description": "Whether this row is a playground item",
+										"example": false
+									}
+								},
+								"required": [
+									"values"
+								]
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "The created dataset item",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"warning": {
+											"type": "string",
+											"description": "Warning message about columns that were omitted because they do not exist in the dataset",
+											"example": "The following columns do not exist in the dataset and were omitted: extraColumn1, extraColumn2"
+										},
+										"datasetRow": {
+											"type": "object",
+											"properties": {
+												"name": {
+													"type": [
+														"string",
+														"null"
+													],
+													"description": "The name of the dataset row",
+													"example": "Test case 1"
+												},
+												"values": {
+													"type": "object",
+													"additionalProperties": {
+														"type": "string"
+													},
+													"description": "The values for each column in this dataset row",
+													"example": {
+														"columnName1": "value1",
+														"columnName2": "value2"
+													}
+												},
+												"idealOutput": {
+													"type": [
+														"string",
+														"null"
+													],
+													"description": "The ideal output for this dataset row, if any",
+													"example": "This is the expected output"
+												},
+												"metadata": {
+													"type": [
+														"object",
+														"null"
+													],
+													"additionalProperties": {},
+													"description": "Additional metadata for this dataset row",
+													"example": {
+														"source": "api",
+														"context": "testing"
+													}
+												}
+											},
+											"required": [
+												"values"
+											],
+											"description": "The created dataset row"
+										}
+									},
+									"required": [
+										"datasetRow"
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request - missing required columns",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Dataset not found",
 						"content": {
 							"application/json": {
 								"schema": {
