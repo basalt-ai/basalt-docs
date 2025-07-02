@@ -1,0 +1,60 @@
+---
+title: 'Datasets'
+description: 'API reference for Basalt datasets'
+---
+
+# Datasets API
+
+The Datasets API allows you to interact with datasets in your Basalt workspace. Datasets provide a structured way to store, manage, and utilize collections of data for your AI workflows.
+
+## Overview
+
+With the Datasets API, you can:
+
+- List all datasets in your workspace
+- Retrieve a specific dataset with its rows/items
+- Add new rows to existing datasets
+
+## Available Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| [`GET /datasets`](/api-reference/datasets/list) | List all datasets in your workspace |
+| [`GET /datasets/{slug}`](/api-reference/datasets/get) | Get a specific dataset by its slug |
+| [`POST /datasets/{slug}/rows`](/api-reference/datasets/add-row) | Add a new row to a dataset |
+
+## Authentication
+
+All datasets endpoints require authentication using your Basalt API key. See the [Authentication](/api-reference/authentication) guide for more information.
+
+## Response Format
+
+All successful responses return relevant dataset objects as described in each endpoint's documentation. Error responses include an `error` field with a descriptive message.
+
+## Using with the SDK
+
+For JavaScript/TypeScript applications, you can use the Basalt SDK, which provides a convenient interface for working with datasets:
+
+```typescript
+import { Basalt } from '@basalt-ai/sdk';
+
+const basalt = new Basalt({
+  apiKey: 'your-api-key'
+});
+
+// List datasets
+const datasets = await basalt.datasets.list();
+
+// Get a dataset
+const dataset = await basalt.datasets.get('my-dataset');
+
+// Add a row to a dataset
+await basalt.datasets.addRow('my-dataset', {
+  values: {
+    input: 'Sample input text',
+    category: 'example'
+  }
+});
+```
+
+Refer to the individual endpoint documentation for more details on request and response formats.

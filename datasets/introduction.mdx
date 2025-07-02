@@ -1,75 +1,92 @@
 ---
-title: 'Introduction (Coming Soon)'
-description: 'A preview of the upcoming Datasets feature in Basalt.'
+title: 'Datasets'
+description: 'Working with datasets in Basalt'
 ---
-
-<Info>
-  The Datasets is not yet available in the SDK. It is currently in development and will be available soon. This page provides a preview of what's coming.
-
-  In the meantime, you can use the [Basalt App](https://app.getbasalt.ai) to create and manage datasets.
-</Info>
 
 ## What are Datasets?
 
-Datasets in Basalt will provide a structured way to store, manage, and utilize collections of data for your AI workflows. This upcoming feature will enable you to:
+Datasets in Basalt provide a structured way to store, manage, and utilize collections of data for your AI workflows. With datasets, you can:
 
 - Store representative examples of your inputs and expected outputs
 - Create standardized test sets for evaluating your AI systems
 - Run experiments against consistent data
 - Compare different approaches using the same baseline data
 
-## Planned Capabilities
+## Working with Datasets
 
-When the Datasets feature is released, you'll be able to:
+The Basalt SDK provides three main operations for working with datasets:
 
-### Push Data to Datasets
+### List All Datasets
+
+Retrieve a list of all datasets available in your workspace:
 
 ```typescript
-// Add examples to your dataset
-await basalt.datasets.add('customer-queries', [
-  { input: 'How do I reset my password?', category: 'account' },
-  { input: 'When will my order arrive?', category: 'orders' }
-])
+const result = await basalt.datasets.list();
+if (result.error) {
+  console.error('Error listing datasets:', result.error);
+  return;
+}
+
+const datasets = result.value;
+console.log('Available datasets:', datasets);
 ```
 
-### Use Datasets in Experiments
+### Get a Specific Dataset
+
+Retrieve a single dataset by its slug, including all rows/items:
 
 ```typescript
-// Create an experiment
-const experiment = await basalt.monitor.createExperiment('query-classification')
+const result = await basalt.datasets.get('customer-queries');
+if (result.error) {
+  console.error('Error getting dataset:', result.error);
+  return;
+}
 
-// Run your workflow against a dataset
-await basalt.datasets.runExperiment({
-  datasetSlug: 'customer-queries',
-  experiment: experiment,
-  workflow: async (item) => {
-    // Your workflow code here, using the dataset item
-    return classifyQuery(item.input)
+const dataset = result.value;
+console.log('Dataset details:', {
+  name: dataset.name,
+  slug: dataset.slug,
+  columns: dataset.columns,
+  rowCount: dataset.rows?.length
+});
+
+// Access dataset rows
+dataset.rows?.forEach(row => {
+  console.log('Row values:', row.values);
+});
+```
+
+### Add a Row to a Dataset
+
+Add a new row/item to an existing dataset:
+
+```typescript
+const result = await basalt.datasets.addRow('customer-queries', {
+  values: {
+    input: 'How do I track my recent order?',
+    category: 'orders'
+  },
+  idealOutput: 'order_tracking',
+  metadata: {
+    source: 'customer_support',
+    priority: 'high'
   }
-})
-```
+});
 
-### Retrieve Dataset Items
+if (result.error) {
+  console.error('Error adding row:', result.error);
+  return;
+}
 
-```typescript
-// Get items from your dataset
-const items = await basalt.datasets.get('customer-queries', {
-  limit: 10,
-  shuffle: true
-})
+console.log('Added row:', result.value);
 ```
 
 ## Benefits of Datasets
 
-The upcoming Datasets feature will help you:
+Basalt Datasets help you:
 
 - **Ensure Consistency**: Test on the same data over time
 - **Improve Reproducibility**: Get reliable comparisons between different approaches
 - **Streamline Testing**: Automate experimentation with real-world examples
 - **Track Progress**: Measure improvements against a consistent benchmark
-
-## Stay Tuned
-
-We're excited to bring Datasets to Basalt soon! This feature will complement our existing monitoring and experimentation capabilities, creating a more comprehensive platform for developing, testing, and optimizing your AI applications.
-
-Follow our release announcements to be notified when Datasets become available.
+- **Organize Examples**: Keep your test cases and training examples structured and accessible
