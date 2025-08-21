@@ -108,12 +108,22 @@
 						"api-reference/monitor/trace"
 					]
 				},
+                {
+					"group": "Datasets",
+					"pages": [
+						"api-reference/datasets/introduction",
+                        "api-reference/datasets/get",
+                        "api-reference/datasets/list",
+                        "api-reference/datasets/add-row"
+					]
+				},
 				{
 					"group": "Experiments",
 					"pages": [
 						"api-reference/experiments/create"
 					]
 				}
+              
 			]
 			}
 		]
