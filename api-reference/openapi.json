@@ -1541,7 +1541,7 @@
         }
       }
     },
-    "/datasets/{id}": {
+    "/datasets/{slug}": {
       "get": {
         "summary": "Get a dataset by ID",
         "description": "Get a dataset by its ID with its associated items",
@@ -1710,7 +1710,7 @@
         }
       }
     },
-    "/datasets/items/{slug}": {
+    "/datasets/{slug}/items": {
       "post": {
         "summary": "Create a dataset item",
         "description": "Create a new dataset item in the specified dataset",
