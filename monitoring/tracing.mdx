@@ -1,6 +1,6 @@
 ---
-title: 'Tracing'
-description: 'Track and monitor complex workflows with the Basalt Tracing system.'
+title: "Tracing"
+description: "Track and monitor complex workflows with the Basalt Tracing system."
 ---
 
 Tracing allows you to monitor and analyze complex workflows in your AI applications. Unlike basic monitoring, tracing provides a comprehensive framework for tracking multi-step processes, nested operations, and complex interactions across your entire application.
@@ -14,6 +14,7 @@ Tracing allows you to monitor and analyze complex workflows in your AI applicati
 A trace represents a complete user interaction or process flow and serves as the top-level container for all monitoring activities. To create a trace, you'll use the `createTrace` method:
 
 <CodeGroup>
+
 ```typescript TypeScript
 const trace = basalt.monitor.createTrace('feature-slug', {
   name: 'Human-readable name', // Optional, defaults to feature-slug
@@ -25,6 +26,7 @@ const trace = basalt.monitor.createTrace('feature-slug', {
 })
 ```
 
+
 ```python Python
 trace = basalt.monitor.create_trace('feature-slug', {
   'name': 'Human-readable name',  # Optional, defaults to feature-slug
@@ -35,6 +37,7 @@ trace = basalt.monitor.create_trace('feature-slug', {
   }
 })
 ```
+
 </CodeGroup>
 
 The `feature-slug` is a unique identifier that helps you categorize and group related traces in your analytics dashboard. The trace becomes the parent container for all logs and generations in your workflow.
@@ -48,6 +51,7 @@ The `feature-slug` is a unique identifier that helps you categorize and group re
 You can associate a trace with specific users and organizations to enable more powerful analytics, filtering, and user-specific insights:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // When creating the trace
 const trace = basalt.monitor.createTrace('feature-slug', {
@@ -75,6 +79,7 @@ trace.identify({
 })
 ```
 
+
 ```python Python
 # When creating the trace
 trace = basalt.monitor.create_trace('feature-slug', {
@@ -101,6 +106,7 @@ trace.identify({
   }
 })
 ```
+
 </CodeGroup>
 
 The `identify` method allows you to add or update user and organization information at any point during the trace's lifecycle. This is particularly useful when user details become available partway through a workflow.
@@ -110,6 +116,7 @@ The `identify` method allows you to add or update user and organization informat
 Metadata provides additional context that helps you understand what happened during your workflow. You can add metadata when creating components or update it later:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Initial metadata when creating the trace
 const trace = basalt.monitor.createTrace('feature-slug', {
@@ -136,6 +143,7 @@ trace.update({
 })
 ```
 
+
 ```python Python
 # Initial metadata when creating the trace
 trace = basalt.monitor.create_trace('feature-slug', {
@@ -161,6 +169,7 @@ trace.update({
   }
 })
 ```
+
 </CodeGroup>
 
 Metadata is flexible and can include any JSON-serializable data. Good metadata makes debugging, analysis, and optimization much easier, so consider adding relevant context at each step of your workflow.
@@ -182,6 +191,7 @@ The `type` parameter defines the nature of the operation being logged:
 ### Basic Log Creation
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Create a log within a trace
 const log = trace.createLog({
@@ -195,6 +205,7 @@ const log = trace.createLog({
 })
 ```
 
+
 ```python Python
 # Create a log within a trace
 log = trace.create_log({
@@ -207,6 +218,7 @@ log = trace.create_log({
   }
 })
 ```
+
 </CodeGroup>
 
 ### Log Lifecycle Methods
@@ -214,6 +226,7 @@ log = trace.create_log({
 Logs have methods to track their lifecycle:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Start the log (automatically called if not explicitly started)
 log.start()
@@ -228,6 +241,7 @@ log.setMetadata({
 log.end('Processed output data')
 ```
 
+
 ```python Python
 # Start the log (automatically called if not explicitly started)
 log.start()
@@ -241,6 +255,7 @@ log.set_metadata({
 # End the log with optional output
 log.end('Processed output data')
 ```
+
 </CodeGroup>
 
 ### Creating Nested Logs
@@ -248,6 +263,7 @@ log.end('Processed output data')
 You can create hierarchical structures by nesting logs:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Create a nested log within another log
 const nestedLog = parentLog.createLog({
@@ -256,6 +272,7 @@ const nestedLog = parentLog.createLog({
 })
 ```
 
+
 ```python Python
 # Create a nested log within another log
 nested_log = parent_log.create_log({
@@ -263,6 +280,7 @@ nested_log = parent_log.create_log({
   'type': 'function'
 })
 ```
+
 </CodeGroup>
 
 ## Create Generations
@@ -272,6 +290,7 @@ Generations represent AI model completions within your workflow. The Basalt SDK 
 ### Basic Generation Creation
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Create a generation within a trace or log
 const generation = trace.createGeneration({
@@ -280,6 +299,7 @@ const generation = trace.createGeneration({
 })
 ```
 
+
 ```python Python
 # Create a generation within a trace or log
 generation = trace.create_generation({
@@ -287,6 +307,7 @@ generation = trace.create_generation({
   'input': 'Generate an article about AI monitoring'
 })
 ```
+
 </CodeGroup>
 
 ### Prompt Parameters
@@ -294,6 +315,7 @@ generation = trace.create_generation({
 When using Basalt-managed prompts, you can reference them directly:
 
 <CodeGroup>
+
 ```typescript TypeScript
 const generation = trace.createGeneration({
   name: 'text-completion',
@@ -306,6 +328,7 @@ const generation = trace.createGeneration({
 })
 ```
 
+
 ```python Python
 generation = trace.create_generation({
   'name': 'text-completion',
@@ -317,6 +340,7 @@ generation = trace.create_generation({
   'input': 'Generate an article about AI monitoring'
 })
 ```
+
 </CodeGroup>
 
 ### Variables and Metadata
@@ -324,6 +348,7 @@ generation = trace.create_generation({
 You can include variables for prompt templates and additional metadata:
 
 <CodeGroup>
+
 ```typescript TypeScript
 const generation = trace.createGeneration({
   name: 'text-completion',
@@ -344,6 +369,7 @@ const generation = trace.createGeneration({
 })
 ```
 
+
 ```python Python
 generation = trace.create_generation({
   'name': 'text-completion',
@@ -363,6 +389,7 @@ generation = trace.create_generation({
   }
 })
 ```
+
 </CodeGroup>
 
 In Python, the variables are converted to a standardized format internally, but you can provide them as a simple dictionary as shown above.
@@ -372,6 +399,7 @@ In Python, the variables are converted to a standardized format internally, but 
 There are multiple ways to end a generation depending on what information you have available:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Basic ending with just the output text
 generation.end('The generated text response from the LLM')
@@ -385,6 +413,7 @@ generation.end({
 })
 ```
 
+
 ```python Python
 # Basic ending with just the output text
 generation.end('The generated text response from the LLM')
@@ -397,6 +426,7 @@ generation.end({
   'cost': 0.0125         # Optional: cost of the generation in USD
 })
 ```
+
 </CodeGroup>
 
 If you don't provide token counts or cost information, Basalt will attempt to calculate these values automatically based on the input and output text. However, providing these values directly is more accurate, especially if you have this information from your LLM provider.
@@ -408,6 +438,7 @@ Basalt's tracing system allows you to create hierarchical structures that accura
 ### Creating Nested Structures
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Create a parent log
 const parentLog = trace.createLog({
@@ -428,6 +459,7 @@ const generation = nestedLog.createGeneration({
 })
 ```
 
+
 ```python Python
 # Create a parent log
 parent_log = trace.create_log({
@@ -447,6 +479,7 @@ generation = nested_log.create_generation({
   'input': 'Validate this data structure'
 })
 ```
+
 </CodeGroup>
 
 ### Appending Existing Generations
@@ -454,6 +487,7 @@ generation = nested_log.create_generation({
 You can append existing generations (such as those from `prompt.get()`) to logs or traces:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Get a prompt from Basalt, which returns a generation object
 const { value, error, generation } = await basalt.prompt.get('article-generator', {
@@ -468,6 +502,7 @@ myLog.append(generation)
 // or directly to the trace
 trace.append(generation)
 ```
+
 
 ```python Python
 # Get a prompt from Basalt, which returns a generation object
@@ -484,15 +519,17 @@ my_log.append(generation)
 # or directly to the trace
 trace.append(generation)
 ```
+
 </CodeGroup>
 
 The `append` method is particularly useful when integrating Basalt-managed prompts into your tracing workflow. When you append a generation to a log or trace, the generation is properly associated with its new parent, maintaining the hierarchical structure of your workflow.
 
 ## Using Evaluators
 
-Evaluators automatically assess the quality of your generations based on predefined criteria. This provides objective metrics about your AI outputs.
+Evaluators automatically assess the quality of your traces, generations or logs based on predefined criteria. This provides objective metrics about your AI outputs.
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Add evaluators when creating a trace
 const trace = basalt.monitor.createTrace('content-processing', {
@@ -513,9 +550,20 @@ const generation = trace.createGeneration({
   ]
 })
 
+// Add evaluators to a specific log
+const log = trace.createLog({
+  type: 'retrieval',
+  name: 'vector-search',
+  evaluators: [
+    { slug: 'context-relevance' }
+  ]
+})
+
 // Add evaluators later
 generation.addEvaluator({ slug: 'factual-consistency' })
+log.addEvaluator({ slug: 'awarness' })
 ```
+
 
 ```python Python
 # Add evaluators when creating a trace
@@ -537,9 +585,20 @@ generation = trace.create_generation({
   ]
 })
 
+# Add evaluators to a specific log
+generation = trace.create_log({
+  'type': 'retrieval',
+  'name': 'vector-search',
+  'evaluators': [
+    { 'slug': 'context-relevance' }
+  ]
+})
+
 # Add evaluators later
 generation.add_evaluator({ 'slug': 'factual-consistency' })
+log.add_evaluator({ 'slug': 'awarness' })
 ```
+
 </CodeGroup>
 
 Evaluators run automatically when the trace or generation ends. The `sampleRate` parameter controls how often evaluations are run, which can help manage costs for large-scale applications.
@@ -551,6 +610,7 @@ For more information on available evaluators and how to create custom ones, see 
 Here's a complete example of using tracing to monitor a content processing workflow:
 
 <CodeGroup>
+
 ```typescript TypeScript
 async function processUserContent(user, content) {
   // Create the main trace for the entire content processing workflow
@@ -764,6 +824,7 @@ async function translateContent(content, parentLog) {
 }
 ```
 
+
 ```python Python
 async def process_user_content(user, content):
   # Create the main trace for the entire content processing workflow
@@ -973,9 +1034,11 @@ async def translate_content(content, parent_log):
   
   return translated_content
 ```
+
 </CodeGroup>
 
 This example demonstrates:
+
 1. Creating a main trace for the entire workflow
 2. Using specific log types for different operations
 3. Appending generations from `prompt.get()`
@@ -989,19 +1052,12 @@ This example demonstrates:
 For effective tracing:
 
 1. **Always end your traces**: Make sure to call `end()` for all traces, even in error cases, or the data won't be sent to Basalt.
-
 2. **Choose meaningful names**: Use descriptive names that clearly communicate the purpose of each component.
-
 3. **Add relevant metadata**: Include information that will help with debugging and analysis later.
-
 4. **Use the right log types**: Choose the appropriate type (`span`, `function`, `tool`, etc.) for each operation to improve analytics.
-
 5. **Structure nested components logically**: Create a hierarchy that reflects the logical flow of your application.
-
 6. **Handle errors properly**: Record errors in your trace metadata and ensure traces are ended even when errors occur.
-
 7. **Consider evaluation needs**: Apply evaluators strategically to assess the quality of critical generations.
-
 8. **Optimize sample rates**: Adjust evaluation sample rates based on your volume and budget.
 
 ## Advanced Topics

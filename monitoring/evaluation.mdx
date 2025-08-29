@@ -1,6 +1,6 @@
 ---
-title: 'Evaluations'
-description: 'Automatically assess the quality of your AI outputs using Basalt Evaluations.'
+title: "Evaluations"
+description: "Automatically assess the quality of your AI outputs using Basalt Evaluations."
 ---
 
 import { Button } from '/snippets/button.mdx'
@@ -23,19 +23,14 @@ To use evaluations in Basalt, you'll need to create your own evaluators through 
   Evaluators are created and managed through the Basalt app. Once created, they can be referenced in your code by their slug.
 </Info>
 
-
-<Button
-variant='link'
-value='Create an evaluator'
-href='https://app.getbasalt.ai'
-icon="arrow-right"
-/>
+<Button variant="link" value="Create an evaluator" href="https://app.getbasalt.ai" icon="arrow-right" />
 
 ## Adding Evaluators to Traces
 
 You can add evaluators at the trace level to have them automatically apply to all generations within that trace:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Add evaluators when creating a trace
 const trace = basalt.monitor.createTrace('content-workflow', {
@@ -51,6 +46,7 @@ const trace = basalt.monitor.createTrace('content-workflow', {
 })
 ```
 
+
 ```python Python
 # Add evaluators when creating a trace
 trace = basalt.monitor.create_trace('content-workflow', {
@@ -65,6 +61,7 @@ trace = basalt.monitor.create_trace('content-workflow', {
   }
 })
 ```
+
 </CodeGroup>
 
 Adding evaluators at the trace level is efficient when you want consistent evaluation across all generations within a workflow.
@@ -74,6 +71,7 @@ Adding evaluators at the trace level is efficient when you want consistent evalu
 For more targeted evaluation, you can add evaluators directly to specific generations:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Add evaluators when creating a generation
 const generation = trace.createGeneration({
@@ -92,6 +90,7 @@ const generation = trace.createGeneration({
 generation.addEvaluator({ slug: 'coherence' })
 ```
 
+
 ```python Python
 # Add evaluators when creating a generation
 generation = trace.create_generation({
@@ -109,6 +108,50 @@ generation = trace.create_generation({
 # Add an evaluator to an existing generation
 generation.add_evaluator({ 'slug': 'coherence' })
 ```
+
+</CodeGroup>
+
+Adding evaluators at the generation level allows you to apply specific evaluations to particular types of content.
+
+## Adding Evaluators to Logs
+
+For more targeted evaluation, you can add evaluators directly to specific log:
+
+<CodeGroup>
+
+```typescript TypeScript
+// Add evaluators when creating a log
+const log = trace.createLog({
+  type: 'retrieval',
+  name: 'vector-search',
+  input: 'Describe this smartphone...',
+  evaluators: [
+    { slug: 'context-relevance' },
+    { slug: 'context-awarness' }
+  ]
+})
+
+// Add an evaluator to an existing log
+log.addEvaluator({ slug: 'format-verification' })
+```
+
+
+```python Python
+# Add evaluators when creating a log
+log = trace.create_generation({
+  'type': 'retrieval',
+  'name': 'vector-search',
+  'input': 'Describe this smartphone...',
+  'evaluators': [
+    { 'slug': 'context-relevance' },
+    { 'slug': 'context-awarness' }
+  ]
+})
+
+# Add an evaluator to an existing log
+log.add_evaluator({ 'slug': 'format-verification' })
+```
+
 </CodeGroup>
 
 Adding evaluators at the generation level allows you to apply specific evaluations to particular types of content.
@@ -118,6 +161,7 @@ Adding evaluators at the generation level allows you to apply specific evaluatio
 The `evaluationConfig` parameter gives you control over how evaluations are applied:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Configure evaluations at the trace level
 const trace = basalt.monitor.createTrace('content-workflow', {
@@ -136,6 +180,7 @@ trace.setEvaluationConfig({
 })
 ```
 
+
 ```python Python
 # Configure evaluations at the trace level
 trace = basalt.monitor.create_trace('content-workflow', {
@@ -153,6 +198,7 @@ trace.set_evaluation_config({
   'sampleRate': 0.1  # Run evaluations on 10% of traces
 })
 ```
+
 </CodeGroup>
 
 ### Sample Rate
@@ -182,6 +228,7 @@ Sample rates allow you to balance evaluation coverage with cost efficiency. For 
 Here's an example of using multiple evaluators to comprehensively assess content:
 
 <CodeGroup>
+
 ```typescript TypeScript
 async function generateProductDescription(productData) {
   // Create a trace with multiple evaluators
@@ -250,6 +297,7 @@ async function generateProductDescription(productData) {
 }
 ```
 
+
 ```python Python
 async def generate_product_description(product_data):
   # Create a trace with multiple evaluators
@@ -316,9 +364,11 @@ async def generate_product_description(product_data):
     trace.end()
     raise error
 ```
+
 </CodeGroup>
 
 In this example:
+
 1. We create a trace with evaluators for brand compliance and message clarity
 2. We add content-specific evaluators to the generation for tone and feature coverage
 3. The evaluations will run on approximately 25% of traces due to the `sampleRate` setting
@@ -328,11 +378,8 @@ In this example:
 To get the most value from evaluations:
 
 1. **Start with a baseline**: Begin with a modest set of evaluators to establish baseline metrics before adding more.
-
 2. **Choose appropriate sample rates**: High-volume applications may only need a small sample rate (1-10%), while critical applications might warrant higher rates (50-100%).
-
 3. **Combine evaluators strategically**: Different evaluators measure different aspects of quality; use combinations that address your specific concerns.
-
 4. **Use contextual evaluators**: Different content types may need different evaluations; tailor your evaluator selection to the specific content.
 
 ## Related Topics
