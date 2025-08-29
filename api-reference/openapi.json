@@ -228,7 +228,9 @@
                                 "anthropic",
                                 "open-ai",
                                 "mistral",
-                                "gemini"
+                                "gemini",
+                                "xai",
+                                "deepseek"
                               ],
                               "description": "The client to use the model",
                               "example": "open-ai"
@@ -1063,17 +1065,33 @@
                     }
                   },
                   "startTime": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "description": "The start time of the trace",
                     "example": "2021-01-01T00:00:00Z"
                   },
                   "endTime": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "description": "The end time of the trace",
                     "example": "2021-01-01T00:00:00Z"
@@ -1543,8 +1561,8 @@
     },
     "/datasets/{slug}": {
       "get": {
-        "summary": "Get a dataset by ID",
-        "description": "Get a dataset by its ID with its associated items",
+        "summary": "Get a dataset by slug",
+        "description": "Get a dataset by its slug with its associated items",
         "parameters": [
           {
             "schema": {
@@ -1770,12 +1788,6 @@
                       "source": "api",
                       "context": "testing"
                     }
-                  },
-                  "isPlayground": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Whether this row is a playground item",
-                    "example": false
                   }
                 },
                 "required": [

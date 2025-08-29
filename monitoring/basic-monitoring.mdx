@@ -1,6 +1,6 @@
 ---
-title: 'Basic Monitoring'
-description: 'Learn how to track and monitor your LLM interactions using the Basalt SDK.'
+title: "Basic Monitoring"
+description: "Learn how to track and monitor your LLM interactions using the Basalt SDK."
 ---
 
 <Info>
@@ -12,6 +12,7 @@ description: 'Learn how to track and monitor your LLM interactions using the Bas
 When you retrieve a prompt using the SDK, it automatically includes a `generation` object that can be used to monitor the complete interaction. Here's how to use it:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Step 1: Get the prompt with monitoring enabled
 const { value, generation } = await basalt.prompt.get('my-prompt-slug')
@@ -23,6 +24,7 @@ const output = await myLLMProvider.complete(value.text)
 generation.end(output)
 ```
 
+
 ```python Python
 # Step 1: Get the prompt with monitoring enabled
 error, result, generation = basalt.prompt.get('my-prompt-slug')
@@ -33,9 +35,11 @@ output = await my_llm_provider.complete(value.text)
 # Step 3: Record the completion by calling end() with the output
 generation.end(output)
 ```
+
 </CodeGroup>
 
 This simple pattern automatically tracks:
+
 - The prompt that was used
 - When the prompt was retrieved
 - When the completion was received
@@ -47,6 +51,7 @@ This simple pattern automatically tracks:
 You can associate the generation with a specific user and organization by using the `identify` method:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Identify the user and organization for this generation
 generation.trace.identify({
@@ -61,6 +66,7 @@ generation.trace.identify({
 })
 ```
 
+
 ```python Python
 # Identify the user and organization for this generation
 generation.trace.identify({
@@ -74,6 +80,7 @@ generation.trace.identify({
   }
 })
 ```
+
 </CodeGroup>
 
 ## Evaluation
@@ -81,19 +88,22 @@ generation.trace.identify({
 You can add automatic evaluators to assess the quality of the LLM output:
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Add an evaluator to automatically assess the response quality
-generation.trace.addEvaluator({
+generation.addEvaluator({
   slug: 'good-answer'
 })
 ```
 
+
 ```python Python
 # Add an evaluator to automatically assess the response quality
-generation.trace.add_evaluator({
+generation.add_evaluator({
   'slug': 'good-answer'
 })
 ```
+
 </CodeGroup>
 
 Evaluators run automatically when `generation.end()` is called. For more information on available evaluators and how to create custom ones, see the [Evaluation](/monitoring/evaluation) documentation.
@@ -103,27 +113,30 @@ Evaluators run automatically when `generation.end()` is called. For more informa
 By default, evaluations are run on 10% of logs. You can configure the evaluation sample rate to control how often evaluations are run.
 
 <CodeGroup>
+
 ```typescript TypeScript
 // Configure evaluations at the trace level
 generation.trace.setEvaluationConfig({
-  sampleRate: 0.1  // Run evaluations on 10% of traces
+  sampleRate: 0.5  // Run evaluations on 50% of traces
 })
 ```
+
 
 ```python Python
 # Configure evaluations at the trace level
 generation.trace.set_evaluation_config({
-  'sampleRate': 0.1  # Run evaluations on 10% of traces
+  'sampleRate': 0.5  # Run evaluations on 50% of traces
 })
 ```
-</CodeGroup>
 
+</CodeGroup>
 
 ## Complete Example
 
 Here's a complete example showing how to use basic monitoring with variables, user identification, and automatic evaluation:
 
 <CodeGroup>
+
 ```typescript TypeScript
 const result = await basalt.prompt.get('comment-classifier', {
   variables: {
@@ -165,6 +178,7 @@ generation.trace.addEvaluator({
 generation.end('output')
 ```
 
+
 ```python Python
 result = basalt.prompt.get('comment-classifier', {
   'variables': {
@@ -204,6 +218,7 @@ generation.trace.add_evaluator({
 # Record the LLM output
 generation.end('output')
 ```
+
 </CodeGroup>
 
 ## Advanced Use Cases
