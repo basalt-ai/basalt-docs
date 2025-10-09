@@ -1,103 +1,110 @@
 ---
-title: 'Quickstart'
-description: 'Know how to install the Basalt SDK, get your first prompt and start monitoring. **(~2 minutes)**'
-icon: 'rocket'
+title: "Quickstart"
+description: "Know how to install the Basalt SDK, get your first prompt and start monitoring. **(~2 minutes)**"
+icon: "rocket"
 ---
 
 This guide will get you all set up and ready to use the Basalt API. We'll cover how to get started using our Python and JavaScript/TypeScript SDKs and how to make your first request. We'll also look at where to go next to find all the information you need to take full advantage of our SDKs.
 
-<Info>**Prerequisites:** Before you begin, make sure to have an [account on Basalt](https://app.getbasalt.ai).</Info>
+<Info>
+  **Prerequisites:** Before you begin, make sure to have an [account on Basalt](https://app.getbasalt.ai).
+</Info>
 
 ## Getting Started
 
 <Steps>
   <Step title="Install the SDK">
-  First, install the SDK for your language.
-	<CodeGroup>
-		```bash TypeScript
-		npm install @basalt-ai/sdk
-		```
+    First, install the SDK for your language.
 
-		```bash Python
-		pip install basalt-sdk
-		```
-	</CodeGroup>
+    <CodeGroup>
+
+    ```bash TypeScript
+    npm install @basalt-ai/sdk
+    ```
+
+    
+    ```bash Python
+    pip install basalt-sdk
+    ```
+
+    </CodeGroup>
   </Step>
   <Step title="Instantiate Basalt">
-	Instantiate the SDK with your API key. If you don't have one, you can get it from the [Basalt Dashboard](https://app.getbasalt.ai).
-	<CodeGroup>
-		```typescript TypeScript
-		import { Basalt } from '@basalt-ai/sdk';
+    Instantiate the SDK with your API key. If you don't have one, you can get it from the [Basalt Dashboard](https://app.getbasalt.ai).
 
-		const basalt = new Basalt({ apiKey: 'your-api-key' });
-		```
+    <CodeGroup>
 
-		```python Python
-		from basalt import Basalt
+    ```typescript TypeScript
+    import { Basalt } from '@basalt-ai/sdk';
+    
+    const basalt = new Basalt({ apiKey: 'your-api-key' });
+    ```
 
-		basalt = Basalt(api_key='your-api-key')
-		```
-	</CodeGroup>
+    
+    ```python Python
+    from basalt import Basalt
+    
+    basalt = Basalt(api_key='your-api-key')
+    ```
+
+    </CodeGroup>
   </Step>
   <Step title="Get your prompt">
     Get your first prompt using the `basalt.prompt.get` method with the `slug`of your prompt as parameter.
 
-	<Info>Only deployed prompts can be retrieve with this method. To know how to deploy your prompt and get your slug, follow [our guide](/docs/getting-started/api-keys).</Info>
+    <Info>
+      Only deployed prompts can be retrieve with this method. To know how to deploy your prompt and get your slug, follow [our guide](/docs/getting-started/api-keys).
+    </Info>
+    <CodeGroup>
 
-	<CodeGroup>
-		```typescript TypeScript
-		const { value } = await basalt.prompt.get('my-prompt-slug')
-		```
+    ```typescript TypeScript
+    const { value } = await basalt.prompt.get('my-prompt-slug')
+    ```
 
-		```python Python
-		error, prompt = basalt.prompt.get('my-prompt-slug')
-		```
-	</CodeGroup>
+    
+    ```python Python
+    error, prompt = basalt.prompt.get('my-prompt-slug')
+    ```
 
-	Learn more about how to get your prompt and discover all the available options in the [Prompts documentation](/prompts/introduction).
+    </CodeGroup>
+
+    Learn more about how to get your prompt and discover all the available options in the [Prompts documentation](/prompts/introduction).
   </Step>
   <Step title="Monitor the output">
     After getting your prompt, you can easily monitor the output of your LLM, pushing it back to Basalt.
 
-	<CodeGroup>
-		```typescript TypeScript
-		const { value, generation } = await basalt.prompt.get('my-prompt-slug')
+    <CodeGroup>
 
-		const output = await myLLMFunction(value.text) // call your own LLM function with the retrieved prompt and get the output
+    ```typescript TypeScript
+    const { value, generation } = await basalt.prompt.get('my-prompt-slug')
+    
+    const output = await myLLMFunction(value.text) // call your own LLM function with the retrieved prompt and get the output
+    
+    generation.end(output)
+    ```
 
-		generation.end(output)
-		```
+    
+    ```python Python
+    error, prompt, generation = basalt.prompt.get('my-prompt-slug')
+    
+    output = my_llm_function(prompt.text) # call your own LLM function with the retrieved prompt and get the output
+    
+    generation.end(output)
+    ```
 
-		```python Python
-		error, prompt, generation = basalt.prompt.get('my-prompt-slug')
+    </CodeGroup>
 
-		output = my_llm_function(prompt.text) # call your own LLM function with the retrieved prompt and get the output
-
-		generation.end(output)
-		```
-	</CodeGroup>
-
-	Learn more about how to monitor your prompt, discover all the available options and more advanced use cases in the [Monitoring documentation](/monitoring/introduction).
+    Learn more about how to monitor your prompt, discover all the available options and more advanced use cases in the [Monitoring documentation](/monitoring/introduction).
   </Step>
 </Steps>
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card
-	title="Prompts"
-	icon="comment-dots"
-	href="/prompts/getting-started"
-	arrow
-  >
-	Discover how to use Basalt as your Prompt Management System
+  <Card title="Prompts" icon="comment-dots" href="/prompts/introduction">
+    Discover how to use Basalt as your Prompt Management System
   </Card>
-  <Card
-	title="Monitoring"
-	icon="chart-line"
-	href="/monitoring/getting-started"
-	arrow
-  >
-	See how to monitor your AI features
+  <Card title="Monitoring" icon="chart-line" href="/monitoring/introduction">
+    See how to monitor your AI features
   </Card>
 </CardGroup>
