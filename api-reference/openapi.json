@@ -214,6 +214,16 @@
                           "description": "The version (snapshot) of the prompt",
                           "example": "1.0.0"
                         },
+                        "tag": {
+                          "type": "string",
+                          "description": "The tag of the prompt",
+                          "example": "latest"
+                        },
+                        "slug": {
+                          "type": "string",
+                          "description": "The slug of the prompt",
+                          "example": "prompt-slug"
+                        },
                         "model": {
                           "type": "object",
                           "properties": {
@@ -225,10 +235,13 @@
                             "client": {
                               "type": "string",
                               "enum": [
-                                "anthropic",
                                 "open-ai",
+                                "anthropic",
+                                "hugging-face",
                                 "mistral",
                                 "gemini",
+                                "azure",
+                                "bedrock",
                                 "xai",
                                 "deepseek"
                               ],
@@ -280,8 +293,6 @@
                                 }
                               },
                               "required": [
-                                "temperature",
-                                "topP",
                                 "maxLength",
                                 "responseFormat"
                               ]
@@ -312,6 +323,7 @@
                       "required": [
                         "text",
                         "version",
+                        "slug",
                         "model"
                       ],
                       "description": "The prompt",
@@ -319,6 +331,8 @@
                         "text": "Hello, how are you?",
                         "systemText": "You are a helpful assistant",
                         "version": "1.0.0",
+                        "tag": "latest",
+                        "slug": "prompt-slug",
                         "model": {
                           "provider": "open-ai",
                           "client": "open-ai",
@@ -694,22 +708,58 @@
                     "example": "production"
                   },
                   "input": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      {
+                        "type": "array",
+                        "items": {}
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "description": "The input of the prompt.",
                     "example": "What is the capital of France?"
                   },
                   "output": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      {
+                        "type": "array",
+                        "items": {}
+                      }
+                    ],
                     "description": "The output of the prompt.",
                     "example": "Paris"
                   },
                   "idealOutput": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      {
+                        "type": "array",
+                        "items": {}
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "description": "The ideal output of the prompt.",
                     "example": "Paris"
@@ -980,25 +1030,61 @@
                     "deprecated": true
                   },
                   "input": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      {
+                        "type": "array",
+                        "items": {}
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "description": "The input of the trace",
                     "example": "What is the capital of France?"
                   },
                   "output": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      {
+                        "type": "array",
+                        "items": {}
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "description": "The output of the trace",
                     "example": "Paris"
                   },
                   "idealOutput": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": {}
+                      },
+                      {
+                        "type": "array",
+                        "items": {}
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "description": "The ideal output of the trace. Used in some evaluators."
                   },
@@ -1120,219 +1206,422 @@
                       "null"
                     ],
                     "items": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "description": "A unique identifier for the log",
-                          "example": "log-123"
-                        },
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "span",
-                            "generation",
-                            "function",
-                            "tool",
-                            "retrieval",
-                            "event"
-                          ],
-                          "description": "The type of log",
-                          "example": "generation"
-                        },
-                        "name": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The name of the log",
-                          "example": "retrieval"
-                        },
-                        "startTime": {
-                          "anyOf": [
-                            {
-                              "type": "string"
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "A unique identifier for the log",
+                              "example": "log-123"
                             },
-                            {
-                              "type": "number",
-                              "exclusiveMinimum": 0
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "span",
+                                "function",
+                                "tool",
+                                "retrieval",
+                                "event"
+                              ],
+                              "description": "The type of log",
+                              "example": "span"
                             },
-                            {
-                              "type": "null"
-                            }
-                          ],
-                          "description": "The start time of the log",
-                          "example": "2021-01-01T00:00:00Z"
-                        },
-                        "endTime": {
-                          "anyOf": [
-                            {
-                              "type": "string"
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "The name of the log",
+                              "example": "retrieval"
                             },
-                            {
-                              "type": "number",
-                              "exclusiveMinimum": 0
+                            "startTime": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The start time of the log",
+                              "example": "2021-01-01T00:00:00Z"
                             },
-                            {
-                              "type": "null"
-                            }
-                          ],
-                          "description": "The end time of the log",
-                          "example": "2021-01-01T00:00:00Z"
-                        },
-                        "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
-                          "additionalProperties": {},
-                          "description": "The metadata of the log",
-                          "example": {
-                            "sessionId": "456"
-                          }
-                        },
-                        "parentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The parent ID of the log. Used to nest logs in a hierarchical structure.",
-                          "example": "parent-123"
-                        },
-                        "input": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The input of the log",
-                          "example": "What is the capital of France?"
-                        },
-                        "output": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The output of the log",
-                          "example": "Paris"
-                        },
-                        "idealOutput": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The ideal output of the log. Used in some evaluators."
-                        },
-                        "inputTokens": {
-                          "type": [
-                            "number",
-                            "null"
-                          ],
-                          "description": "The number of input tokens. If not provided, it will be computed based on the input",
-                          "example": 100
-                        },
-                        "outputTokens": {
-                          "type": [
-                            "number",
-                            "null"
-                          ],
-                          "description": "The number of output tokens. If not provided, it will be computed based on the output",
-                          "example": 100
-                        },
-                        "cost": {
-                          "type": [
-                            "number",
-                            "null"
-                          ],
-                          "example": 100
-                        },
-                        "variables": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "label": {
-                                "type": "string"
-                              },
-                              "value": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                            "endTime": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The end time of the log",
+                              "example": "2021-01-01T00:00:00Z"
+                            },
+                            "metadata": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {},
+                              "description": "The metadata of the log",
+                              "example": {
+                                "sessionId": "456"
                               }
                             },
-                            "required": [
-                              "label"
-                            ]
-                          },
-                          "example": [
-                            {
-                              "label": "question",
-                              "value": "What is the capital of France?"
-                            }
-                          ]
-                        },
-                        "prompt": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
-                          "properties": {
-                            "slug": {
-                              "type": "string"
-                            },
-                            "version": {
+                            "parentId": {
                               "type": [
                                 "string",
                                 "null"
-                              ]
+                              ],
+                              "description": "The parent ID of the log. Used to nest logs in a hierarchical structure.",
+                              "example": "parent-123"
                             },
-                            "tag": {
+                            "input": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The input of the log",
+                              "example": "What is the capital of France?"
+                            },
+                            "output": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The output of the log",
+                              "example": "Paris"
+                            },
+                            "idealOutput": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The ideal output of the log. Used in some evaluators."
+                            },
+                            "evaluators": {
                               "type": [
-                                "string",
+                                "array",
                                 "null"
+                              ],
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "slug": {
+                                    "type": "string",
+                                    "description": "The slug of the evaluator in Basalt.",
+                                    "example": "hallucination"
+                                  }
+                                },
+                                "required": [
+                                  "slug"
+                                ]
+                              },
+                              "example": [
+                                {
+                                  "slug": "hallucination"
+                                }
                               ]
                             }
                           },
                           "required": [
-                            "slug"
-                          ],
-                          "example": {
-                            "slug": "qa-prompt",
-                            "version": "1.0.0",
-                            "tag": "production"
-                          }
+                            "id",
+                            "type"
+                          ]
                         },
-                        "evaluators": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "slug": {
-                                "type": "string",
-                                "description": "The slug of the evaluator in Basalt.",
-                                "example": "hallucination"
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "description": "A unique identifier for the log",
+                              "example": "log-123"
+                            },
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "generation"
+                              ],
+                              "description": "The type of log",
+                              "example": "generation"
+                            },
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "The name of the log",
+                              "example": "retrieval"
+                            },
+                            "startTime": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The start time of the log",
+                              "example": "2021-01-01T00:00:00Z"
+                            },
+                            "endTime": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The end time of the log",
+                              "example": "2021-01-01T00:00:00Z"
+                            },
+                            "metadata": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": {},
+                              "description": "The metadata of the log",
+                              "example": {
+                                "sessionId": "456"
                               }
                             },
-                            "required": [
-                              "slug"
-                            ]
-                          },
-                          "example": [
-                            {
-                              "slug": "hallucination"
+                            "parentId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "description": "The parent ID of the log. Used to nest logs in a hierarchical structure.",
+                              "example": "parent-123"
+                            },
+                            "input": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The input of the log",
+                              "example": "What is the capital of France?"
+                            },
+                            "output": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The output of the log",
+                              "example": "Paris"
+                            },
+                            "idealOutput": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                },
+                                {
+                                  "type": "array",
+                                  "items": {}
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "The ideal output of the log. Used in some evaluators."
+                            },
+                            "inputTokens": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "The number of input tokens. If not provided, it will be computed based on the input",
+                              "example": 100
+                            },
+                            "outputTokens": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "The number of output tokens. If not provided, it will be computed based on the output",
+                              "example": 100
+                            },
+                            "cost": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "example": 100
+                            },
+                            "variables": {
+                              "type": [
+                                "array",
+                                "null"
+                              ],
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "label"
+                                ]
+                              },
+                              "example": [
+                                {
+                                  "label": "question",
+                                  "value": "What is the capital of France?"
+                                }
+                              ]
+                            },
+                            "prompt": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "slug": {
+                                  "type": "string"
+                                },
+                                "version": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "tag": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "slug"
+                              ],
+                              "example": {
+                                "slug": "qa-prompt",
+                                "version": "1.0.0",
+                                "tag": "production"
+                              }
+                            },
+                            "evaluators": {
+                              "type": [
+                                "array",
+                                "null"
+                              ],
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "slug": {
+                                    "type": "string",
+                                    "description": "The slug of the evaluator in Basalt.",
+                                    "example": "hallucination"
+                                  }
+                                },
+                                "required": [
+                                  "slug"
+                                ]
+                              },
+                              "example": [
+                                {
+                                  "slug": "hallucination"
+                                }
+                              ]
                             }
+                          },
+                          "required": [
+                            "id",
+                            "type"
                           ]
                         }
-                      },
-                      "required": [
-                        "id",
-                        "type"
                       ]
                     },
                     "description": "The logs to append to the trace.",
@@ -1495,12 +1784,40 @@
                           "columns": {
                             "type": "array",
                             "items": {
-                              "type": "string"
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "description": "The name of the column",
+                                  "example": "input"
+                                },
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "text",
+                                    "image",
+                                    "file",
+                                    "json"
+                                  ],
+                                  "description": "The type of the column",
+                                  "example": "text"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "type"
+                              ]
                             },
                             "description": "The columns of the dataset",
                             "example": [
-                              "input",
-                              "output"
+                              {
+                                "name": "input",
+                                "type": "text"
+                              },
+                              {
+                                "name": "output",
+                                "type": "text"
+                              }
                             ]
                           }
                         },
@@ -1604,12 +1921,40 @@
                         "columns": {
                           "type": "array",
                           "items": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "The name of the column",
+                                "example": "input"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "image",
+                                  "file",
+                                  "json"
+                                ],
+                                "description": "The type of the column",
+                                "example": "text"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "type"
+                            ]
                           },
                           "description": "The columns of the dataset",
                           "example": [
-                            "input",
-                            "output"
+                            {
+                              "name": "input",
+                              "type": "text"
+                            },
+                            {
+                              "name": "output",
+                              "type": "text"
+                            }
                           ]
                         },
                         "rows": {
