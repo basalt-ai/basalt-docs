@@ -98,7 +98,8 @@
 					"pages": [
 						"api-reference/prompts/get",
 						"api-reference/prompts/list",
-						"api-reference/prompts/describe"
+						"api-reference/prompts/describe",
+                        "api-reference/prompts/publish"
 					]
 				},
 				{

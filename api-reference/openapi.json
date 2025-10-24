@@ -574,6 +574,132 @@
         }
       }
     },
+    "/prompts/{slug}/publish": {
+      "post": {
+        "summary": "Publish a prompt version with a tag",
+        "description": "Assign a new tag to a specific prompt version. If the tag already exists, it will be updated to point to the specified version. If the tag does not exist, it will be created.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The slug of the prompt to publish",
+              "example": "my-prompt-slug"
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newTag": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The new tag to assign to the prompt version",
+                    "example": "production"
+                  },
+                  "version": {
+                    "type": "string",
+                    "description": "The version number of the prompt to publish",
+                    "example": "1.0.0"
+                  },
+                  "tag": {
+                    "type": "string",
+                    "description": "The tag of the prompt version to publish",
+                    "example": "latest"
+                  }
+                },
+                "required": [
+                  "newTag"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The deployment tag was successfully created or updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deploymentTag": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "The unique identifier of the deployment tag",
+                          "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "label": {
+                          "type": "string",
+                          "description": "The label of the deployment tag",
+                          "example": "production"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "label"
+                      ],
+                      "description": "The deployment tag that was created or updated",
+                      "example": {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                        "label": "production"
+                      }
+                    }
+                  },
+                  "required": [
+                    "deploymentTag"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid request parameters or body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found - Prompt or prompt version not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/monitor/experiments": {
       "post": {
         "summary": "Create an experiment",
