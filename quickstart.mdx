@@ -63,7 +63,7 @@ This guide will get you all set up and ready to use the Basalt API. We'll cover 
 
     
     ```python Python
-    error, prompt = basalt.prompt.get('my-prompt-slug')
+    error, prompt, generation = await basalt.prompt.get('my-prompt-slug')
     ```
 
     </CodeGroup>
@@ -85,7 +85,7 @@ This guide will get you all set up and ready to use the Basalt API. We'll cover 
 
     
     ```python Python
-    error, prompt, generation = basalt.prompt.get('my-prompt-slug')
+    error, prompt, generation = await basalt.prompt.get('my-prompt-slug')
     
     output = my_llm_function(prompt.text) # call your own LLM function with the retrieved prompt and get the output
     

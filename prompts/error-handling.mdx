@@ -73,7 +73,7 @@ console.log(`Retrieved prompt: ${value.text}`)
 ```
 
 ```python Python
-error, prompt = basalt.prompt.get(slug='welcome-message')
+error, prompt, generation = await basalt.prompt.get(slug='welcome-message')
 
 if error:
 	raise error
@@ -100,7 +100,7 @@ console.log(`Found ${value.length} prompts`)
 ```
 
 ```python Python
-error, value = basalt.prompt.list(feature_slug='onboarding')
+error, value = await basalt.prompt.list(feature_slug='onboarding')
 
 if error:
 	raise error
@@ -128,7 +128,7 @@ console.log(`Prompt name: ${value.name}, Version: ${value.version}`)
 ```
 
 ```python Python
-error, value = basalt.prompt.describe(
+error, value = await basalt.prompt.describe(
     slug='welcome-message',
     version='1.0.0'
 )

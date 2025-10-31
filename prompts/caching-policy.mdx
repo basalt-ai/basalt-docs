@@ -37,7 +37,7 @@ const { value } = await basalt.prompt.get('welcome-message', {
 
 ```python Python
 # Disable caching for a specific get request
-error, value = basalt.prompt.get(
+error, value = await basalt.prompt.get(
     'welcome-message',
     cache=False
 )

@@ -35,7 +35,7 @@ from basalt import BasaltSDK
 basalt = BasaltSDK(api_key=os.environ.get('BASALT_API_KEY'))
 
 def get_basic_prompt():
-    error, prompt = basalt.prompt.get('welcome-message')
+    error, prompt, generation = await basalt.prompt.get('welcome-message')
     
     if error:
         print(f"Failed to get prompt: {error.message}")
@@ -69,7 +69,7 @@ async function getSpecificVersion() {
 
 ```python Python
 def get_specific_version():
-    error, prompt = basalt.prompt.get(
+    error, prompt, generation = await basalt.prompt.get(
         slug='product-description',
         version='2.1.0'
     )
@@ -116,7 +116,7 @@ def get_environment_specific_prompt():
     
     tag = 'production' if is_prod else 'staging'
     
-    error, prompt = basalt.prompt.get(
+    error, prompt, generation = await basalt.prompt.get(
         slug='checkout-flow',
         tag=tag
     )
@@ -159,7 +159,7 @@ async function getPersonalizedPrompt(userName: string, companyName: string) {
 def get_personalized_prompt(user_name, company_name):
     from datetime import datetime
     
-    error, prompt = basalt.prompt.get(
+    error, prompt, generation = await basalt.prompt.get(
         slug='personalized-email',
         variables={
             'userName': user_name,
@@ -205,7 +205,7 @@ async function getComplexPrompt() {
 
 ```python Python
 def get_complex_prompt():
-    error, prompt = basalt.prompt.get(
+    error, prompt, generation = await basalt.prompt.get(
         slug='product-recommendation',
         version='3.0.0',
         variables={
@@ -247,7 +247,7 @@ async function listAllPrompts() {
 
 ```python Python
 def list_all_prompts():
-    error, prompts = basalt.prompt.list()
+    error, prompts = await basalt.prompt.list()
     
     if error:
         print(f"Failed to list prompts: {error.message}")
@@ -281,7 +281,7 @@ async function listFeaturePrompts(featureSlug: string) {
 
 ```python Python
 def list_feature_prompts(feature_slug):
-    error, prompts = basalt.prompt.list(
+    error, prompts = await basalt.prompt.list(
         feature_slug=feature_slug
     )
     
@@ -318,7 +318,7 @@ async function findLivePrompts() {
 
 ```python Python
 def find_live_prompts():
-    error, prompts = basalt.prompt.list()
+    error, prompts = await basalt.prompt.list()
     
     if error:
         print(f"Failed to list prompts: {error.message}")
@@ -358,7 +358,7 @@ async function findPromptsByTag(tagName: string) {
 
 ```python Python
 def find_prompts_by_tag(tag_name):
-    error, prompts = basalt.prompt.list()
+    error, prompts = await basalt.prompt.list()
     
     if error:
         print(f"Failed to list prompts: {error.message}")
@@ -401,7 +401,7 @@ async function getPromptDetails(promptSlug: string) {
 
 ```python Python
 def get_prompt_details(prompt_slug):
-    error, details = basalt.prompt.describe(prompt_slug)
+    error, details = await basalt.prompt.describe(prompt_slug)
     
     if error:
         print(f"Failed to describe prompt {prompt_slug}: {error.message}")
@@ -447,7 +447,7 @@ async function getPromptVariables(promptSlug: string) {
 
 ```python Python
 def get_prompt_variables(prompt_slug):
-    error, details = basalt.prompt.describe(prompt_slug)
+    error, details = await basalt.prompt.describe(prompt_slug)
     
     if error:
         print(f"Failed to describe prompt {prompt_slug}: {error.message}")
@@ -496,7 +496,7 @@ async function checkAvailableVersions(promptSlug: string) {
 
 ```python Python
 def check_available_versions(prompt_slug):
-    error, details = basalt.prompt.describe(prompt_slug)
+    error, details = await basalt.prompt.describe(prompt_slug)
     
     if error:
         print(f"Failed to describe prompt {prompt_slug}: {error.message}")
@@ -560,7 +560,7 @@ async function buildPromptSelectionData() {
 ```python Python
 async def build_prompt_selection_data():
     # Step 1: Get all prompts
-    error, prompts = basalt.prompt.list()
+    error, prompts = await basalt.prompt.list()
     
     if error:
         print(f"Failed to list prompts: {error.message}")
@@ -570,7 +570,7 @@ async def build_prompt_selection_data():
     prompt_details = []
     
     for prompt in prompts:
-        desc_error, details = basalt.prompt.describe(prompt.slug)
+        desc_error, details = await basalt.prompt.describe(prompt.slug)
         
         if desc_error:
             print(f"Couldn't get details for {prompt.slug}: {desc_error.message}")
@@ -645,7 +645,7 @@ async function runSupportWorkflow(userQuery: string) {
 ```python Python
 async def run_support_workflow(user_query):
     # Step 1: Use classifier prompt to determine intent
-    error, classifier_prompt = basalt.prompt.get(
+    error, classifier_prompt = await basalt.prompt.get(
         slug='support-query-classifier',
         variables={
             'query': user_query
@@ -663,7 +663,7 @@ async def run_support_workflow(user_query):
     # Step 2: Based on the intent, get the appropriate response prompt
     response_slug = f"support-response-{intent}"
     
-    error, response_prompt = basalt.prompt.get(
+    error, response_prompt = await basalt.prompt.get(
         slug=response_slug,
         variables={
             'query': user_query,
@@ -745,7 +745,7 @@ async def get_feature_flagged_prompt(prompt_slug):
         prompt_tag = 'standard'
     
     # Get the appropriate prompt variant using tags
-    error, prompt = basalt.prompt.get(
+    error, prompt, generation = await basalt.prompt.get(
         slug=prompt_slug,
         tag=prompt_tag
     )

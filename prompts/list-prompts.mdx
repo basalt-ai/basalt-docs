@@ -14,7 +14,7 @@ const { value } = await basalt.prompt.list()
 ```
 
 ```python Python
-error, prompts = basalt.prompt.list()
+error, prompts = await basalt.prompt.list()
 ```
 </CodeGroup>
 
@@ -31,7 +31,7 @@ const { value } = await basalt.prompt.list({
 
 ```python Python
 # Using named parameters
-error, prompts = basalt.prompt.list(
+error, prompts = await basalt.prompt.list(
     feature_slug='onboarding'
 )
 ```

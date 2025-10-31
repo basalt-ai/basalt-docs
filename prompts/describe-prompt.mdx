@@ -14,7 +14,7 @@ const { value } = await basalt.prompt.describe('my-prompt-slug')
 ```
 
 ```python Python
-error, prompt_details = basalt.prompt.describe('my-prompt-slug')
+error, prompt_details = await basalt.prompt.describe('my-prompt-slug')
 ```
 </CodeGroup>
 
@@ -37,7 +37,7 @@ const { value } = await basalt.prompt.describe('welcome-message', {
 
 ```python Python
 # Using named parameters
-error, prompt_details = basalt.prompt.describe(
+error, prompt_details = await basalt.prompt.describe(
     slug='welcome-message',
     version='1.0.0'
 )
@@ -69,7 +69,7 @@ const { value } = await basalt.prompt.describe('welcome-message', {
 
 ```python Python
 # Using named parameters
-error, prompt_details = basalt.prompt.describe(
+error, prompt_details = await basalt.prompt.describe(
     slug='welcome-message',
     tag='staging'
 )

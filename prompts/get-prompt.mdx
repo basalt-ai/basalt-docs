@@ -15,7 +15,7 @@ const { value } await basalt.prompt.get('my-prompt-slug')
 ```
 
 ```python Python
-error, prompt = basalt.prompt.get('my-prompt-slug')
+error, prompt, generation = await basalt.prompt.get('my-prompt-slug')
 ```
 </CodeGroup>
 
@@ -38,7 +38,7 @@ const { value } = await basalt.prompt.get('welcome-message', {
 
 ```python Python
 # Using named parameters
-error, result = basalt.prompt.get(
+error, result, generation = await basalt.prompt.get(
     slug='welcome-message',
     tag='staging'
 )
@@ -70,7 +70,7 @@ const { value } = await basalt.prompt.get('welcome-message', {
 
 ```python Python
 # Using named parameters
-error, result = basalt.prompt.get(
+error, result, generation = await basalt.prompt.get(
     slug='welcome-message',
     version='1.0.0'
 )
@@ -99,7 +99,7 @@ const { value } = await basalt.prompt.get('welcome-message', {
 ```
 
 ```python Python
-error, result = basalt.prompt.get(
+error, result, generation = await basalt.prompt.get(
     slug='welcome-message',
     variables={
         'name': 'John Doe',

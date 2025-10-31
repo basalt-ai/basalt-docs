@@ -27,7 +27,7 @@ generation.end(output)
 
 ```python Python
 # Step 1: Get the prompt with monitoring enabled
-error, result, generation = basalt.prompt.get('my-prompt-slug')
+error, result, generation = await basalt.prompt.get('my-prompt-slug')
 
 # Step 2: Use the prompt with your LLM provider
 output = await my_llm_provider.complete(value.text)
@@ -125,7 +125,7 @@ generation.trace.setEvaluationConfig({
 ```python Python
 # Configure evaluations at the trace level
 generation.trace.set_evaluation_config({
-  'sampleRate': 0.5  # Run evaluations on 50% of traces
+  'sample_rate': 0.5  # Run evaluations on 50% of traces
 })
 ```
 
@@ -180,7 +180,7 @@ generation.end('output')
 
 
 ```python Python
-result = basalt.prompt.get('comment-classifier', {
+result = await basalt.prompt.get('comment-classifier', {
   'variables': {
     'comment': 'I would like to contribute to this issue'
   }

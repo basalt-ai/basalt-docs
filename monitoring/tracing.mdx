@@ -506,7 +506,7 @@ trace.append(generation)
 
 ```python Python
 # Get a prompt from Basalt, which returns a generation object
-error, result = basalt.prompt.get('article-generator', {
+error, result, generation = await basalt.prompt.get('article-generator', {
   'variables': {
     'topic': 'AI monitoring'
   }
@@ -572,8 +572,8 @@ trace = basalt.monitor.create_trace('content-processing', {
     { 'slug': 'hallucination' },
     { 'slug': 'toxicity' }
   ],
-  'evaluationConfig': {
-    'sampleRate': 0.1  # Run evaluations on 10% of traces
+  'evaluation_config': {
+    'sample_rate': 0.1  # Run evaluations on 10% of traces
   }
 })
 
@@ -856,7 +856,7 @@ async def process_user_content(user, content):
     })
     
     # Get a prompt from Basalt for topic extraction
-    error, result = basalt.prompt.get('topic-extractor', {
+    error, result, generation = await basalt.prompt.get('topic-extractor', {
       'variables': {
         'content': content
       }

@@ -28,7 +28,7 @@ generation.end(response)
 
 ```python Python
 # Get a prompt from Basalt (already includes monitoring)
-error, result = basalt.prompt.get('customer-reply', {
+error, result, generation = await basalt.prompt.get('customer-reply', {
   'variables': {
     'customerName': 'John Smith',
     'inquiry': 'When will my order arrive?'
@@ -138,7 +138,7 @@ async def handle_customer_query(user, query):
   
   try:
     # Get the query classification prompt
-    error, result = basalt.prompt.get('query-classifier')
+    error, result, generation = await basalt.prompt.get('query-classifier')
     classifierPrompt, classifyGeneration = result.value, result.generation
     
     # Append the generation to our trace

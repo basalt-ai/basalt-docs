@@ -56,8 +56,8 @@ trace = basalt.monitor.create_trace('content-workflow', {
     { 'slug': 'toxicity' },
     { 'slug': 'relevance' }
   ],
-  'evaluationConfig': {
-    'sampleRate': 0.25  # Run evaluations on 25% of traces
+  'evaluation_config': {
+    'sample_rate': 0.25  # Run evaluations on 25% of traces
   }
 })
 ```
@@ -188,14 +188,14 @@ trace = basalt.monitor.create_trace('content-workflow', {
     { 'slug': 'hallucination' },
     { 'slug': 'toxicity' }
   ],
-  'evaluationConfig': {
-    'sampleRate': 0.1  # Run evaluations on 10% of traces
+  'evaluation_config': {
+    'sample_rate': 0.1  # Run evaluations on 10% of traces
   }
 })
 
 # Configure after creation
 trace.set_evaluation_config({
-  'sampleRate': 0.1  # Run evaluations on 10% of traces
+  'sample_rate': 0.1  # Run evaluations on 10% of traces
 })
 ```
 
@@ -311,14 +311,14 @@ async def generate_product_description(product_data):
       { 'slug': 'brand-compliance' },
       { 'slug': 'message-clarity' }
     ],
-    'evaluationConfig': {
-      'sampleRate': 0.25  # 25% sample rate
+    'evaluation_config': {
+      'sample_rate': 0.25  # 25% sample rate
     }
   })
   
   try:
     # Get product description prompt
-    error, result = basalt.prompt.get('product-description', {
+    error, result, generation = await basalt.prompt.get('product-description', {
       'variables': {
         'name': product_data['name'],
         'features': ', '.join(product_data['features']),
@@ -349,11 +349,7 @@ async def generate_product_description(product_data):
     trace.end(description)
     
     return {
-      'description': description,
-      'metadata': {
-        'evaluationEnabled': True,
-        'sampleRate': 0.25
-      }
+      'description': description
     }
   except Exception as error:
     trace.update({
