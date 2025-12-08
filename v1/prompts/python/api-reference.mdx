@@ -1,0 +1,81 @@
+---
+title: "API Reference"
+description: "Detailed API reference for prompt operations."
+---
+
+## List Prompts
+
+`basalt.prompts.list_sync()` / `basalt.prompts.list_async()`
+
+Lists all prompts accessible to your API key.
+
+**Returns:**
+- `total`: Total number of prompts (int)
+- `prompts`: List of prompt metadata
+
+Each prompt in the list has:
+- `slug`: Unique identifier
+- `description`: Human-readable description
+- `latest_version`: Most recent version number
+- `tags`: List of tags (e.g., `['production', 'latest']`)
+
+## Get Prompt
+
+`basalt.prompts.get_sync(slug, tag=None, version=None, variables=None)` / `basalt.prompts.get_async(...)`
+
+Retrieves a specific prompt with its full content and configuration.
+
+**Parameters:**
+- `slug` (str): Prompt identifier
+- `tag` (str, optional): Tag to retrieve (e.g., 'latest', 'production')
+- `version` (str, optional): Specific version number
+- `variables` (dict, optional): Variables for substitution
+
+**Returns:**
+- `slug`: Prompt identifier
+- `version`: Version number (e.g., "1.2.0")
+- `text`: The actual prompt text
+- `description`: Human-readable description
+- `model.provider`: "openai", "anthropic", etc.
+- `model.model`: "gpt-4", "claude-4-opus", etc.
+- `model.parameters.temperature`: Sampling temperature
+- `model.parameters.max_tokens`: Maximum completion tokens
+- `model.parameters.top_p`: Nucleus sampling parameter
+
+## Describe Prompt
+
+`basalt.prompts.describe_sync(slug)` / `basalt.prompts.describe_async(slug)`
+
+Gets metadata about a prompt including available versions and tags.
+
+**Parameters:**
+- `slug` (str): Prompt identifier
+
+**Returns:**
+- `slug`: Prompt identifier
+- `description`: Human-readable description
+- `available_versions`: List of available versions
+- `available_tags`: List of available tags
+
+## Publish Prompt
+
+`basalt.prompt.publish_sync(slug, new_tag, version)` / `basalt.prompt.publish_async(...)`
+
+Assigns or updates tags for prompt versions.
+
+**Parameters:**
+- `slug` (str): Prompt identifier
+- `new_tag` (str): Tag to assign (e.g., 'production')
+- `version` (str): Version to tag
+
+**Returns:**
+- `slug`: Prompt identifier
+- `version`: Version number
+- `new_tag`: Assigned tag
+
+## Exceptions
+
+- `NotFoundError`: Prompt not found or tag/version doesn't exist
+- `UnauthorizedError`: Invalid API key
+- `NetworkError`: Network connectivity issues
+- `BasaltAPIError`: General API errors

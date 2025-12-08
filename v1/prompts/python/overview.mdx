@@ -1,0 +1,45 @@
+---
+title: "Prompts SDK Overview"
+description: "Details for using Basalt prompts."
+---
+
+## Using Prompts in Python
+
+The Basalt Python SDK provides a comprehensive interface for managing prompts with both synchronous and asynchronous methods.
+
+### Initialization
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
+```
+
+### Core Methods
+
+- `basalt.prompts.list_sync()` / `basalt.prompts.list_async()`: List all prompts
+- `basalt.prompts.get_sync()` / `basalt.prompts.get_async()`: Retrieve a specific prompt
+- `basalt.prompts.describe_sync()` / `basalt.prompts.describe_async()`: Get prompt metadata
+- `basalt.prompt.publish_sync()` / `basalt.prompt.publish_async()`: Publish a version to a tag
+
+### Prompt Object
+
+Retrieved prompts include:
+- `slug`: Unique identifier
+- `version`: Version number
+- `text`: The prompt content
+- `description`: Human-readable description
+- `model`: Model configuration (provider, model, parameters)
+- `tags`: Associated tags
+
+### Variable Substitution
+
+Use Jinja2 syntax in prompts and pass variables when retrieving.
+
+### Caching
+
+Automatic caching with 5-minute TTL and fallback for availability.
+
+### Error Handling
+
+Handle `NotFoundError`, `UnauthorizedError`, `NetworkError`, `BasaltAPIError`.

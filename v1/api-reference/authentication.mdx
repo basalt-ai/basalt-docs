@@ -1,0 +1,12 @@
+---
+title: 'Authentication'
+description: ''
+icon: 'lock'
+---
+
+All API endpoints are authenticated using an API Key Bearer tokens. If you don't have one, you can get it from the Basalt Dashboard. Find the documentation on how to get your API key [here](/docs/getting-started/api-keys).
+
+```bash Request with bearer token
+curl https://api.getbasalt.ai/{endpoint} \
+  -H "Authorization: Bearer {Your API Key}"
+```

@@ -1,7 +1,4 @@
 ---
-title: "Evaluations"
-description: "Automatically assess the quality of your AI outputs using Basalt Evaluations."
----
 
 import { Button } from '/snippets/button.mdx'
 
@@ -205,15 +202,9 @@ trace.set_evaluation_config({
 
 The `sampleRate` parameter controls how often evaluations are run:
 
-- Value range: `0.0` to `1.0` (0% to 100%)
-- Default value: `0.1` (10%)
 
 Sample rates allow you to balance evaluation coverage with cost efficiency. For example:
 
-- `sampleRate: 1.0` - Evaluate every trace (100%)
-- `sampleRate: 0.5` - Evaluate approximately half of all traces (50%)
-- `sampleRate: 0.1` - Evaluate approximately one in ten traces (10%)
-- `sampleRate: 0.01` - Evaluate approximately one in a hundred traces (1%)
 
 <Info>
   Sampling is applied at the trace level. When a trace is selected for evaluation, all evaluators assigned to that trace and its generations will run. This ensures you get complete evaluation data for the sampled traces rather than patchy data across all traces.
@@ -381,7 +372,3 @@ To get the most value from evaluations:
 ## Related Topics
 
 To further enhance your understanding and use of evaluations:
-
-- [Experiments](/experiments/introduction) - Compare evaluation results between different workflow versions
-- [Tracing](/monitoring/tracing) - Add evaluators to more complex workflows
-- [Prompt Management](/prompts/introduction) - Improve prompts based on evaluation feedback

@@ -1,0 +1,61 @@
+---
+title: "Quickstart (v1)"
+description: "Quickstart guide for Basalt v1"
+icon: "rocket"
+---
+
+<Warning>
+	**The TypeScript SDK is not yet available for v1.** If you're using TypeScript/JavaScript, we recommend using the v0 docs: [v0/quickstart](/v0/quickstart).
+</Warning>
+
+## Quickstart (Python)
+
+<Info>
+  **Prerequisites:** Before you begin, make sure to have an [account on Basalt](https://app.getbasalt.ai).
+</Info>
+
+### 1. Install the SDK
+
+```bash
+pip install basalt-python
+```
+
+### 2. Set your API key
+
+```bash
+export BASALT_API_KEY="your_api_key_here"
+```
+
+### 3. Initialize the Basalt client
+
+```python
+from basalt import Basalt, TelemetryConfig
+
+telemetry = TelemetryConfig(
+    service_name="my-app",
+    environment="production",
+)
+
+client = Basalt(
+    api_key="your_api_key",
+    telemetry_config=telemetry,
+    observability_metadata={
+        "version": "1.0.0",
+        "region": "us-east-1",
+    },
+)
+```
+
+### 4. List your prompts
+
+```python
+response = client.prompts.list_sync()
+print(f"Total prompts: {response.total}")
+for prompt in response.prompts:
+    print(f"Slug: {prompt.slug} | Description: {prompt.description}")
+client.shutdown()
+```
+
+---
+
+For more details, see the [API Reference](./api-reference/introduction).
