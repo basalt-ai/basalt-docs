@@ -1,0 +1,51 @@
+---
+title: API Reference
+---
+
+# API Reference
+
+## Dataset Methods
+
+### list_sync
+
+```python
+basalt.datasets.list_sync()
+```
+Returns a list of all datasets accessible to your API key.
+
+### get_sync
+
+```python
+basalt.datasets.get_sync(slug: str)
+```
+Retrieves a dataset by slug.
+
+### add_row_sync
+
+```python
+basalt.datasets.add_row_sync(slug: str, values: dict, name: str = None, ideal_output: str = None, metadata: dict = None)
+```
+Adds a row to a dataset.
+
+## Dataset Objects
+
+### Dataset
+- `slug`: str
+- `name`: str
+- `description`: str
+- `num_rows`: int
+- `columns`: List[DatasetColumn]
+- `rows`: List[DatasetRow]
+
+### DatasetColumn
+- `name`: str
+- `type`: str
+- `description`: str
+
+### DatasetRow
+- `name`: str
+- `values`: dict
+- `ideal_output`: Optional[str]
+- `metadata`: Optional[dict]
+
+See the [Python SDK documentation](https://github.com/basalt-ai/basalt) for more details.

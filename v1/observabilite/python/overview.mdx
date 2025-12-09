@@ -1,0 +1,32 @@
+---
+title: Overview
+---
+
+# Overview
+
+Basalt v1 observability is built on OpenTelemetry and introduces a unified API for tracing, logging, and context propagation. This page covers the new concepts, migration notes, and best practices for Python users.
+
+<Warning>
+This documentation is for the Python SDK. For TypeScript, see the TypeScript tab.
+</Warning>
+
+## Major v1 Changes
+- Unified `observe`/`start_observe` API for all tracing and logging
+- Full support for OpenTelemetry context propagation
+- Auto-instrumentation for LLMs, vector DBs, and frameworks
+- Rich identity, experiment, and evaluator tracking
+- Async and sync support with identical APIs
+
+## Migration from v0
+- v1 is **not backward compatible** with v0
+- All tracing, logging, and context APIs have changed
+- See the Examples and API Reference tabs for new usage patterns
+
+## Core Concepts
+- **Root Spans:** Use `start_observe` (or `async_start_observe`) for entry points
+- **Nested Spans:** Use `observe` (or `async_observe`) for child operations
+- **Identity & Experiment:** Attach user/org/experiment to root spans; propagates automatically
+- **Evaluators:** Attach evaluators to spans for automated grading
+- **Auto-Instrumentation:** Enable tracing for LLMs, DBs, frameworks with zero code
+
+See the Examples tab for practical code and the API Reference for details.

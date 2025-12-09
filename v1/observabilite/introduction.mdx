@@ -1,11 +1,21 @@
 ---
-title: "Introduction à l'Observabilité"
-description: "Vue d'ensemble du fonctionnement de l'observabilité dans Basalt (évaluateurs, génération, otel, etc.)"
+title: Observability
 ---
 
-Cette section explique le fonctionnement de l'observabilité dans Basalt :
-- Évaluateurs
-- Génération
-- Intégration OpenTelemetry (otel)
+# Observability
 
-Les sous-catégories Python et TypeScript arrivent bientôt.
+Basalt v1 introduces a unified, OpenTelemetry-based observability system for AI applications. This is a major breaking change from v0, with new APIs, context propagation, and auto-instrumentation for LLMs, vector DBs, and frameworks.
+
+<Info>
+This section covers the core concepts and breaking changes in v1 observability. For SDK usage, see the Python or TypeScript tabs.
+</Info>
+
+## What's New in v1?
+- Unified `observe`/`start_observe` API for tracing, logging, and context
+- Full OpenTelemetry compatibility and context propagation
+- Auto-instrumentation for LLMs, vector DBs, and frameworks
+- Rich identity, experiment, and evaluator tracking
+- Async and sync support with identical APIs
+- Major API changes: see migration notes in the Python tab
+
+> **Migration:** v1 is not backward compatible with v0. See the Python tab for migration guidance and code examples.

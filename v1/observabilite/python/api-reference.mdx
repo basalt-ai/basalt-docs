@@ -1,0 +1,54 @@
+---
+title: API Reference
+---
+
+# API Reference
+
+## Core APIs
+
+### start_observe
+
+```python
+@start_observe(feature_slug: str, name: str, identity: dict = None, experiment: dict = None, metadata: dict = None)
+def my_function(...):
+    ...
+```
+Creates a root span for a trace. Use as a decorator or context manager.
+
+### observe
+
+```python
+@observe(name: str, kind: str = None, metadata: dict = None)
+def my_child_function(...):
+    ...
+```
+Creates a nested span. Use as a decorator or context manager.
+
+### async_start_observe / async_observe
+
+Async equivalents for async functions and workflows.
+
+## Span Handle Methods
+- `set_input(data)` / `set_output(data)`
+- `set_attribute(key, value)`
+- `set_status(status, message)`
+- `record_exception(exception)`
+- `add_event(name, attributes)`
+- `set_identity(identity)`
+- `add_evaluator(slug)`
+
+## Static Methods
+- `observe.metadata(dict)` / `observe.update_metadata(dict)`
+- `observe.set_input(data)` / `observe.set_output(data)`
+- `observe.set_identity(identity)`
+- `observe.evaluate(slug)`
+
+## Auto-Instrumentation
+- `Basalt(enabled_instruments=[...])` or `TelemetryConfig`
+
+## Trace Context
+- `configure_trace_defaults(...)`
+- `current_trace_defaults()`
+- `set_trace_user(...)` / `set_trace_organization(...)`
+
+See the [Python SDK documentation](https://github.com/basalt-ai/basalt) for more details and advanced usage.

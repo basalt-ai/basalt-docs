@@ -1,0 +1,71 @@
+---
+title: Examples
+---
+
+# Examples
+
+## Attaching Experiments to Spans
+
+Attach experiment metadata to observability spans using the `experiment` parameter:
+
+```python
+from basalt.observability import start_observe, observe
+
+@start_observe(
+    feature_slug="ab-test",
+    name="experiment.variant_a",
+    experiment="exp-456",
+    identity={
+        "organization": {"id": "123", "name": "ACME"},
+        "user": {"id": "456", "name": "John Doe"}
+    }
+)
+def run_variant_a():
+    observe.set_input({"variant": "A", "model": "gpt-4o"})
+    result = run_test()
+    observe.set_output({"variant": "A", "result": result})
+    return result
+
+# Or using context manager
+with start_observe(
+        feature_slug="ab-test",
+        name="experiment.variant_b",
+        experiment="exp-456",
+):
+    # Your experiment code
+    pass
+```
+
+## Creating Experiments
+
+Create experiments programmatically using the API client:
+
+```python
+from basalt.experiments import ExperimentsClient
+
+client = ExperimentsClient(api_key="your-api-key")
+
+# Create experiment synchronously
+experiment = client.create_sync(
+    feature_slug="my-feature",
+    name="GPT-5.1 vs GPT-5 Test"
+)
+print(f"Created experiment: {experiment.id}")
+```
+
+## Async Creation
+
+```python
+import asyncio
+from basalt.experiments import ExperimentsClient
+
+async def create_experiment():
+    client = ExperimentsClient(api_key="your-api-key")
+    experiment = await client.create(
+        feature_slug="llm-routing",
+        name="Model Selection Experiment"
+    )
+    return experiment
+
+experiment = asyncio.run(create_experiment())
+```

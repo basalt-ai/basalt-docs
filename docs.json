@@ -106,14 +106,47 @@
                   {
                     "group": "Datasets",
                     "icon": "database",
-                    "pages": ["v1/datasets/sdk-python", "v1/datasets/sdk-ts"]
+                    "pages": [
+                      "v1/datasets/introduction",
+                      {
+                        "group": "Python",
+                        "icon": "python",
+                        "pages": [
+                          "v1/datasets/python/overview",
+                          "v1/datasets/python/examples",
+                          "v1/datasets/python/api-reference"
+                        ]
+                      },
+                      {
+                        "group": "TypeScript",
+                        "icon": "js",
+                        "pages": [
+                          "v1/datasets/typescript/placeholder"
+                        ]
+                      }
+                    ]
                   },
                   {
                     "group": "Experiments",
                     "icon": "flask",
                     "pages": [
-                      "v1/experiments/sdk-python",
-                      "v1/experiments/sdk-ts"
+                      "v1/experiments/introduction",
+                      {
+                        "group": "Python",
+                        "icon": "python",
+                        "pages": [
+                          "v1/experiments/python/overview",
+                          "v1/experiments/python/examples",
+                          "v1/experiments/python/api-reference"
+                        ]
+                      },
+                      {
+                        "group": "TypeScript",
+                        "icon": "js",
+                        "pages": [
+                          "v1/experiments/typescript/placeholder"
+                        ]
+                      }
                     ]
                   },
                   {
@@ -121,8 +154,22 @@
                     "icon": "chart-line",
                     "pages": [
                       "v1/observabilite/introduction",
-                      "v1/observabilite/python",
-                      "v1/observabilite/ts"
+                      {
+                        "group": "Python",
+                        "icon": "python",
+                        "pages": [
+                          "v1/observabilite/python/overview",
+                          "v1/observabilite/python/examples",
+                          "v1/observabilite/python/api-reference"
+                        ]
+                      },
+                      {
+                        "group": "TypeScript",
+                        "icon": "js",
+                        "pages": [
+                          "v1/observabilite/typescript/placeholder"
+                        ]
+                      }
                     ]
                   }
                 ]

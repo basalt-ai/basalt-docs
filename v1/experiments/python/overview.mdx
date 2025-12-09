@@ -1,0 +1,42 @@
+---
+title: Overview
+---
+
+# Overview
+
+This page explains how to use Basalt's Experiments API with Python. Experiments help you organize, track, and compare different approaches in your AI workflows.
+
+<Warning>
+This documentation is for the Python SDK. For TypeScript, see the TypeScript tab.
+</Warning>
+
+## What are Experiments?
+
+Experiments in Basalt are a mechanism for:
+- Tracking variants of prompts, models, or approaches
+- Comparing performance across versions
+- Associating traces with experiments
+- Attaching metadata to observability spans
+
+## Core Concepts
+
+### Experiment Model
+
+```python
+@dataclass(slots=True, frozen=True)
+class Experiment:
+    id: str                 # Unique identifier
+    name: str               # Human-readable name
+    feature_slug: str       # Feature slug
+    created_at: str         # ISO 8601 timestamp
+```
+
+### TraceExperiment
+
+```python
+@dataclass(frozen=True, slots=True)
+class TraceExperiment:
+    id: str                      # Experiment ID
+    name: str | None = None      # Optional display name
+    feature_slug: str | None = None  # Optional feature slug
+```

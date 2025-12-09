@@ -1,0 +1,36 @@
+---
+title: API Reference
+---
+
+# API Reference
+
+## Experiment Methods
+
+### create_sync
+
+```python
+client.create_sync(feature_slug: str, name: str)
+```
+Creates a new experiment synchronously.
+
+### create (async)
+
+```python
+await client.create(feature_slug: str, name: str)
+```
+Creates a new experiment asynchronously.
+
+## Experiment Objects
+
+### Experiment
+- `id`: str
+- `name`: str
+- `feature_slug`: str
+- `created_at`: str
+
+### TraceExperiment
+- `id`: str
+- `name`: Optional[str]
+- `feature_slug`: Optional[str]
+
+See the [Python SDK documentation](https://github.com/basalt-ai/basalt) for more details.

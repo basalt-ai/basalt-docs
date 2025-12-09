@@ -1,0 +1,108 @@
+---
+title: Examples
+---
+
+# Examples
+
+## Root Span with start_observe
+
+```python
+from basalt.observability import start_observe, observe
+
+@start_observe(
+    feature_slug="data-processing",
+    name="Data Processing Workflow",
+    identity={
+        "organization": {"id": "123", "name": "ACME"},
+        "user": {"id": "456", "name": "John Doe"}
+    },
+    metadata={"version": "v2", "environment": "production"}
+)
+def process_data(data):
+    prepare_data(data)
+    transform_data(data)
+    return result
+
+@observe(name="Data Preparation")
+def prepare_data(data):
+    pass
+```
+
+## Using as a Context Manager
+
+```python
+from basalt.observability import start_observe
+
+def process_request():
+    with start_observe(
+            feature_slug="request-processing",
+            name="Request Processing",
+            identity={
+                "organization": {"id": "123", "name": "ACME"},
+                "user": {"id": "456", "name": "John Doe"}
+            }
+    ):
+        observe.set_input({"data": "..."})
+        result = do_work()
+        observe.set_output(result)
+        return result
+```
+
+## Async Observability
+
+```python
+import asyncio
+from basalt.observability import async_start_observe, async_observe
+
+async def main():
+    async with async_start_observe(feature_slug="async-workflow", name="async_workflow") as span:
+        span.set_input({"task": "process_data"})
+        result = await process_data()
+        span.set_output(result)
+
+async def process_data():
+    async with async_observe(name="data_processing") as span:
+        await asyncio.sleep(0.1)
+        return {"status": "complete"}
+
+asyncio.run(main())
+```
+
+## LLM & Generation Tracing
+
+```python
+from basalt.observability import observe_generation
+
+@observe_generation(name="llm.generate_summary")
+def generate_summary(text: str):
+    response = llm_client.generate(text)
+    return response
+```
+
+## Auto-Instrumentation
+
+```python
+from basalt import Basalt
+basalt = Basalt(api_key="your-api-key", enabled_instruments=["openai", "anthropic"])
+
+import openai
+client = openai.OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+# This call is automatically traced
+```
+
+## Trace Context
+
+```python
+from basalt.observability import configure_trace_defaults, current_trace_defaults
+
+configure_trace_defaults(
+    experiment={"id": "exp-default", "name": "Default Experiment"},
+    metadata={"environment": "production"}
+)
+defaults = current_trace_defaults()
+print(defaults.experiment.id)
+```

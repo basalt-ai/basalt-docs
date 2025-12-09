@@ -1,0 +1,58 @@
+---
+title: Overview
+---
+
+# Overview
+
+This page explains how to use Basalt's Datasets API with Python. Datasets help you organize, retrieve, and manage test cases for evaluating AI model outputs.
+
+<Warning>
+This documentation is for the Python SDK. For TypeScript, see the TypeScript tab.
+</Warning>
+
+## Listing Datasets
+
+Retrieve all datasets accessible to your API key.
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
+
+# List all datasets
+response = basalt.datasets.list_sync()
+
+print(f"Total datasets: {response.total}")
+for dataset in response.datasets:
+    print(f"{dataset.slug}: {dataset.num_rows} rows")
+
+basalt.shutdown()
+```
+
+## Getting a Dataset
+
+Retrieve a specific dataset and inspect its structure.
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
+dataset = basalt.datasets.get_sync(slug='customer-support-qa')
+
+print(f"Dataset: {dataset.name}")
+print(f"Rows: {len(dataset.rows)}")
+print(f"Columns: {[col.name for col in dataset.columns]}")
+
+basalt.shutdown()
+```
+
+## Dataset Structure
+
+- `dataset.slug`: Unique identifier
+- `dataset.name`: Human-readable name
+- `dataset.description`: Description
+- `dataset.num_rows`: Number of rows
+- `dataset.columns`: List of columns
+- `dataset.rows`: List of rows
+
+See the API Reference for details on objects and methods.

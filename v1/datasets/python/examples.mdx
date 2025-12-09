@@ -1,0 +1,75 @@
+---
+title: Examples
+---
+
+# Examples
+
+## Adding Rows
+
+Add new test cases to existing datasets.
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
+row, warning = basalt.datasets.add_row_sync(
+    slug='customer-support-qa',
+    values={
+        'question': 'How do I reset my password?',
+        'context': 'User account management'
+    },
+    name='test-case-001',
+    ideal_output='Click on "Forgot Password" on the login page.',
+    metadata={'category': 'account', 'priority': 'high'}
+)
+print(f"Added row: {row.name}")
+if warning:
+    print(f"Warning: {warning}")
+basalt.shutdown()
+```
+
+## Bulk Row Addition
+
+```python
+from basalt import Basalt
+
+def add_multiple_test_cases(slug: str, test_cases: list):
+    basalt = Basalt(api_key="your-api-key")
+    for i, test_case in enumerate(test_cases):
+        row, warning = basalt.datasets.add_row_sync(
+            slug=slug,
+            values=test_case['values'],
+            name=test_case.get('name', f'test-{i:03d}'),
+            ideal_output=test_case.get('ideal_output'),
+            metadata=test_case.get('metadata', {})
+        )
+        print(f"✓ Added: {row.name}")
+        if warning:
+            print(f"  Warning: {warning}")
+    basalt.shutdown()
+```
+
+## Use Case: Prompt Testing Dataset
+
+```python
+from basalt import Basalt
+import openai
+
+def evaluate_prompt_against_dataset(prompt_slug: str, dataset_slug: str):
+    basalt = Basalt(api_key="your-api-key")
+    openai_client = openai.OpenAI()
+    dataset = basalt.datasets.get_sync(slug=dataset_slug)
+    for row in dataset.rows:
+        prompt = basalt.prompts.get_sync(
+            slug=prompt_slug,
+            tag='latest',
+            variables=row.values
+        )
+        response = openai_client.chat.completions.create(
+            model=prompt.model.model,
+            messages=[{"role": "user", "content": prompt.text}]
+        )
+        actual_output = response.choices[0].message.content
+        print(f"Test {row.name}: {actual_output}")
+    basalt.shutdown()
+```
