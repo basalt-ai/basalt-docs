@@ -1,0 +1,632 @@
+---
+title: Evaluators Guide
+description: Understanding evaluator attachment, propagation modes, sampling, and quality evaluation
+---
+
+# Evaluators Guide
+
+Evaluators are quality checks that run on your traces to assess aspects like correctness, toxicity, hallucination, bias, and more. Understanding how evaluators attach to spans is crucial for effective quality monitoring.
+
+## What Are Evaluators?
+
+Evaluators are server-side functions that analyze span data after execution to produce quality scores. Common evaluator types:
+
+- **Answer Quality**: Correctness, relevance, completeness
+- **Safety**: Toxicity, bias, PII detection
+- **Hallucination**: Factual consistency, grounding
+- **Performance**: Response time, token efficiency
+- **Custom**: Domain-specific quality checks
+
+Evaluators run **asynchronously** after spans complete, so they don't block your application.
+
+## How Evaluators Work
+
+### Basic Flow
+
+```
+1. Span created with evaluator attached
+   └── Attributes: basalt.span.evaluators = ["quality-check"]
+
+2. Span completed and exported to Basalt backend
+
+3. Backend receives span data
+
+4. Evaluator "quality-check" runs on span data
+   └── Analyzes: input, output, metadata, prompt, etc.
+
+5. Evaluation result stored
+   └── Score, feedback, reasoning
+
+6. Results visible in Basalt dashboard
+```
+
+### What Evaluators Receive
+
+Evaluators have access to:
+- Span **input** and **output** data
+- Span **kind** (GENERATION, RETRIEVAL, etc.)
+- **Metadata** and attributes
+- **Prompt** attributes (if using prompt context manager)
+- **Model** information (for LLM spans)
+- **Tokens** used
+- Parent span context
+
+## Two Attachment Modes
+
+Basalt supports two distinct modes for attaching evaluators: **propagating** and **non-propagating**.
+
+### Propagating Mode (Affects Children)
+
+Evaluators attached in propagating mode flow down to all child spans through context propagation.
+
+**Methods:**
+- `@evaluator` decorator
+- `with_evaluators()` context manager
+- `attach_evaluator()` context manager
+- `configure_trace_defaults(evaluators=[...])` global config
+
+**Example:**
+
+```python
+from basalt.observability import start_observe, observe, evaluator
+
+@evaluator("quality-check")  # Propagating
+def parent():
+    # This span has "quality-check"
+    child()
+
+@observe(name="child")
+def child():
+    # This span ALSO has "quality-check" (inherited from parent)
+    pass
+```
+
+### Non-Propagating Mode (Span-Only)
+
+Evaluators attached in non-propagating mode apply **only** to the specific span, not children.
+
+**Methods:**
+- `span.add_evaluator(slug)` - span handle method
+- `span.add_evaluators(*slugs)` - multiple at once
+- `attach_evaluators_to_span()` helper
+
+**Example:**
+
+```python
+from basalt.observability import start_observe, observe
+
+@start_observe(feature_slug="app", name="parent")
+def parent():
+    with observe("child") as span:
+        span.add_evaluator("child-only")  # Non-propagating
+        # This span has "child-only"
+        
+        grandchild()
+
+@observe(name="grandchild")
+def grandchild():
+    # This span does NOT have "child-only"
+    pass
+```
+
+### Combining Modes
+
+You can mix propagating and non-propagating evaluators in the same trace:
+
+```python
+from basalt.observability import start_observe, observe, evaluator
+
+@evaluator("quality")  # Propagating - all spans get this
+@start_observe(feature_slug="app", name="root")
+def root():
+    with observe("processing") as span:
+        # This span has "quality" (propagated)
+        span.add_evaluator("processing-specific")  # Non-propagating
+        # This span now has: ["quality", "processing-specific"]
+        
+        generate()
+
+@observe(name="generate", kind=ObserveKind.GENERATION)
+def generate():
+    # This span has only "quality" (propagated)
+    # Does NOT have "processing-specific" (not propagated)
+    pass
+```
+
+## Using the @evaluator Decorator
+
+The most common way to attach evaluators is the `@evaluator` decorator.
+
+### Basic Usage
+
+```python
+from basalt.observability import evaluator, start_observe
+
+@evaluator("answer-correctness")
+@start_observe(feature_slug="qa", name="QA System")
+def qa_system(question: str):
+    # All spans in this trace get "answer-correctness" evaluator
+    return generate_answer(question)
+```
+
+### Multiple Evaluators
+
+```python
+@evaluator(slugs=["quality", "toxicity", "hallucination", "bias"])
+@start_observe(feature_slug="content-gen", name="Generate Content")
+def generate_content(topic: str):
+    # All spans get all 4 evaluators
+    return create_article(topic)
+```
+
+### With Sampling
+
+```python
+from basalt.observability import evaluator, EvaluationConfig
+
+@evaluator(
+    slugs=["expensive-eval"],
+    config=EvaluationConfig(sample_rate=0.1)  # Run on 10% of traces
+)
+@start_observe(feature_slug="app", name="handler")
+def handler():
+    # "expensive-eval" runs on only 10% of traces (cost control)
+    pass
+```
+
+### Placement Matters
+
+The `@evaluator` decorator can be placed at **any level**, not just root:
+
+```python
+@start_observe(feature_slug="app", name="root")
+def root():
+    # No evaluators here
+    critical_section()
+
+@evaluator("critical-check")  # Propagates to children of critical_section
+@observe(name="critical_section")
+def critical_section():
+    # This and all children get "critical-check"
+    child_operation()
+```
+
+## Context Managers for Evaluators
+
+For dynamic control, use context managers.
+
+### with_evaluators()
+
+```python
+from basalt.observability import with_evaluators, observe
+
+def dynamic_processing(user_tier: str):
+    if user_tier == "premium":
+        # Premium users get comprehensive evaluation
+        with with_evaluators(["quality", "toxicity", "bias", "hallucination"]):
+            return premium_process()
+    else:
+        # Free users get basic evaluation
+        with with_evaluators(["toxicity"]):
+            return basic_process()
+```
+
+### attach_evaluator()
+
+```python
+from basalt.observability import attach_evaluator, observe
+
+def conditional_evaluation(needs_quality_check: bool):
+    with observe(name="operation") as span:
+        if needs_quality_check:
+            with attach_evaluator("quality-check"):
+                # Evaluator applies to spans created within this context
+                perform_operation()
+```
+
+## Span-Specific Evaluators
+
+Use span handle methods for non-propagating attachment.
+
+### Single Evaluator
+
+```python
+with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
+    # Attach evaluator to just this span
+    span.add_evaluator("generation-quality")
+    
+    response = llm.generate(prompt)
+    span.set_output(response)
+```
+
+### Multiple Evaluators
+
+```python
+with observe(name="content-gen", kind=ObserveKind.GENERATION) as span:
+    # Attach multiple evaluators at once
+    span.add_evaluators("quality", "toxicity", "hallucination")
+    
+    content = generate_content()
+    span.set_output(content)
+```
+
+### With Configuration
+
+```python
+from basalt.observability import EvaluationConfig
+
+with observe(name="operation") as span:
+    span.add_evaluator("expensive-check")
+    
+    # Set sampling rate for all evaluators on this span
+    span.set_evaluator_config(EvaluationConfig(sample_rate=0.2))
+```
+
+## Sampling
+
+Control evaluation costs by sampling traces.
+
+### Sample Rate Basics
+
+```python
+from basalt.observability import EvaluationConfig
+
+# Sample rate: 0.0 (never) to 1.0 (always)
+config = EvaluationConfig(sample_rate=0.5)  # Run on 50% of traces
+```
+
+### Per-Evaluator Sampling
+
+```python
+@evaluator("cheap-eval", config=EvaluationConfig(sample_rate=1.0))  # 100%
+@evaluator("expensive-eval", config=EvaluationConfig(sample_rate=0.1))  # 10%
+@start_observe(feature_slug="app", name="handler")
+def handler():
+    # "cheap-eval" runs on every trace
+    # "expensive-eval" runs on 10% of traces
+    pass
+```
+
+### Dynamic Sampling
+
+```python
+def adaptive_sampling(query_complexity: str):
+    if query_complexity == "high":
+        sample_rate = 1.0  # Always evaluate complex queries
+    elif query_complexity == "medium":
+        sample_rate = 0.5
+    else:
+        sample_rate = 0.1  # Rarely evaluate simple queries
+    
+    with evaluator(
+        "quality-check",
+        config=EvaluationConfig(sample_rate=sample_rate)
+    ):
+        return process_query()
+```
+
+### Why Sampling?
+
+- **Cost control**: Some evaluators use LLMs and incur costs
+- **Performance**: Reduce backend load
+- **Focused analysis**: High sampling for critical paths, low for routine operations
+- **A/B testing**: Sample different populations
+
+## Evaluator Metadata
+
+Attach metadata to provide context for evaluators.
+
+### Evaluator-Specific Metadata
+
+```python
+with observe(name="generation", kind=ObserveKind.GENERATION) as span:
+    span.add_evaluator("answer-correctness")
+    
+    # Metadata specifically for evaluators
+    span.set_evaluator_metadata({
+        "expected_answer": "Paris",
+        "acceptable_alternatives": ["paris", "Paris, France"],
+        "language": "en"
+    })
+    
+    answer = generate_answer("What is the capital of France?")
+    span.set_output(answer)
+```
+
+The evaluator receives `expected_answer` and can use it for comparison.
+
+### Shared Metadata
+
+```python
+with observe(name="translation", kind=ObserveKind.GENERATION) as span:
+    # Regular metadata (visible in dashboard)
+    span.set_metadata({
+        "source_language": "en",
+        "target_language": "fr"
+    })
+    
+    # Evaluator-specific metadata
+    span.set_evaluator_metadata({
+        "reference_translation": "Bonjour, comment allez-vous?"
+    })
+    
+    span.add_evaluator("translation-quality")
+```
+
+## Auto-Instrumentation and Evaluators
+
+Auto-instrumented spans automatically inherit evaluators from parent context.
+
+### Automatic Inheritance
+
+```python
+from basalt import Basalt
+from basalt.observability import evaluator, start_observe
+
+basalt = Basalt(
+    api_key="...",
+    enabled_instruments=["openai"]
+)
+
+@evaluator(["quality", "toxicity"])
+@start_observe(feature_slug="qa", name="QA System")
+def qa_system(query: str):
+    # Auto-instrumented OpenAI call automatically gets evaluators
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": query}]
+    )
+    # The OpenAI span has both "quality" and "toxicity" evaluators
+    return response.choices[0].message.content
+```
+
+**No manual attachment needed!** The auto-instrumented span reads evaluators from context.
+
+### With Prompt Context Manager
+
+```python
+@evaluator(["hallucination", "factuality"])
+@start_observe(feature_slug="qa", name="QA")
+def qa_with_prompt(query: str):
+    with basalt.prompts.get_sync("qa-prompt", variables={"query": query}) as prompt:
+        # OpenAI call gets:
+        # 1. Evaluators: ["hallucination", "factuality"]
+        # 2. Prompt attributes: slug, version, variables
+        response = openai_client.chat.completions.create(
+            model=prompt.model.model,
+            messages=[{"role": "user", "content": prompt.text}]
+        )
+        # Evaluators can access both the prompt AND the response
+        return response.choices[0].message.content
+```
+
+This enables powerful evaluations like:
+- "Does the response match the prompt template?"
+- "Is the response grounded in the prompt context?"
+- "Did the model follow prompt instructions?"
+
+## Global Evaluator Configuration
+
+Set default evaluators for all traces.
+
+```python
+from basalt.observability import configure_trace_defaults
+
+# All traces created after this will have these evaluators
+configure_trace_defaults(
+    evaluators=["baseline-quality", "toxicity"]
+)
+
+@start_observe(feature_slug="app", name="handler")
+def handler():
+    # Automatically has "baseline-quality" and "toxicity"
+    pass
+```
+
+Override globals with local evaluators:
+
+```python
+configure_trace_defaults(evaluators=["baseline"])
+
+@evaluator("special-check")  # Adds to global defaults
+@start_observe(feature_slug="app", name="handler")
+def handler():
+    # Has both "baseline" (global) and "special-check" (local)
+    pass
+```
+
+## Evaluator Best Practices
+
+### ✅ Do
+
+- **Use propagating mode by default** - `@evaluator` decorator for broad coverage
+- **Sample expensive evaluators** - Use `sample_rate < 1.0` for LLM-based evaluators
+- **Provide context via metadata** - Help evaluators make accurate assessments
+- **Use semantic span kinds** - Evaluators can filter by GENERATION, RETRIEVAL, etc.
+- **Test evaluators in development** - Use `sample_rate=1.0` to see all results
+- **Monitor evaluation costs** - Track evaluator usage in production
+- **Use non-propagating for span-specific checks** - `span.add_evaluator()` for targeted evaluation
+
+### ❌ Don't
+
+- **Don't over-evaluate** - Too many evaluators increase costs and latency
+- **Don't use sample_rate=1.0 for expensive evaluators in prod** - Control costs
+- **Don't attach evaluators to non-relevant spans** - e.g., "hallucination" evaluator on RETRIEVAL spans
+- **Don't forget to test** - Ensure evaluators receive the data they need
+- **Don't block on evaluations** - Evaluators run async, don't wait for results
+
+## Advanced Patterns
+
+### Conditional Evaluation by Span Kind
+
+```python
+from basalt.observability import observe, ObserveKind
+
+@start_observe(feature_slug="pipeline", name="Pipeline")
+def pipeline():
+    retrieval()
+    generation()
+
+@observe(name="retrieval", kind=ObserveKind.RETRIEVAL)
+def retrieval():
+    with observe(name="search") as span:
+        # Evaluator specific to retrieval
+        span.add_evaluator("retrieval-quality")
+    return search_results
+
+@observe(name="generation", kind=ObserveKind.GENERATION)
+def generation():
+    with observe(name="llm-call") as span:
+        # Evaluator specific to generation
+        span.add_evaluator("hallucination-check")
+    return llm_output
+```
+
+### Hierarchical Evaluation
+
+```python
+@evaluator("all-operations")  # All spans get this
+@start_observe(feature_slug="app", name="root")
+def root():
+    critical_path()
+    non_critical_path()
+
+@evaluator("critical-only")  # Only critical spans get this
+@observe(name="critical_path")
+def critical_path():
+    # Has both "all-operations" and "critical-only"
+    pass
+
+@observe(name="non_critical_path")
+def non_critical_path():
+    # Has only "all-operations"
+    pass
+```
+
+### Evaluation with Experiments
+
+```python
+from basalt.types import TraceExperiment
+from basalt.observability import evaluator
+
+experiment = TraceExperiment(id="eval-comparison", name="Evaluator A/B Test")
+
+@evaluator("evaluator-a")
+@start_observe(feature_slug="qa", name="Variant A", experiment=experiment)
+def variant_a():
+    return process()
+
+@evaluator("evaluator-b")
+@start_observe(feature_slug="qa", name="Variant B", experiment=experiment)
+def variant_b():
+    return process()
+
+# Compare evaluator performance in dashboard
+```
+
+## Real-World Example: Multi-Tier Evaluation
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, evaluator, EvaluationConfig, ObserveKind
+
+basalt = Basalt(api_key="...", enabled_instruments=["openai"])
+
+# Global baseline: Always run toxicity check
+from basalt.observability import configure_trace_defaults
+configure_trace_defaults(
+    evaluators=["toxicity"]
+)
+
+@start_observe(
+    feature_slug="content-generation",
+    name="Generate Content",
+    identity={"user": {"id": "user-123"}}
+)
+def generate_content(topic: str, user_tier: str):
+    """Multi-tier evaluation based on user tier."""
+    
+    # Tier-specific evaluation
+    if user_tier == "premium":
+        # Premium: Comprehensive evaluation
+        with evaluator(
+            slugs=["quality", "factuality", "bias", "hallucination"],
+            config=EvaluationConfig(sample_rate=1.0)  # Always evaluate
+        ):
+            return premium_generation(topic)
+    
+    elif user_tier == "standard":
+        # Standard: Moderate evaluation
+        with evaluator(
+            slugs=["quality", "factuality"],
+            config=EvaluationConfig(sample_rate=0.5)  # 50% sampling
+        ):
+            return standard_generation(topic)
+    
+    else:
+        # Free: Basic evaluation (only global toxicity)
+        return basic_generation(topic)
+
+@observe(name="Premium Generation", kind=ObserveKind.GENERATION)
+def premium_generation(topic: str):
+    """Premium features with full evaluation."""
+    
+    with basalt.prompts.get_sync("premium-prompt", variables={"topic": topic}) as prompt:
+        response = openai_client.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=[{"role": "user", "content": prompt.text}]
+        )
+        # Span gets: toxicity (global) + quality, factuality, bias, hallucination (tier)
+        return response.choices[0].message.content
+
+@observe(name="Standard Generation", kind=ObserveKind.GENERATION)
+def standard_generation(topic: str):
+    """Standard features with moderate evaluation."""
+    
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Write about: {topic}"}]
+    )
+    # Span gets: toxicity (global) + quality, factuality (tier, 50% sampled)
+    return response.choices[0].message.content
+
+@observe(name="Basic Generation", kind=ObserveKind.GENERATION)
+def basic_generation(topic: str):
+    """Basic features with minimal evaluation."""
+    
+    response = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": f"Write about: {topic}"}]
+    )
+    # Span gets only: toxicity (global)
+    return response.choices[0].message.content
+
+# Usage
+premium_content = generate_content("AI Ethics", user_tier="premium")
+standard_content = generate_content("Quantum Computing", user_tier="standard")
+free_content = generate_content("Python Basics", user_tier="free")
+
+basalt.shutdown()
+```
+
+**This pattern enables:**
+- Cost control (sampling by tier)
+- Quality differentiation (more checks for premium)
+- Global safety (toxicity always checked)
+- Scalable evaluation strategy
+
+## Summary
+
+| Feature | Method | Mode | Use Case |
+|---------|--------|------|----------|
+| Decorator | `@evaluator(...)` | Propagating | Broad coverage across trace |
+| Context manager | `with_evaluators(...)` | Propagating | Dynamic/conditional evaluation |
+| Span method | `span.add_evaluator(...)` | Non-propagating | Span-specific evaluation |
+| Global config | `configure_trace_defaults(...)` | Propagating | Baseline evaluation for all traces |
+| Sampling | `EvaluationConfig(sample_rate=...)` | Both | Cost control |
+| Metadata | `span.set_evaluator_metadata(...)` | N/A | Provide context for evaluators |
+
+Next steps:
+- [API Reference](/v1/observabilite/python/api-reference) - All evaluator methods
+- [Workflows](/v1/observabilite/python/workflows) - Evaluation in complete examples
+- [Concepts](/v1/observabilite/python/concepts) - Understanding context propagation

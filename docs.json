@@ -159,6 +159,11 @@
                         "icon": "python",
                         "pages": [
                           "v1/observabilite/python/overview",
+                          "v1/observabilite/python/concepts",
+                          "v1/observabilite/python/patterns",
+                          "v1/observabilite/python/workflows",
+                          "v1/observabilite/python/evaluators",
+                          "v1/observabilite/python/auto-instrumentation",
                           "v1/observabilite/python/examples",
                           "v1/observabilite/python/api-reference"
                         ]

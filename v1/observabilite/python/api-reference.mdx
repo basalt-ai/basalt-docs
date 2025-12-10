@@ -1,54 +1,985 @@
 ---
 title: API Reference
+description: Complete API documentation for Basalt observability
 ---
 
 # API Reference
 
-## Core APIs
+Complete reference for all observability APIs in the Basalt Python SDK.
+
+## Core Decorators and Context Managers
 
 ### start_observe
 
+Creates a **root span** to start a new trace. Every trace must have exactly one root span.
+
+**As Decorator:**
 ```python
-@start_observe(feature_slug: str, name: str, identity: dict = None, experiment: dict = None, metadata: dict = None)
+@start_observe(
+    feature_slug: str,
+    name: str,
+    identity: dict | Callable = None,
+    experiment: TraceExperiment | dict = None,
+    metadata: dict = None
+)
 def my_function(...):
     ...
 ```
-Creates a root span for a trace. Use as a decorator or context manager.
+
+**As Context Manager:**
+```python
+with start_observe(
+    feature_slug: str,
+    name: str,
+    identity: dict | Callable = None,
+    experiment: TraceExperiment | dict = None,
+    metadata: dict = None
+) as span:
+    ...
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `feature_slug` | `str` | Yes | Feature identifier for categorization (e.g., "qa-system", "data-pipeline") |
+| `name` | `str` | Yes | Human-readable span name (e.g., "Answer Question") |
+| `identity` | `dict \| Callable` | No | User/org identity dict or callable that extracts identity from function args |
+| `experiment` | `TraceExperiment \| dict` | No | Experiment information for A/B testing |
+| `metadata` | `dict` | No | Additional metadata to attach to span |
+
+**Identity Structure:**
+```python
+{
+    "user": {"id": "user-123", "name": "Alice"},  # name optional
+    "organization": {"id": "org-456", "name": "Acme Corp"}  # name optional
+}
+```
+
+**Experiment Structure:**
+```python
+TraceExperiment(
+    id="exp-789",
+    name="Model Comparison",
+    feature_slug="qa-system"
+)
+# Or as dict:
+{"id": "exp-789", "name": "Model Comparison", "feature_slug": "qa-system"}
+```
+
+**Examples:**
+
+```python
+# Basic usage
+@start_observe(feature_slug="api", name="Handle Request")
+def handle_request(data):
+    return process(data)
+
+# With identity
+@start_observe(
+    feature_slug="api",
+    name="Handle Request",
+    identity={"user": {"id": "user-123"}}
+)
+def handle_request(data):
+    return process(data)
+
+# Identity from function args (callable)
+def extract_identity(user_id: str, **kwargs):
+    return {"user": {"id": user_id}}
+
+@start_observe(
+    feature_slug="api",
+    name="Handle Request",
+    identity=extract_identity  # Callable
+)
+def handle_request(user_id: str, data: dict):
+    return process(data)
+
+# As context manager
+with start_observe(feature_slug="job", name="Batch Job") as span:
+    span.set_input({"batch_id": "123"})
+    result = process_batch()
+    span.set_output(result)
+```
+
+---
 
 ### observe
 
+Creates a **child span** within an existing trace. Requires a parent span from `start_observe`.
+
+**As Decorator:**
 ```python
-@observe(name: str, kind: str = None, metadata: dict = None)
-def my_child_function(...):
+@observe(
+    name: str,
+    kind: ObserveKind | str = None,
+    metadata: dict = None
+)
+def my_function(...):
     ...
 ```
-Creates a nested span. Use as a decorator or context manager.
+
+**As Context Manager:**
+```python
+with observe(
+    name: str,
+    kind: ObserveKind | str = None,
+    metadata: dict = None
+) as span:
+    ...
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `str` | Yes | Span name |
+| `kind` | `ObserveKind \| str` | No | Semantic span kind (see ObserveKind) |
+| `metadata` | `dict` | No | Additional metadata |
+
+**ObserveKind Values:**
+
+```python
+from basalt.observability import ObserveKind
+
+ObserveKind.GENERATION   # LLM text generation
+ObserveKind.RETRIEVAL    # Vector search, database queries
+ObserveKind.TOOL         # Tool/function execution
+ObserveKind.FUNCTION     # General function calls
+ObserveKind.EVENT        # Discrete events
+ObserveKind.SPAN         # Generic (default)
+```
+
+**Examples:**
+
+```python
+# Basic
+@observe(name="Process Data")
+def process_data(data):
+    return transform(data)
+
+# With span kind
+@observe(name="Search Documents", kind=ObserveKind.RETRIEVAL)
+def search_docs(query: str):
+    return vector_db.search(query)
+
+@observe(name="Generate Answer", kind=ObserveKind.GENERATION)
+def generate_answer(context: str):
+    return llm.generate(context)
+
+# As context manager
+with observe(name="Multi-Step", kind=ObserveKind.FUNCTION) as span:
+    span.set_input({"step": 1})
+    result = step1()
+    result = step2(result)
+    span.set_output(result)
+```
+
+---
 
 ### async_start_observe / async_observe
 
-Async equivalents for async functions and workflows.
+Explicit async variants of `start_observe` and `observe`. Also works with auto-detection using `@start_observe` and `@observe` on async functions.
+
+**Signatures:** Same as sync versions
+
+**Examples:**
+
+```python
+# Explicit async
+@async_start_observe(feature_slug="async-app", name="Async Handler")
+async def async_handler(data):
+    result = await process_async(data)
+    return result
+
+@async_observe(name="Process Async")
+async def process_async(data):
+    await asyncio.sleep(0.1)
+    return data
+
+# Auto-detection (recommended)
+@start_observe(feature_slug="async-app", name="Async Handler")
+async def async_handler(data):
+    # Automatically detects async function
+    return await process_async(data)
+
+# Async context managers
+async def workflow():
+    async with async_start_observe(
+        feature_slug="workflow",
+        name="Async Workflow"
+    ) as span:
+        span.set_input({"task": "process"})
+        result = await process()
+        span.set_output(result)
+```
+
+---
 
 ## Span Handle Methods
-- `set_input(data)` / `set_output(data)`
-- `set_attribute(key, value)`
-- `set_status(status, message)`
-- `record_exception(exception)`
-- `add_event(name, attributes)`
-- `set_identity(identity)`
-- `add_evaluator(slug)`
 
-## Static Methods
-- `observe.metadata(dict)` / `observe.update_metadata(dict)`
-- `observe.set_input(data)` / `observe.set_output(data)`
-- `observe.set_identity(identity)`
-- `observe.evaluate(slug)`
+When using context managers, you get a span handle with these methods:
+
+### Data Methods
+
+#### set_input(data)
+Set the input data for the span.
+
+```python
+span.set_input(data: Any) -> None
+```
+
+**Example:**
+```python
+with observe(name="process") as span:
+    span.set_input({"query": "hello", "limit": 10})
+```
+
+---
+
+#### set_output(data)
+Set the output data for the span.
+
+```python
+span.set_output(data: Any) -> None
+```
+
+**Example:**
+```python
+with observe(name="process") as span:
+    result = process()
+    span.set_output({"result": result, "count": 5})
+```
+
+---
+
+#### set_attribute(key, value)
+Set a single attribute on the span.
+
+```python
+span.set_attribute(key: str, value: Any) -> None
+```
+
+**Example:**
+```python
+with observe(name="operation") as span:
+    span.set_attribute("version", "2.0")
+    span.set_attribute("retry_count", 3)
+```
+
+---
+
+#### set_metadata(metadata)
+Set multiple attributes at once.
+
+```python
+span.set_metadata(metadata: dict) -> None
+```
+
+**Example:**
+```python
+with observe(name="operation") as span:
+    span.set_metadata({
+        "environment": "production",
+        "region": "us-west-2",
+        "version": "2.0"
+    })
+```
+
+---
+
+### Identity Methods
+
+#### set_identity(identity)
+Set user and organization identity.
+
+```python
+span.set_identity(identity: dict) -> None
+```
+
+**Structure:**
+```python
+{
+    "user": {"id": "user-123", "name": "Alice"},  # name optional
+    "organization": {"id": "org-456", "name": "Acme"}  # name optional
+}
+```
+
+**Example:**
+```python
+with start_observe(feature_slug="api", name="handler") as span:
+    span.set_identity({
+        "user": {"id": "user-123", "name": "Alice"},
+        "organization": {"id": "org-456"}
+    })
+```
+
+---
+
+#### set_user(user_id, name=None)
+Set user identity only.
+
+```python
+span.set_user(user_id: str, name: str = None) -> None
+```
+
+**Example:**
+```python
+with start_observe(feature_slug="api", name="handler") as span:
+    span.set_user(user_id="user-123", name="Alice")
+```
+
+---
+
+#### set_organization(org_id, name=None)
+Set organization identity only.
+
+```python
+span.set_organization(org_id: str, name: str = None) -> None
+```
+
+**Example:**
+```python
+with start_observe(feature_slug="api", name="handler") as span:
+    span.set_organization(org_id="org-456", name="Acme Corp")
+```
+
+---
+
+### Status and Error Methods
+
+#### set_status(status, message=None)
+Set the span status.
+
+```python
+span.set_status(status: str, message: str = None) -> None
+```
+
+**Status values:** `"ok"`, `"error"`, `"unset"`
+
+**Example:**
+```python
+with observe(name="operation") as span:
+    try:
+        result = risky_operation()
+        span.set_status("ok", "Operation succeeded")
+    except Exception as e:
+        span.set_status("error", f"Failed: {str(e)}")
+```
+
+---
+
+#### record_exception(exception)
+Record an exception with full traceback.
+
+```python
+span.record_exception(exception: Exception) -> None
+```
+
+**Example:**
+```python
+with observe(name="operation") as span:
+    try:
+        risky_operation()
+    except ValueError as e:
+        span.record_exception(e)
+        span.set_status("error")
+```
+
+---
+
+### Event Methods
+
+#### add_event(name, attributes=None)
+Add a timestamped event to the span.
+
+```python
+span.add_event(name: str, attributes: dict = None) -> None
+```
+
+**Example:**
+```python
+with observe(name="multi-step") as span:
+    span.add_event("Started processing", {"item_count": 100})
+    
+    process_batch()
+    span.add_event("Batch processed", {"success": 95, "failed": 5})
+    
+    notify_users()
+    span.add_event("Notifications sent")
+```
+
+---
+
+### Evaluator Methods
+
+#### add_evaluator(slug, metadata=None)
+Add a single evaluator to this span only (non-propagating).
+
+```python
+span.add_evaluator(slug: str, metadata: dict = None) -> None
+```
+
+**Example:**
+```python
+with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
+    span.add_evaluator("quality-check")
+    response = llm.generate(prompt)
+```
+
+---
+
+#### add_evaluators(*slugs)
+Add multiple evaluators at once (non-propagating).
+
+```python
+span.add_evaluators(*slugs: str) -> None
+```
+
+**Example:**
+```python
+with observe(name="content-gen", kind=ObserveKind.GENERATION) as span:
+    span.add_evaluators("quality", "toxicity", "hallucination")
+```
+
+---
+
+#### set_evaluator_config(config)
+Set evaluation configuration (e.g., sample rate).
+
+```python
+span.set_evaluator_config(config: EvaluationConfig) -> None
+```
+
+**Example:**
+```python
+from basalt.observability import EvaluationConfig
+
+with observe(name="operation") as span:
+    span.add_evaluator("expensive-eval")
+    span.set_evaluator_config(EvaluationConfig(sample_rate=0.2))
+```
+
+---
+
+#### set_evaluator_metadata(metadata)
+Set metadata for evaluators to use.
+
+```python
+span.set_evaluator_metadata(metadata: dict) -> None
+```
+
+**Example:**
+```python
+with observe(name="translation", kind=ObserveKind.GENERATION) as span:
+    span.add_evaluator("translation-quality")
+    span.set_evaluator_metadata({
+        "reference_translation": "Bonjour",
+        "source_language": "en",
+        "target_language": "fr"
+    })
+```
+
+---
+
+### LLM-Specific Methods
+
+For spans with `kind=ObserveKind.GENERATION`:
+
+#### set_model(model)
+Set the LLM model name.
+
+```python
+span.set_model(model: str) -> None
+```
+
+**Example:**
+```python
+with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
+    span.set_model("gpt-4")
+```
+
+---
+
+#### set_prompt(prompt)
+Set the prompt text.
+
+```python
+span.set_prompt(prompt: str) -> None
+```
+
+**Example:**
+```python
+with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
+    prompt_text = "Translate 'hello' to French"
+    span.set_prompt(prompt_text)
+```
+
+---
+
+#### set_completion(completion)
+Set the LLM completion/response text.
+
+```python
+span.set_completion(completion: str) -> None
+```
+
+**Example:**
+```python
+with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
+    response = llm.generate(prompt)
+    span.set_completion(response)
+```
+
+---
+
+#### set_tokens(input=None, output=None, total=None)
+Set token counts.
+
+```python
+span.set_tokens(
+    input: int = None,
+    output: int = None,
+    total: int = None
+) -> None
+```
+
+**Example:**
+```python
+with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
+    response = openai_client.chat.completions.create(...)
+    span.set_tokens(
+        input=response.usage.prompt_tokens,
+        output=response.usage.completion_tokens,
+        total=response.usage.total_tokens
+    )
+```
+
+---
+
+## Static Methods on observe Class
+
+For use within decorator-traced functions (when you don't have span handle access):
+
+### observe.metadata(metadata)
+Set metadata on the current active span.
+
+```python
+observe.metadata(metadata: dict) -> None
+```
+
+**Example:**
+```python
+@observe(name="process")
+def process():
+    observe.metadata({"version": "2.0", "priority": "high"})
+```
+
+---
+
+### observe.update_metadata(metadata)
+Update existing metadata on the current active span.
+
+```python
+observe.update_metadata(metadata: dict) -> None
+```
+
+**Example:**
+```python
+@observe(name="process")
+def process():
+    observe.update_metadata({"iteration": 1})
+    # Later...
+    observe.update_metadata({"iteration": 2})
+```
+
+---
+
+### observe.set_input(data)
+Set input on the current active span.
+
+```python
+observe.set_input(data: Any) -> None
+```
+
+**Example:**
+```python
+@observe(name="process")
+def process(data):
+    observe.set_input({"sanitized": sanitize(data)})
+```
+
+---
+
+### observe.set_output(data)
+Set output on the current active span.
+
+```python
+observe.set_output(data: Any) -> None
+```
+
+**Example:**
+```python
+@observe(name="process")
+def process():
+    result = compute()
+    observe.set_output({"result": result, "status": "success"})
+    return result
+```
+
+---
+
+### observe.set_identity(identity)
+Set identity on the current active span.
+
+```python
+observe.set_identity(identity: dict) -> None
+```
+
+**Example:**
+```python
+@start_observe(feature_slug="api", name="handler")
+def handler(user_id: str):
+    observe.set_identity({"user": {"id": user_id}})
+```
+
+---
+
+### observe.evaluate(slug)
+Add evaluator to the current active span.
+
+```python
+observe.evaluate(slug: str) -> None
+```
+
+**Example:**
+```python
+@observe(name="llm-call", kind=ObserveKind.GENERATION)
+def llm_call():
+    observe.evaluate("quality-check")
+    return llm.generate(prompt)
+```
+
+---
+
+## Evaluator Decorators and Context Managers
+
+### @evaluator
+
+Attach evaluators in propagating mode (affects all child spans).
+
+```python
+@evaluator(
+    slugs: str | list[str],
+    config: EvaluationConfig = None
+)
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `slugs` | `str \| list[str]` | Yes | Evaluator slug(s) |
+| `config` | `EvaluationConfig` | No | Evaluation configuration (sample rate, etc.) |
+
+**Example:**
+```python
+from basalt.observability import evaluator, EvaluationConfig
+
+# Single evaluator
+@evaluator("quality-check")
+@start_observe(feature_slug="qa", name="QA")
+def qa_system():
+    # All spans get "quality-check"
+    pass
+
+# Multiple evaluators
+@evaluator(slugs=["quality", "toxicity", "hallucination"])
+@start_observe(feature_slug="qa", name="QA")
+def qa_system():
+    # All spans get all three evaluators
+    pass
+
+# With sampling
+@evaluator("expensive-eval", config=EvaluationConfig(sample_rate=0.1))
+@start_observe(feature_slug="qa", name="QA")
+def qa_system():
+    # "expensive-eval" runs on 10% of traces
+    pass
+```
+
+---
+
+### with_evaluators
+
+Context manager for propagating evaluators.
+
+```python
+with with_evaluators(
+    slugs: list[str],
+    config: EvaluationConfig = None
+):
+    ...
+```
+
+**Example:**
+```python
+from basalt.observability import with_evaluators
+
+def dynamic_evaluation(user_tier: str):
+    if user_tier == "premium":
+        with with_evaluators(["quality", "toxicity", "bias"]):
+            return premium_process()
+    else:
+        with with_evaluators(["toxicity"]):
+            return basic_process()
+```
+
+---
+
+### attach_evaluator
+
+Context manager for attaching a single propagating evaluator.
+
+```python
+with attach_evaluator(slug: str):
+    ...
+```
+
+**Example:**
+```python
+from basalt.observability import attach_evaluator
+
+def conditional_check(needs_check: bool):
+    if needs_check:
+        with attach_evaluator("quality-check"):
+            return process()
+```
+
+---
+
+## Global Configuration
+
+### configure_trace_defaults
+
+Set global defaults for all traces.
+
+```python
+configure_trace_defaults(
+    experiment: TraceExperiment | dict = None,
+    metadata: dict = None,
+    evaluators: list[str] = None
+)
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `experiment` | `TraceExperiment \| dict` | Default experiment for all traces |
+| `metadata` | `dict` | Default metadata for all traces |
+| `evaluators` | `list[str]` | Default evaluators for all traces |
+
+**Example:**
+```python
+from basalt.observability import configure_trace_defaults
+
+# Set global defaults
+configure_trace_defaults(
+    experiment={"id": "exp-123", "name": "Production Test"},
+    metadata={"environment": "production", "version": "2.0"},
+    evaluators=["baseline-quality", "toxicity"]
+)
+
+# All subsequent traces will have these defaults
+@start_observe(feature_slug="api", name="handler")
+def handler():
+    # Automatically has experiment, metadata, and evaluators
+    pass
+```
+
+---
+
+### current_trace_defaults
+
+Get current global trace defaults.
+
+```python
+current_trace_defaults() -> dict
+```
+
+**Returns:** Dictionary with `experiment`, `metadata`, and `evaluators` keys.
+
+**Example:**
+```python
+from basalt.observability import current_trace_defaults
+
+defaults = current_trace_defaults()
+print(defaults["evaluators"])  # ["baseline-quality", "toxicity"]
+```
+
+---
+
+## Trace Context Helpers
+
+### set_trace_user
+
+Set user identity in current context (propagates to all spans).
+
+```python
+set_trace_user(user_id: str, name: str = None) -> None
+```
+
+**Example:**
+```python
+from basalt.observability import set_trace_user
+
+def middleware(user_id: str):
+    set_trace_user(user_id=user_id, name="Alice")
+    # All spans created after this have user identity
+    handle_request()
+```
+
+---
+
+### set_trace_organization
+
+Set organization identity in current context (propagates to all spans).
+
+```python
+set_trace_organization(org_id: str, name: str = None) -> None
+```
+
+**Example:**
+```python
+from basalt.observability import set_trace_organization
+
+def middleware(org_id: str):
+    set_trace_organization(org_id=org_id, name="Acme Corp")
+    # All spans created after this have org identity
+    handle_request()
+```
+
+---
+
+## Data Classes
+
+### EvaluationConfig
+
+Configuration for evaluator sampling and behavior.
+
+```python
+@dataclass
+class EvaluationConfig:
+    sample_rate: float = 1.0  # 0.0 to 1.0
+```
+
+**Example:**
+```python
+from basalt.observability import EvaluationConfig
+
+# 50% sampling
+config = EvaluationConfig(sample_rate=0.5)
+```
+
+---
+
+### TraceExperiment
+
+Experiment information for A/B testing.
+
+```python
+@dataclass
+class TraceExperiment:
+    id: str            # Experiment ID
+    name: str          # Experiment name
+    feature_slug: str  # Feature being tested
+```
+
+**Example:**
+```python
+from basalt.types import TraceExperiment
+
+experiment = TraceExperiment(
+    id="exp-model-comparison",
+    name="GPT-4 vs Claude",
+    feature_slug="qa-system"
+)
+```
+
+---
 
 ## Auto-Instrumentation
-- `Basalt(enabled_instruments=[...])` or `TelemetryConfig`
 
-## Trace Context
-- `configure_trace_defaults(...)`
-- `current_trace_defaults()`
-- `set_trace_user(...)` / `set_trace_organization(...)`
+### Basalt Initialization
 
-See the [Python SDK documentation](https://github.com/basalt-ai/basalt) for more details and advanced usage.
+Enable auto-instrumentation when initializing Basalt.
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(
+    api_key: str,
+    enabled_instruments: list[str] = None,  # Specific providers to enable
+    disabled_instruments: list[str] = None,  # Specific providers to disable
+    telemetry_config: TelemetryConfig = None
+)
+```
+
+**Example:**
+```python
+basalt = Basalt(
+    api_key="your-api-key",
+    enabled_instruments=["openai", "anthropic", "chromadb"]
+)
+
+# Now OpenAI, Anthropic, and ChromaDB calls are auto-traced
+```
+
+---
+
+### TelemetryConfig
+
+Advanced telemetry configuration.
+
+```python
+from basalt import TelemetryConfig
+
+config = TelemetryConfig(
+    service_name: str = "basalt-service",
+    environment: str = "production",
+    enable_instrumentation: bool = True
+)
+
+basalt = Basalt(api_key="...", telemetry_config=config)
+```
+
+---
+
+## Context Keys (Advanced)
+
+For advanced use cases, these context keys are available:
+
+```python
+from basalt.observability.context import (
+    USER_CONTEXT_KEY,
+    ORGANIZATION_CONTEXT_KEY,
+    EVALUATOR_CONTEXT_KEY,
+    EVALUATOR_CONFIG_CONTEXT_KEY,
+    EVALUATOR_METADATA_CONTEXT_KEY,
+    EXPERIMENT_CONTEXT_KEY
+)
+```
+
+These are used internally for context propagation and are rarely needed in application code.
+
+---
+
+## See Also
+
+- [Core Concepts](/v1/observabilite/python/concepts) - Understanding traces, spans, and context propagation
+- [Patterns Guide](/v1/observabilite/python/patterns) - Decorators vs context managers
+- [Workflows](/v1/observabilite/python/workflows) - Complete end-to-end examples
+- [Evaluators Guide](/v1/observabilite/python/evaluators) - Quality evaluation
+- [Auto-Instrumentation](/v1/observabilite/python/auto-instrumentation) - Supported providers

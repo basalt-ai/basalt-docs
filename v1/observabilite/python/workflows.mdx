@@ -1,0 +1,683 @@
+---
+title: Complete Workflows
+description: End-to-end examples showing prompt retrieval, LLM calls, RAG pipelines, and evaluation
+---
+
+# Complete Workflows
+
+This guide demonstrates complete, production-ready workflows showing how observability, prompts, auto-instrumentation, and evaluation work together.
+
+## Basic RAG Pipeline
+
+A Retrieval-Augmented Generation (RAG) pipeline retrieves relevant context from a vector database, then generates an answer using an LLM.
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, ObserveKind
+import openai
+
+# Initialize Basalt with auto-instrumentation
+basalt = Basalt(
+    api_key="your-basalt-api-key",
+    enabled_instruments=["openai", "chromadb"]  # Auto-trace OpenAI and ChromaDB
+)
+
+openai_client = openai.OpenAI(api_key="your-openai-key")
+
+@start_observe(
+    feature_slug="qa-system",
+    name="Answer Question",
+    identity={"user": {"id": "user-123", "name": "Alice"}}
+)
+def answer_question(question: str):
+    """Complete RAG pipeline with automatic tracing."""
+    # Step 1: Retrieve relevant documents
+    docs = search_documents(question)
+    
+    # Step 2: Generate answer using retrieved context
+    answer = generate_answer(question, docs)
+    
+    return answer
+
+@observe(name="Search Documents", kind=ObserveKind.RETRIEVAL)
+def search_documents(query: str):
+    """Retrieve relevant documents from vector database."""
+    # ChromaDB call is auto-instrumented
+    results = chroma_collection.query(
+        query_texts=[query],
+        n_results=5
+    )
+    
+    # Store metadata about retrieval
+    observe.update_metadata({
+        "vector_db": "chromadb",
+        "results_count": len(results["documents"][0])
+    })
+    
+    return results["documents"][0]
+
+@observe(name="Generate Answer", kind=ObserveKind.GENERATION)
+def generate_answer(question: str, context: list[str]):
+    """Generate answer using LLM."""
+    context_text = "\n\n".join(context)
+    prompt = f"Context:\n{context_text}\n\nQuestion: {question}\n\nAnswer:"
+    
+    # OpenAI call is auto-instrumented
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    answer = response.choices[0].message.content
+    
+    # Store token usage
+    observe.update_metadata({
+        "input_tokens": response.usage.prompt_tokens,
+        "output_tokens": response.usage.completion_tokens,
+        "total_tokens": response.usage.total_tokens
+    })
+    
+    return answer
+
+# Execute the pipeline
+answer = answer_question("What is quantum computing?")
+print(answer)
+
+# Shutdown to flush traces
+basalt.shutdown()
+```
+
+**What happens:**
+1. Root span `"Answer Question"` created with user identity
+2. Identity automatically propagates to all child spans
+3. `search_documents` creates a RETRIEVAL span
+4. ChromaDB call auto-instrumented (no manual tracing needed)
+5. `generate_answer` creates a GENERATION span
+6. OpenAI call auto-instrumented with model, prompt, tokens captured
+7. All spans linked in single trace with shared trace ID
+
+## Prompt + LLM + Evaluation Workflow
+
+This workflow fetches a prompt from Basalt, makes an LLM call, and attaches evaluators for quality checking.
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, evaluator, ObserveKind
+import openai
+
+basalt = Basalt(
+    api_key="your-basalt-api-key",
+    enabled_instruments=["openai"]
+)
+
+openai_client = openai.OpenAI(api_key="your-openai-key")
+
+@evaluator(slugs=["answer-correctness", "toxicity", "hallucination"])
+@start_observe(
+    feature_slug="qa-assistant",
+    name="QA Assistant",
+    identity={"user": {"id": "user-456"}}
+)
+def qa_assistant(user_query: str):
+    """Complete workflow with prompt, LLM, and evaluation."""
+    
+    # Step 1: Retrieve relevant context
+    context_docs = retrieve_context(user_query)
+    
+    # Step 2: Get prompt from Basalt and generate response
+    response = generate_with_prompt(user_query, context_docs)
+    
+    # Step 3: Post-process (evaluators run automatically)
+    return post_process(response)
+
+@observe(name="Retrieve Context", kind=ObserveKind.RETRIEVAL)
+def retrieve_context(query: str):
+    """Retrieve context documents."""
+    # Vector search happens here
+    results = vector_db.search(query, top_k=5)
+    observe.set_output({"doc_count": len(results)})
+    return results
+
+@observe(name="Generate with Prompt", kind=ObserveKind.GENERATION)
+def generate_with_prompt(query: str, context: list):
+    """Use Basalt prompt with LLM."""
+    
+    # Fetch prompt using context manager
+    with basalt.prompts.get_sync(
+        "qa-prompt",
+        variables={
+            "query": query,
+            "context": "\n".join(context)
+        }
+    ) as prompt:
+        # This creates a "prompt.get" span with prompt attributes
+        
+        # OpenAI call automatically inherits:
+        # - Evaluators (answer-correctness, toxicity, hallucination)
+        # - Identity (user-456)
+        # - Prompt attributes (slug, version, variables)
+        response = openai_client.chat.completions.create(
+            model=prompt.model.model,
+            messages=[{"role": "user", "content": prompt.text}],
+            temperature=prompt.model.parameters.temperature
+        )
+        
+        answer = response.choices[0].message.content
+        
+        # Store generation metadata
+        observe.update_metadata({
+            "model": prompt.model.model,
+            "prompt_version": prompt.version,
+            "cached": prompt.from_cache
+        })
+        
+        return answer
+
+@observe(name="Post Process")
+def post_process(response: str):
+    """Clean up response."""
+    return response.strip()
+
+# Execute
+answer = qa_assistant("How do I reset my password?")
+basalt.shutdown()
+```
+
+**Key features:**
+- `@evaluator` decorator attaches 3 evaluators to all spans in the workflow
+- Prompt context manager creates a prompt span
+- OpenAI span automatically gets prompt attributes (slug, version, variables)
+- Evaluators automatically apply to the OpenAI span (and all spans)
+- Identity propagates from root to all children
+- All spans traceable by `prompt.slug` in dashboard
+
+**Trace hierarchy:**
+```
+Trace (trace_id: xyz)
+└── QA Assistant (root, evaluators: [answer-correctness, toxicity, hallucination])
+    ├── Retrieve Context (inherits evaluators, identity)
+    ├── Generate with Prompt
+    │   ├── prompt.get (prompt attributes stored)
+    │   └── openai.chat.completions (inherits evaluators, prompt attrs, identity)
+    └── Post Process (inherits evaluators, identity)
+```
+
+## Multi-Layer Context Propagation
+
+This example shows how identity and evaluators flow through multiple layers of function calls.
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, evaluator, ObserveKind
+
+basalt = Basalt(api_key="your-api-key", enabled_instruments=["openai"])
+
+@start_observe(
+    feature_slug="api-handler",
+    name="API Handler",
+    identity={
+        "user": {"id": "user-789", "name": "Bob"},
+        "organization": {"id": "org-123", "name": "Acme Corp"}
+    }
+)
+def api_handler(user_id: str, query: str):
+    """Entry point - sets identity for entire trace."""
+    return service_layer(query)
+
+@evaluator("quality-check")  # Propagating evaluator
+def service_layer(query: str):
+    """Business logic layer - adds evaluator."""
+    # This span has identity from api_handler + quality-check evaluator
+    
+    data = data_layer(query)
+    response = llm_layer(query, data)
+    return response
+
+@observe(name="Data Layer")
+def data_layer(query: str):
+    """Data access layer."""
+    # This span automatically has:
+    # - Identity: user-789, org-123
+    # - Evaluator: quality-check
+    
+    result = database_query(query)
+    observe.set_output({"row_count": len(result)})
+    return result
+
+@observe(name="Database Query", kind=ObserveKind.RETRIEVAL)
+def database_query(query: str):
+    """Database operation."""
+    # This span also has identity and evaluator (propagated down)
+    return db.execute(query)
+
+@observe(name="LLM Layer", kind=ObserveKind.GENERATION)
+def llm_layer(query: str, data: list):
+    """LLM processing layer."""
+    # This span has identity and evaluator
+    
+    with observe(name="Format Prompt") as span:
+        # Child span also inherits everything
+        prompt = format_prompt(query, data)
+        span.set_output({"prompt_length": len(prompt)})
+    
+    # Auto-instrumented LLM call inherits all context
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    return response.choices[0].message.content
+
+def format_prompt(query: str, data: list):
+    """Helper function (not traced)."""
+    return f"Query: {query}\nData: {data}"
+
+# Execute
+result = api_handler("user-789", "analyze sales")
+basalt.shutdown()
+```
+
+**Context propagation flow:**
+```
+1. api_handler (root)
+   → Sets identity: user-789, org-123
+   ↓ Identity propagates down
+
+2. service_layer
+   → Adds evaluator: quality-check (propagating mode)
+   → Has identity from parent
+   ↓ Identity + Evaluator propagate down
+
+3. data_layer
+   → Has identity + evaluator
+   ↓ Propagates to child
+
+4. database_query
+   → Has identity + evaluator
+   
+5. llm_layer
+   → Has identity + evaluator
+   ↓ Propagates to children
+
+6. Format Prompt (child of llm_layer)
+   → Has identity + evaluator
+   
+7. openai.chat.completions (auto-instrumented)
+   → Has identity + evaluator (from context)
+```
+
+## Async Workflow
+
+Complete async workflow with concurrent operations.
+
+```python
+import asyncio
+from basalt import Basalt
+from basalt.observability import async_start_observe, async_observe, ObserveKind
+
+basalt = Basalt(
+    api_key="your-api-key",
+    enabled_instruments=["openai", "anthropic"]
+)
+
+@async_start_observe(
+    feature_slug="async-pipeline",
+    name="Async Pipeline",
+    identity={"user": {"id": "user-async"}}
+)
+async def async_pipeline(queries: list[str]):
+    """Process multiple queries concurrently."""
+    # Process all queries in parallel
+    results = await asyncio.gather(*[
+        process_single_query(query) for query in queries
+    ])
+    
+    return results
+
+@async_observe(name="Process Single Query")
+async def process_single_query(query: str):
+    """Process one query with multiple async operations."""
+    
+    # Run retrieval and enrichment in parallel
+    context, metadata = await asyncio.gather(
+        retrieve_context_async(query),
+        fetch_metadata_async(query)
+    )
+    
+    # Generate response
+    response = await generate_async(query, context, metadata)
+    
+    return response
+
+@async_observe(name="Retrieve Context", kind=ObserveKind.RETRIEVAL)
+async def retrieve_context_async(query: str):
+    """Async vector search."""
+    await asyncio.sleep(0.1)  # Simulate async DB call
+    results = await vector_db.search_async(query)
+    return results
+
+@async_observe(name="Fetch Metadata", kind=ObserveKind.RETRIEVAL)
+async def fetch_metadata_async(query: str):
+    """Fetch additional metadata."""
+    await asyncio.sleep(0.05)  # Simulate async API call
+    return {"category": "general", "priority": "high"}
+
+@async_observe(name="Generate Response", kind=ObserveKind.GENERATION)
+async def generate_async(query: str, context: list, metadata: dict):
+    """Generate response asynchronously."""
+    
+    # Async LLM call (auto-instrumented)
+    response = await openai_client.chat.completions.acreate(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"{query}\n\n{context}"}]
+    )
+    
+    return response.choices[0].message.content
+
+# Execute async pipeline
+async def main():
+    queries = [
+        "What is AI?",
+        "Explain quantum computing",
+        "How does blockchain work?"
+    ]
+    
+    results = await async_pipeline(queries)
+    print(results)
+    
+    basalt.shutdown()
+
+# Run
+asyncio.run(main())
+```
+
+**What happens:**
+1. Root span created for entire pipeline
+2. Three `process_single_query` spans created concurrently
+3. Each query spawns two parallel retrieval operations
+4. All spans maintain parent-child relationships despite concurrency
+5. Identity propagates to all spans automatically
+6. Async LLM calls auto-instrumented
+
+## Batch Processing with Error Handling
+
+Robust batch processing with span-level error tracking.
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, ObserveKind
+
+basalt = Basalt(api_key="your-api-key", enabled_instruments=["openai"])
+
+@start_observe(
+    feature_slug="batch-processor",
+    name="Batch Processing Job",
+    metadata={"job_id": "batch-001", "environment": "production"}
+)
+def process_batch(items: list[dict]):
+    """Process a batch of items with error handling."""
+    
+    results = []
+    for i, item in enumerate(items):
+        with observe(name=f"Process Item {i+1}") as span:
+            span.set_input(item)
+            
+            try:
+                result = process_item(item)
+                span.set_output(result)
+                span.set_status("ok", "Item processed successfully")
+                results.append({"status": "success", "result": result})
+                
+            except ValueError as e:
+                # Validation error - record but continue
+                span.record_exception(e)
+                span.set_status("error", f"Validation failed: {str(e)}")
+                results.append({"status": "validation_error", "error": str(e)})
+                
+            except Exception as e:
+                # Unexpected error - record and continue
+                span.record_exception(e)
+                span.set_status("error", f"Processing failed: {str(e)}")
+                results.append({"status": "processing_error", "error": str(e)})
+    
+    # Summary statistics
+    success_count = sum(1 for r in results if r["status"] == "success")
+    observe.update_metadata({
+        "total_items": len(items),
+        "successful": success_count,
+        "failed": len(items) - success_count,
+        "success_rate": success_count / len(items)
+    })
+    
+    return results
+
+@observe(name="Process Item")
+def process_item(item: dict):
+    """Process single item with validation."""
+    
+    # Validation
+    if "id" not in item:
+        raise ValueError("Item missing required field: id")
+    
+    if "text" not in item or len(item["text"]) < 10:
+        raise ValueError("Item text too short")
+    
+    # Processing
+    with observe(name="Enrich Data") as span:
+        enriched = enrich_data(item)
+        span.set_attribute("enrichment_count", len(enriched))
+    
+    # LLM processing
+    with observe(name="Analyze Text", kind=ObserveKind.GENERATION) as span:
+        analysis = analyze_with_llm(enriched["text"])
+        span.set_tokens(input=len(enriched["text"]), output=len(analysis))
+    
+    return {
+        "id": item["id"],
+        "analysis": analysis,
+        "enriched": enriched
+    }
+
+@observe(name="Enrich Data")
+def enrich_data(item: dict):
+    """Add additional data to item."""
+    return {
+        **item,
+        "timestamp": "2025-12-10T10:00:00Z",
+        "version": "2.0"
+    }
+
+@observe(name="Analyze with LLM", kind=ObserveKind.GENERATION)
+def analyze_with_llm(text: str):
+    """Analyze text using LLM."""
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Analyze: {text}"}]
+    )
+    return response.choices[0].message.content
+
+# Execute batch processing
+items = [
+    {"id": "1", "text": "Valid item with enough text"},
+    {"id": "2", "text": "Short"},  # Will fail validation
+    {"text": "Missing ID field"},  # Will fail validation
+    {"id": "4", "text": "Another valid item for processing"}
+]
+
+results = process_batch(items)
+print(f"Processed {len(results)} items")
+print(f"Success: {sum(1 for r in results if r['status'] == 'success')}")
+
+basalt.shutdown()
+```
+
+**Features:**
+- Error handling at item level (doesn't stop batch)
+- `record_exception()` captures full traceback
+- Status tracking per span ("ok", "error")
+- Summary metrics on root span
+- Each item gets its own span with full error context
+
+## Advanced: Dynamic Evaluator Attachment
+
+Control evaluator attachment dynamically based on runtime conditions.
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, evaluator, EvaluationConfig
+
+basalt = Basalt(api_key="your-api-key", enabled_instruments=["openai"])
+
+@start_observe(feature_slug="adaptive-qa", name="Adaptive QA")
+def adaptive_qa_system(query: str, user_tier: str):
+    """Attach different evaluators based on user tier."""
+    
+    # Premium users get comprehensive evaluation
+    if user_tier == "premium":
+        with evaluator(
+            slugs=["quality", "toxicity", "bias", "hallucination"],
+            config=EvaluationConfig(sample_rate=1.0)  # 100% sampling
+        ):
+            return process_premium_query(query)
+    
+    # Free tier users get basic evaluation
+    else:
+        with evaluator(
+            slugs=["toxicity"],
+            config=EvaluationConfig(sample_rate=0.1)  # 10% sampling
+        ):
+            return process_free_query(query)
+
+@observe(name="Process Premium Query", kind=ObserveKind.GENERATION)
+def process_premium_query(query: str):
+    """Premium processing with enhanced features."""
+    # Gets all 4 evaluators from parent
+    
+    with basalt.prompts.get_sync("premium-prompt", variables={"query": query}) as prompt:
+        response = openai_client.chat.completions.create(
+            model="gpt-4-turbo",  # Premium model
+            messages=[{"role": "user", "content": prompt.text}]
+        )
+    
+    return response.choices[0].message.content
+
+@observe(name="Process Free Query", kind=ObserveKind.GENERATION)
+def process_free_query(query: str):
+    """Basic processing for free tier."""
+    # Gets only toxicity evaluator from parent
+    
+    response = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",  # Standard model
+        messages=[{"role": "user", "content": query}]
+    )
+    
+    return response.choices[0].message.content
+
+# Usage
+premium_answer = adaptive_qa_system("Explain quantum mechanics", user_tier="premium")
+free_answer = adaptive_qa_system("What is AI?", user_tier="free")
+
+basalt.shutdown()
+```
+
+**Dynamic evaluation benefits:**
+- Cost control (sample rates, evaluator count)
+- User tier differentiation
+- A/B testing evaluation strategies
+- Performance optimization
+
+## Testing with Experiments
+
+Use experiments to compare different approaches.
+
+```python
+from basalt import Basalt
+from basalt.types import TraceExperiment
+from basalt.observability import start_observe, observe, evaluator
+
+basalt = Basalt(api_key="your-api-key", enabled_instruments=["openai", "anthropic"])
+
+# Define experiment
+experiment = TraceExperiment(
+    id="exp-model-comparison",
+    name="GPT-4 vs Claude 3.5 Comparison",
+    feature_slug="qa-system"
+)
+
+@evaluator(["answer-quality", "response-time"])
+@start_observe(
+    feature_slug="qa-system",
+    name="QA Variant A - GPT-4",
+    experiment=experiment
+)
+def variant_a_gpt4(query: str):
+    """Variant A: Using GPT-4."""
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": query}]
+    )
+    return response.choices[0].message.content
+
+@evaluator(["answer-quality", "response-time"])
+@start_observe(
+    feature_slug="qa-system",
+    name="QA Variant B - Claude",
+    experiment=experiment
+)
+def variant_b_claude(query: str):
+    """Variant B: Using Claude."""
+    response = anthropic_client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        messages=[{"role": "user", "content": query}]
+    )
+    return response.content[0].text
+
+# Run both variants
+query = "Explain the theory of relativity"
+
+result_a = variant_a_gpt4(query)
+result_b = variant_b_claude(query)
+
+# Both traces tagged with experiment ID
+# Compare in Basalt dashboard:
+# - Answer quality scores
+# - Response times
+# - Token costs
+# - Error rates
+
+basalt.shutdown()
+```
+
+**Experiment tracking enables:**
+- Side-by-side variant comparison
+- Statistical significance testing
+- Cost vs quality tradeoffs
+- Automated winner selection
+
+## Best Practices Summary
+
+### ✅ Do
+
+- **Use `start_observe` for entry points** - Every workflow needs a root span
+- **Set identity early** - Propagates to all children automatically
+- **Use semantic span kinds** - GENERATION, RETRIEVAL, TOOL, etc.
+- **Attach evaluators at root** - Use `@evaluator` decorator for propagation
+- **Leverage auto-instrumentation** - No manual tracing needed for LLM calls
+- **Use prompt context managers** - Automatic attribute injection
+- **Handle errors gracefully** - Use `record_exception()` and set status
+- **Add meaningful metadata** - Helps with debugging and analysis
+
+### ❌ Don't
+
+- **Don't skip `start_observe`** - Child spans need a root
+- **Don't capture PII** - Sanitize sensitive data
+- **Don't over-instrument** - Too many spans add overhead
+- **Don't ignore evaluator costs** - Use sampling for expensive evaluators
+- **Don't forget to shutdown** - Call `basalt.shutdown()` to flush traces
+
+## Next Steps
+
+- [Evaluators Guide](/v1/observabilite/python/evaluators) - Deep dive into evaluation
+- [Auto-Instrumentation](/v1/observabilite/python/auto-instrumentation) - All supported providers
+- [API Reference](/v1/observabilite/python/api-reference) - Complete method documentation
+- [Patterns Guide](/v1/observabilite/python/patterns) - Decorators vs context managers
