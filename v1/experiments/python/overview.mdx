@@ -10,33 +10,75 @@ This page explains how to use Basalt's Experiments API with Python. Experiments 
 This documentation is for the Python SDK. For TypeScript, see the TypeScript tab.
 </Warning>
 
-## What are Experiments?
+## Installation
 
-Experiments in Basalt are a mechanism for:
-- Tracking variants of prompts, models, or approaches
-- Comparing performance across versions
-- Associating traces with experiments
-- Attaching metadata to observability spans
+Ensure you have the Basalt SDK installed:
 
-## Core Concepts
-
-### Experiment Model
-
-```python
-@dataclass(slots=True, frozen=True)
-class Experiment:
-    id: str                 # Unique identifier
-    name: str               # Human-readable name
-    feature_slug: str       # Feature slug
-    created_at: str         # ISO 8601 timestamp
+```bash
+pip install basalt-sdk
 ```
 
-### TraceExperiment
+## Client Initialization
+
+You can interact with experiments using the `ExperimentsClient`.
 
 ```python
-@dataclass(frozen=True, slots=True)
-class TraceExperiment:
-    id: str                      # Experiment ID
-    name: str | None = None      # Optional display name
-    feature_slug: str | None = None  # Optional feature slug
+from basalt.experiments import ExperimentsClient
+
+client = ExperimentsClient(api_key="your-api-key")
+```
+
+## Creating Experiments
+
+You can create experiments programmatically to register new tests or variants.
+
+### Synchronous Creation
+
+```python
+experiment = client.create_sync(
+    feature_slug="llm-routing",
+    name="Model Selection Experiment"
+)
+
+print(f"Created experiment: {experiment.id}")
+```
+
+### Asynchronous Creation
+
+```python
+import asyncio
+
+async def create_experiment():
+    experiment = await client.create(
+        feature_slug="llm-routing",
+        name="Model Selection Experiment"
+    )
+    return experiment
+
+asyncio.run(create_experiment())
+```
+
+## Using Experiments with Observability
+
+The most common use case is attaching an experiment context to your traces. This allows you to slice and dice your observability data by experiment.
+
+```python
+from basalt.observability import start_observe, observe
+
+@start_observe(
+    feature_slug="ab-test",
+    name="experiment.variant_a",
+    experiment="exp-456", # The ID of the experiment
+    identity={
+        "organization": {"id": "123", "name": "ACME"},
+        "user": {"id": "456", "name": "John Doe"}
+    }
+)
+def run_variant_a():
+    # Experiment metadata is automatically attached to the root span
+    observe.set_input({"variant": "A", "model": "gpt-4o"})
+    
+    # ... your logic ...
+    
+    return "result"
 ```

@@ -4,68 +4,64 @@ title: Examples
 
 # Examples
 
-## Attaching Experiments to Spans
+## A/B Testing Setup
 
-Attach experiment metadata to observability spans using the `experiment` parameter:
+This example demonstrates how to set up a simple A/B test where you route traffic to two different variants and track them as separate experiments.
 
 ```python
+import random
+from basalt.experiments import ExperimentsClient
 from basalt.observability import start_observe, observe
 
-@start_observe(
-    feature_slug="ab-test",
-    name="experiment.variant_a",
-    experiment="exp-456",
-    identity={
-        "organization": {"id": "123", "name": "ACME"},
-        "user": {"id": "456", "name": "John Doe"}
-    }
-)
-def run_variant_a():
-    observe.set_input({"variant": "A", "model": "gpt-4o"})
-    result = run_test()
-    observe.set_output({"variant": "A", "result": result})
-    return result
-
-# Or using context manager
-with start_observe(
-        feature_slug="ab-test",
-        name="experiment.variant_b",
-        experiment="exp-456",
-):
-    # Your experiment code
-    pass
-```
-
-## Creating Experiments
-
-Create experiments programmatically using the API client:
-
-```python
-from basalt.experiments import ExperimentsClient
-
+# Initialize client
 client = ExperimentsClient(api_key="your-api-key")
 
-# Create experiment synchronously
-experiment = client.create_sync(
-    feature_slug="my-feature",
-    name="GPT-5.1 vs GPT-5 Test"
-)
-print(f"Created experiment: {experiment.id}")
+# Create experiments for two variants
+variant_a = client.create_sync(feature_slug="checkout-flow", name="Variant A: Standard")
+variant_b = client.create_sync(feature_slug="checkout-flow", name="Variant B: Streamlined")
+
+def get_variant():
+    return variant_a if random.random() < 0.5 else variant_b
+
+@start_observe(feature_slug="checkout-flow", name="checkout_process")
+def process_checkout(user_id):
+    # Determine which experiment to run
+    experiment = get_variant()
+    
+    # Start a span for the specific variant, attaching the experiment ID
+    with start_observe(
+        name=f"variant_{experiment.id}", 
+        experiment=experiment.id,
+        feature_slug=experiment.feature_slug
+    ):
+        if experiment.id == variant_a.id:
+            # Logic for Variant A
+            observe.set_input({"step": "standard_checkout"})
+            pass
+        else:
+            # Logic for Variant B
+            observe.set_input({"step": "streamlined_checkout"})
+            pass
+
+# Simulate traffic
+process_checkout("user_123")
 ```
 
-## Async Creation
+## Context Manager Usage
+
+You can also use the context manager to wrap specific blocks of code with experiment context.
 
 ```python
-import asyncio
-from basalt.experiments import ExperimentsClient
+from basalt.observability import start_observe
 
-async def create_experiment():
-    client = ExperimentsClient(api_key="your-api-key")
-    experiment = await client.create(
-        feature_slug="llm-routing",
-        name="Model Selection Experiment"
-    )
-    return experiment
+# ... assuming experiment_id is known ...
+experiment_id = "exp-123"
 
-experiment = asyncio.run(create_experiment())
+with start_observe(
+    feature_slug="search-ranking",
+    name="search.v2",
+    experiment=experiment_id,
+):
+    # All spans created within this block will be associated with the experiment
+    results = run_search_v2("query")
 ```

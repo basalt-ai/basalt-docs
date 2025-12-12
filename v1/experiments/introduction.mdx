@@ -1,5 +1,6 @@
 ---
 title: Experiments
+description: Learn how Basalt Experiments help you optimize and improve your AI workflows.
 ---
 
 # Experiments
@@ -10,9 +11,29 @@ Experiments enable you to track A/B tests, model comparisons, and feature variat
 This section covers the concept of experiments and how they are used for evaluation and comparison. For SDK usage, see the Python or TypeScript tabs.
 </Info>
 
-Experiments allow you to:
-- Track different variants of prompts, models, or approaches
-- Compare performance across versions
-- Associate traces with specific experiments
-- Attach experiment metadata to observability spans
-- Run systematic tests and comparisons
+## What are Experiments?
+
+**Experiments** in Basalt are a mechanism for:
+- Tracking different variants of prompts, models, or approaches
+- Comparing performance across versions
+- Associating traces with specific experiments
+- Attaching experiment metadata to observability spans
+- Running systematic tests and comparisons
+
+## Core Concepts
+
+Each experiment is defined by:
+
+- **ID**: A unique identifier (e.g., `"exp-456"`).
+- **Name**: A human-readable description (e.g., `"Model Comparison A/B Test"`).
+- **Feature Slug**: An optional identifier for grouping experiments by feature.
+
+When you run an experiment, you attach this metadata to your traces, allowing you to filter and analyze the performance of that specific variant later.
+
+## Why use Experiments?
+
+Experiments are essential for:
+
+- **A/B Testing**: Serve different prompts or models to different users and track which one performs better.
+- **Model Comparison**: Evaluate how a new model version compares to the current production model.
+- **Feature Flagging**: Roll out new features to a subset of users and monitor the impact.
