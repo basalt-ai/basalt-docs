@@ -5,7 +5,9 @@ description: "Code examples for using prompts."
 
 ## Listing Prompts
 
-### Basic Listing
+Use listing to discover available prompts, check their descriptions, and see which tags and versions exist.
+
+### Basic Listing (sync)
 
 ```python
 from basalt import Basalt
@@ -27,7 +29,7 @@ for prompt in response.prompts:
 basalt.shutdown()
 ```
 
-### Async Listing
+### Basic Listing (async)
 
 ```python
 import asyncio
@@ -35,7 +37,7 @@ from basalt import Basalt
 
 async def list_prompts_async():
     basalt = Basalt(api_key="your-api-key")
-    response = await basalt.prompts.list_async()
+    response = await basalt.prompts.list()
     for prompt in response.prompts:
         print(f"{prompt.slug}: {prompt.description}")
     basalt.shutdown()
@@ -46,6 +48,8 @@ asyncio.run(list_prompts_async())
 
 ## Getting Prompts
 
+Use `get` when you want the actual prompt text and model configuration your app should use.
+
 ### Get Latest Version
 
 ```python
@@ -53,10 +57,10 @@ from basalt import Basalt
 
 basalt = Basalt(api_key="your-api-key")
 
-# Get the latest version
+# Get the latest version (usually used in dev environments)
 prompt = basalt.prompts.get_sync(
-    slug='customer-greeting',
-    tag='latest'
+    slug="customer-greeting",
+    tag="latest",
 )
 
 print(f"Prompt text: {prompt.text}")
@@ -71,29 +75,37 @@ basalt.shutdown()
 ```python
 # Get a specific version by version number
 prompt = basalt.prompts.get_sync(
-    slug='customer-greeting',
-    version='1.2.0'
+    slug="customer-greeting",
+    version="1.2.0",
 )
 
 print(f"Retrieved version: {prompt.version}")
 ```
 
-### Get by Tag
+### Get by Tag (environments)
+
+Tags are ideal for mapping prompts to environments such as `production` and `staging` without changing your code.
 
 ```python
 # Get by environment tag
 production_prompt = basalt.prompts.get_sync(
-    slug='customer-greeting',
-    tag='production'
+    slug="customer-greeting",
+    tag="production",
 )
 
 staging_prompt = basalt.prompts.get_sync(
-    slug='customer-greeting',
-    tag='staging'
+    slug="customer-greeting",
+    tag="staging",
 )
 ```
 
-### Variable Substitution
+You can point `staging` to a new version first, test it, then move the `production` tag to that same version once you’re confident.
+
+## Variable Substitution
+
+Inject runtime data into your prompts using variables.
+
+### Simple Variable Example
 
 ```python
 from basalt import Basalt
@@ -101,15 +113,15 @@ from basalt import Basalt
 basalt = Basalt(api_key="your-api-key")
 
 # Prompt in Basalt platform:
-# "Hello {{customer_name}}, welcome to {{product_name}}!"
+# "Hello {{ customer_name }}, welcome to {{ product_name }}!"
 
 prompt = basalt.prompts.get_sync(
-    slug='welcome-message',
-    tag='latest',
+    slug="welcome-message",
+    tag="latest",
     variables={
-        'customer_name': 'Alice',
-        'product_name': 'Premium Plan'
-    }
+        "customer_name": "Alice",
+        "product_name": "Premium Plan",
+    },
 )
 
 print(prompt.text)
@@ -117,3 +129,29 @@ print(prompt.text)
 
 basalt.shutdown()
 ```
+
+You can pass any JSON-serializable values in `variables`. Use this to personalize responses, inject context, or conditionally render parts of your prompt via Jinja2.
+
+## Async Usage in Applications
+
+In async frameworks (e.g. FastAPI), prefer async methods to avoid blocking the event loop.
+
+```python
+from fastapi import FastAPI
+from basalt import Basalt
+
+app = FastAPI()
+basalt = Basalt(api_key="your-api-key")
+
+@app.get("/greet/{customer_name}")
+async def greet(customer_name: str):
+    prompt = await basalt.prompts.get(
+        slug="welcome-message",
+        tag="production",
+        variables={"customer_name": customer_name},
+    )
+    # Use prompt.text and prompt.model with your LLM client here
+    return {"prompt": prompt.text}
+```
+
+This pattern scales cleanly as you add more prompt-dependent endpoints or background tasks.

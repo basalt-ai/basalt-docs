@@ -1,17 +1,57 @@
 ---
-title: "Prompts Introduction"
-description: "Domain explanation of what prompts are in Basalt."
+title: "Introduction"
+description: "Check out how prompts work on Basalt, how to interact with them and what are the available features in the SDK."
 ---
 
-# Prompts Management
+# What are prompts?
 
-Basalt's Prompts API provides version control, tag-based deployment, and dynamic variable substitution for your AI prompts. This guide covers all prompt operations with complete examples.
+In Basalt, a **prompt** is a reusable, versioned template that describes how your AI should behave in a given context.
+
+Instead of hard‑coding strings like "You are a support bot…" all over your codebase, you define prompts once in Basalt, give them a stable slug, and reference them from your applications via the SDK or API.
+
+A prompt typically combines:
+
+- **System behavior** – role, tone, and constraints (e.g. “You are a senior support agent…”)
+- **Task instructions** – what the model should do (e.g. “Summarize this ticket in 3 bullet points…”)
+- **Examples** – optional few-shot examples to steer behavior
+- **Variables** – placeholders like `{{customer_message}}` filled at runtime
+- **Model configuration** – provider, model name, and parameters (temperature, max tokens, etc.)
+
+Prompts become first-class, shareable building blocks you can reuse across:
+
+- User-facing features (assistants, copilots, search, recommendations)
+- Internal tools (support, operations, data quality checks)
+- Background workflows (cron jobs, pipelines, agents)
+
+## Prompts Management
+
+Basalt’s Prompts API lets you manage these templates like code:
+
+- Prompts are **versioned** so you always know what is running.
+- You **deploy** versions to environments using **tags** (for example `production`, `staging`, `latest`).
+- You can evolve prompts safely over time while keeping older versions available for rollback or comparison.
+
+With the Prompts API you can:
+
+- **Create and update prompts** as your product or use cases evolve
+- **Track versions** to understand which behavior is live in each environment
+- **Deploy using tags** instead of hard-coding version numbers in your application
+- **Roll out changes gradually** by pointing different services or environments at different tags
+- **Attach model settings** directly to prompts so configuration travels with the template
 
 ## Overview
 
-The Prompts API enables you to:
-- **Store prompts centrally** with version control
-- **Deploy prompts** using tags (e.g., `production`, `staging`, `latest`)
-- **Substitute variables** dynamically using Jinja2 templates
-- **Cache prompts** for performance with graceful fallback
-- **Manage model configurations** alongside prompts
+At a high level, the Prompts API enables you to:
+
+- **Store prompts centrally** with full version history
+- **Deploy prompts with tags** (e.g. `production`, `staging`, `latest`)
+- **Substitute variables dynamically** using Jinja2 templates
+- **Cache prompts for performance** with graceful fallback
+- **Manage model configurations** alongside prompt content
+
+In the rest of this section you’ll see:
+
+- How to **define** prompts and variables in Basalt
+- How to **fetch** prompts from the SDK by slug, tag, or version
+- How to **safely update and roll back** prompts with versioning
+- How to **test and iterate** on prompt changes without risking production

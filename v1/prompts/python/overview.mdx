@@ -5,9 +5,19 @@ description: "Details for using Basalt prompts."
 
 ## Using Prompts in Python
 
-The Basalt Python SDK provides a comprehensive interface for managing prompts with both synchronous and asynchronous methods.
+The Basalt Python SDK gives you a simple, high-level interface to work with prompts from your Python code.  
+You can list prompts, fetch specific versions or tags, inspect metadata, and control which prompt version is used in each environment.
 
-### Initialization
+Typical use cases include:
+
+- Connecting your app to centrally managed prompts
+- Rolling out new prompt versions safely via tags
+- Injecting runtime data into prompts with variables
+- Keeping model configuration close to prompt content
+
+## Initialization
+
+Initialize the client once and reuse it across your application.
 
 ```python
 from basalt import Basalt
@@ -15,31 +25,89 @@ from basalt import Basalt
 basalt = Basalt(api_key="your-api-key")
 ```
 
-### Core Methods
+When your application is shutting down (for example in a CLI or worker), call:
 
-- `basalt.prompts.list_sync()` / `basalt.prompts.list_async()`: List all prompts
-- `basalt.prompts.get_sync()` / `basalt.prompts.get_async()`: Retrieve a specific prompt
-- `basalt.prompts.describe_sync()` / `basalt.prompts.describe_async()`: Get prompt metadata
-- `basalt.prompt.publish_sync()` / `basalt.prompt.publish_async()`: Publish a version to a tag
+```python
+basalt.shutdown()
+```
 
-### Prompt Object
+to clean up resources.
 
-Retrieved prompts include:
-- `slug`: Unique identifier
-- `version`: Version number
-- `text`: The prompt content
-- `description`: Human-readable description
-- `model`: Model configuration (provider, model, parameters)
-- `tags`: Associated tags
+## Core Methods
 
-### Variable Substitution
+All operations are available in both synchronous and asynchronous forms.
 
-Use Jinja2 syntax in prompts and pass variables when retrieving.
+- `basalt.prompts.list_sync()` / `basalt.prompts.list_async()`:  
+  List all prompts accessible to your API key, with their basic metadata (slug, description, latest version, tags).
 
-### Caching
+- `basalt.prompts.get_sync(...)` / `basalt.prompts.get(...)`:  
+  Retrieve a specific prompt’s **rendered text** and **model configuration**, using either a `tag` (e.g. `production`) or a specific `version`.
 
-Automatic caching with 5-minute TTL and fallback for availability.
+- `basalt.prompts.describe_sync(slug)`:  
+  Get detailed metadata for a single prompt, including all available versions and tags, without fetching the full prompt text. Async variants may also be available; refer to the Python SDK reference.
 
-### Error Handling
+- `basalt.prompt.publish_sync(...)` / `basalt.prompt.publish(...)`:  
+  Publish a version to a tag (for example, mark version `1.3.0` as `production`).
 
-Handle `NotFoundError`, `UnauthorizedError`, `NetworkError`, `BasaltAPIError`.
+Use sync methods in scripts and simple backends; prefer async methods in async web frameworks (FastAPI, Starlette, etc.) to avoid blocking the event loop.
+
+## Prompt Object
+
+When you retrieve a prompt, you receive a structured object containing:
+
+- `slug`: Unique identifier for the prompt
+- `version`: The concrete version number being used (e.g. `"1.2.0"`)
+- `text`: The final prompt text (after variable substitution, if provided)
+- `description`: Human-readable description of the prompt’s purpose
+- `model`: Model configuration object:
+  - `provider`: e.g. `"openai"`, `"anthropic"`
+  - `model`: e.g. `"gpt-4.1"`, `"claude-3-opus"`
+  - `parameters`: e.g. `temperature`, `max_tokens`, `top_p`
+- `tags`: List of tags currently pointing to this version (e.g. `["latest", "staging"]`)
+
+You can feed `prompt.text` and `prompt.model` directly into your LLM client of choice.
+
+## Variable Substitution
+
+Prompts can contain variables using **Jinja2 syntax**:
+
+```text
+Hello {{ customer_name }}, welcome to {{ product_name }}!
+```
+
+When calling `get_sync` / `get`, pass a `variables` dictionary:
+
+```python
+prompt = basalt.prompts.get_sync(
+    slug="welcome-message",
+    tag="latest",
+    variables={
+        "customer_name": "Alice",
+        "product_name": "Premium Plan",
+    },
+)
+print(prompt.text)
+# -> "Hello Alice, welcome to Premium Plan!"
+```
+
+If you omit `variables`, the prompt is returned with raw placeholders, which is useful for debugging or previewing templates.
+
+## Caching
+
+The SDK automatically caches prompt resolutions for a short time (for example, a 5‑minute TTL):
+
+- **Reduces latency and API calls** when fetching the same slug+tag or slug+version repeatedly.
+- **Provides graceful fallback** if the API is temporarily unavailable: recent prompts can still be served from cache.
+
+You don’t need to manage caching manually; it’s handled internally by the SDK.
+
+## Error Handling
+
+The SDK raises specific exceptions so you can react appropriately:
+
+- `NotFoundError`: The prompt, tag, or version doesn’t exist.
+- `UnauthorizedError`: Invalid or missing API key.
+- `NetworkError`: Network connectivity issues when calling the Basalt API.
+- `BasaltAPIError`: Other API-level errors (validation, server issues, etc.).
+
+Wrap your calls in `try`/`except` blocks and handle these errors based on your application’s needs (e.g. fallback to a default prompt, log and return a safe message, etc.).

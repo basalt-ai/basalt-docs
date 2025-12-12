@@ -85,6 +85,7 @@
                     "icon": "comment-dots",
                     "pages": [
                       "v1/prompts/introduction",
+                      "v1/prompts/caching-policy",
                       {
                         "group": "Python",
                         "icon": "python",
