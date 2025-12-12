@@ -4,15 +4,37 @@ title: Overview
 
 # Overview
 
-This page explains how to use Basalt's Datasets API with Python. Datasets help you organize, retrieve, and manage test cases for evaluating AI model outputs.
+This page explains how to work with **Datasets** using the Basalt **Python SDK**.
+
+Datasets let you organize, retrieve, and extend structured test data (inputs, ideal outputs, metadata) to evaluate prompts, models, and full workflows.
 
 <Warning>
 This documentation is for the Python SDK. For TypeScript, see the TypeScript tab.
 </Warning>
 
-## Listing Datasets
+## Initialization
+
+Create a single `Basalt` client and reuse it across your application or script.
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
+```
+
+When you are done (for example in a CLI script or worker), call:
+
+```python
+basalt.shutdown()
+```
+
+to clean up resources.
+
+## Listing datasets
 
 Retrieve all datasets accessible to your API key.
+
+### Basic listing (sync)
 
 ```python
 from basalt import Basalt
@@ -23,36 +45,110 @@ basalt = Basalt(api_key="your-api-key")
 response = basalt.datasets.list_sync()
 
 print(f"Total datasets: {response.total}")
+
 for dataset in response.datasets:
-    print(f"{dataset.slug}: {dataset.num_rows} rows")
+    print(f"\nSlug: {dataset.slug}")
+    print(f"  Name: {dataset.name}")
+    print(f"  Description: {dataset.description}")
+    print(f"  Rows: {dataset.num_rows}")
+    print(f"  Columns: {len(dataset.columns)}")
 
 basalt.shutdown()
 ```
 
-## Getting a Dataset
+### Async listing
 
-Retrieve a specific dataset and inspect its structure.
+```python
+import asyncio
+from basalt import Basalt
+
+async def list_datasets_async():
+    basalt = Basalt(api_key="your-api-key")
+
+    response = await basalt.datasets.list()
+
+    for dataset in response.datasets:
+        print(f"{dataset.slug}: {dataset.num_rows} rows")
+
+    basalt.shutdown()
+
+asyncio.run(list_datasets_async())
+```
+
+Use the sync version in scripts and simple backends; prefer the async method `list` in async frameworks like FastAPI.
+
+## Getting datasets
+
+Retrieve a specific dataset with all its rows and columns.
 
 ```python
 from basalt import Basalt
 
 basalt = Basalt(api_key="your-api-key")
-dataset = basalt.datasets.get_sync(slug='customer-support-qa')
+
+# Get dataset by slug
+dataset = basalt.datasets.get_sync(slug="customer-support-qa")
 
 print(f"Dataset: {dataset.name}")
-print(f"Rows: {len(dataset.rows)}")
+print(f"Description: {dataset.description}")
+print(f"Total rows: {dataset.num_rows}")
 print(f"Columns: {[col.name for col in dataset.columns]}")
+
+# Access rows
+for row in dataset.rows:
+    print(f"\nRow: {row.name}")
+    print(f"  Values: {row.values}")
+    print(f"  Ideal output: {row.ideal_output}")
+    print(f"  Metadata: {row.metadata}")
 
 basalt.shutdown()
 ```
 
-## Dataset Structure
+### Inspecting columns
 
-- `dataset.slug`: Unique identifier
-- `dataset.name`: Human-readable name
-- `dataset.description`: Description
-- `dataset.num_rows`: Number of rows
-- `dataset.columns`: List of columns
-- `dataset.rows`: List of rows
+```python
+from basalt import Basalt
 
-See the API Reference for details on objects and methods.
+basalt = Basalt(api_key="your-api-key")
+
+dataset = basalt.datasets.get_sync(slug="my-dataset")
+
+for column in dataset.columns:
+    print(f"\nColumn: {column.name}")
+    print(f"  Type: {column.type}")
+    print(f"  Description: {column.description}")
+
+basalt.shutdown()
+```
+
+## Dataset objects
+
+The main objects you work with are:
+
+- `Dataset`
+- `DatasetColumn`
+- `DatasetRow`
+
+### Dataset
+
+- `slug`: Unique identifier for the dataset
+- `name`: Human-readable name
+- `description`: Description of what the dataset is for
+- `num_rows`: Number of rows
+- `columns`: List of `DatasetColumn` objects
+- `rows`: List of `DatasetRow` objects
+
+### DatasetColumn
+
+- `name`: Column name
+- `type`: Data type (e.g. `"string"`, `"number"`)
+- `description`: Column description
+
+### DatasetRow
+
+- `name`: Row identifier
+- `values`: Dict of `column_name -> value`
+- `ideal_output`: Optional expected output for evaluation
+- `metadata`: Optional dict with additional context
+
+See the API Reference for method signatures and all available fields.

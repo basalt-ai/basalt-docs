@@ -4,48 +4,140 @@ title: API Reference
 
 # API Reference
 
-## Dataset Methods
+This page documents the main Python SDK methods and objects for working with datasets.
 
-### list_sync
+## Dataset methods
+
+### `list_sync`
 
 ```python
 basalt.datasets.list_sync()
 ```
-Returns a list of all datasets accessible to your API key.
 
-### get_sync
+Lists all datasets accessible to your API key.
+
+**Returns:**
+
+An object with:
+- `total` (int): Total number of datasets.
+- `datasets` (list): List of dataset metadata objects.
+
+Each dataset object includes `slug`, `name`, `description`, `num_rows`, and `columns`.
+
+---
+
+### `list` (async)
+
+```python
+await basalt.datasets.list()
+```
+
+Async variant of `list_sync`, suitable for use in async applications.
+
+**Returns:**
+
+Same as `list_sync`: an object with `total` and `datasets`.
+
+---
+
+### `get_sync`
 
 ```python
 basalt.datasets.get_sync(slug: str)
 ```
-Retrieves a dataset by slug.
 
-### add_row_sync
+Retrieves a dataset by slug, including its rows and columns.
+
+**Parameters:**
+
+- `slug` (str, required): Dataset identifier.
+
+**Returns:**
+
+A `Dataset` object (see below).
+
+---
+
+### `add_row_sync`
 
 ```python
-basalt.datasets.add_row_sync(slug: str, values: dict, name: str = None, ideal_output: str = None, metadata: dict = None)
+basalt.datasets.add_row_sync(
+    slug: str,
+    values: dict,
+    name: str | None = None,
+    ideal_output: str | None = None,
+    metadata: dict | None = None,
+)
 ```
-Adds a row to a dataset.
 
-## Dataset Objects
+Adds a single row to a dataset.
 
-### Dataset
-- `slug`: str
-- `name`: str
-- `description`: str
-- `num_rows`: int
-- `columns`: List[DatasetColumn]
-- `rows`: List[DatasetRow]
+**Parameters:**
 
-### DatasetColumn
-- `name`: str
-- `type`: str
-- `description`: str
+- `slug` (str, required): Dataset identifier.
+- `values` (dict, required): Column name → value mapping.
+- `name` (str, optional): Row identifier; auto-generated if omitted.
+- `ideal_output` (str, optional): Expected output for evaluation.
+- `metadata` (dict, optional): Arbitrary metadata for this row.
 
-### DatasetRow
-- `name`: str
-- `values`: dict
-- `ideal_output`: Optional[str]
-- `metadata`: Optional[dict]
+**Returns:**
 
-See the [Python SDK documentation](https://github.com/basalt-ai/basalt) for more details.
+A `DatasetRow` object representing the newly created row.
+
+---
+
+### `add_row` (async)
+
+```python
+await basalt.datasets.add_row(
+    slug: str,
+    values: dict,
+    name: str | None = None,
+    ideal_output: str | None = None,
+    metadata: dict | None = None,
+)
+```
+
+Async variant of `add_row_sync`, for use in async workflows.
+
+**Returns:**
+
+Same as `add_row_sync`: a `DatasetRow` object.
+
+---
+
+## Dataset objects
+
+### `Dataset`
+
+Represents a complete dataset, including schema and rows.
+
+- `slug` (str): Unique identifier.
+- `name` (str): Human-readable name.
+- `description` (str): Description of the dataset.
+- `num_rows` (int): Number of rows.
+- `columns` (list[DatasetColumn]): List of column definitions.
+- `rows` (list[DatasetRow]): List of rows in the dataset.
+
+---
+
+### `DatasetColumn`
+
+Describes a single column in the dataset schema.
+
+- `name` (str): Column name.
+- `type` (str): Data type (for example `"string"`, `"number"`).
+- `description` (str): Column description.
+
+---
+
+### `DatasetRow`
+
+Represents a single test case / row.
+
+- `name` (str): Row identifier.
+- `values` (dict): Column name → value mapping.
+- `ideal_output` (str | None): Expected output, when available.
+- `metadata` (dict | None): Additional metadata for this row.
+
+Refer to the Python SDK documentation for lower-level details and additional helpers.

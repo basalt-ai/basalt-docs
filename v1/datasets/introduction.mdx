@@ -1,17 +1,59 @@
 ---
 title: Datasets
+description: Working with datasets in Basalt
 ---
 
 # Datasets
 
-Basalt's Datasets API helps you organize test data for evaluating AI model outputs. Store inputs, expected outputs, and metadata to systematically test and improve your AI applications.
+In Basalt, a **dataset** is a structured collection of examples you use to evaluate and improve your AI systems.
+
+Instead of testing prompts or models with ad‑hoc inputs, you store representative examples—inputs, expected outputs, and metadata—in datasets and reuse them across experiments, environments, and teams.
+
+Typical uses include:
+
+- Building **evaluation suites** for prompts, RAG pipelines, and agents
+- Capturing **high‑quality production examples** for regression testing
+- Sharing **canonical test cases** between teams and environments
 
 <Info>
-This section covers the concept of datasets and how they are used for evaluation and testing. For SDK usage, see the Python or TypeScript tabs.
+This page focuses on the concept of datasets: what they are, when to use them, and how they fit into your evaluation workflow.  
+For concrete SDK usage, see the Python or TypeScript tabs.
 </Info>
 
-Datasets enable you to:
-- **Organize test cases** with structured inputs and expected outputs
-- **Store ideal outputs** for automated quality evaluation
-- **Track metadata** for additional context on each test case
-- **Integrate with evaluators** for quality monitoring
+## What datasets contain
+
+A dataset usually describes a specific evaluation surface—for example “customer support Q&A” or “RAG search quality”.
+
+Each dataset is made of:
+
+- **Columns** – the schema describing what each row contains (e.g. `question`, `context`, `category`)
+- **Rows** – individual test cases with:
+  - **Values**: the actual inputs or fields (e.g. a user question, retrieved context)
+  - **Ideal output**: the expected or “golden” answer, when available
+  - **Metadata**: additional context like difficulty, source, tags, or ratings
+
+This structure lets you evaluate different prompts, models, or workflows against the **same underlying data**, so you can compare results fairly.
+
+## Why use datasets
+
+Datasets help you:
+
+- **Ensure consistency** – run the same tests across versions, models, and environments
+- **Improve reproducibility** – reproduce issues and fixes using stable, versioned examples
+- **Streamline experimentation** – plug datasets into evaluators and experiments instead of hand‑crafting inputs
+- **Track progress over time** – measure quality improvements on a fixed benchmark
+- **Organize real‑world examples** – turn production traffic into structured, reusable test cases
+
+## How datasets fit with other Basalt features
+
+Datasets work best alongside:
+
+- **Prompts** – use dataset rows as inputs to prompts and compare actual vs. ideal outputs
+- **Evaluators** – automate scoring of model behavior on dataset rows
+- **Experiments** – run A/B tests or model comparisons over a given dataset
+
+The SDK pages in this section show how to:
+
+- List and inspect datasets for your workspace
+- Retrieve full datasets (columns and rows) for testing
+- Add new rows programmatically from scripts, experiments, or production systems
