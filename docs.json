@@ -151,7 +151,7 @@
                     ]
                   },
                   {
-                    "group": "Observabilité",
+                    "group": "Monitoring",
                     "icon": "chart-line",
                     "pages": [
                       "v1/observabilite/introduction",

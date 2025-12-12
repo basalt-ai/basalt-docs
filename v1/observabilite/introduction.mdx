@@ -1,21 +1,29 @@
 ---
-title: Observability
+title: Monitoring
 ---
 
-# Observability
+# Monitoring
 
-Basalt v1 introduces a unified, OpenTelemetry-based observability system for AI applications. This is a major breaking change from v0, with new APIs, context propagation, and auto-instrumentation for LLMs, vector DBs, and frameworks.
+Basalt v1 introduces a unified, OpenTelemetry-based monitoring and observability system for AI applications. It replaces the v0 tracing APIs with a single, coherent model built around `start_observe` and `observe`.
+
+With Monitoring, you can:
+
+- Trace complete AI workflows (prompts, RAG, tools, evaluators) as a single **trace**
+- Attach **user and organization identity** to requests and have it flow automatically
+- Track **latency, token usage, and errors** for LLM calls and tools
+- Enable **auto-instrumentation** for LLM SDKs and other libraries with minimal code
 
 <Info>
-This section covers the core concepts and breaking changes in v1 observability. For SDK usage, see the Python or TypeScript tabs.
+This section explains how Basalt Monitoring works conceptually and how it differs from v0.  
+For detailed Python usage, see the Python tab; for TypeScript, see the TypeScript tab.
 </Info>
 
-## What's New in v1?
-- Unified `observe`/`start_observe` API for tracing, logging, and context
+## What's new in v1
+
+- Unified `observe` / `start_observe` API for tracing, logging, and context
 - Full OpenTelemetry compatibility and context propagation
 - Auto-instrumentation for LLMs, vector DBs, and frameworks
 - Rich identity, experiment, and evaluator tracking
-- Async and sync support with identical APIs
-- Major API changes: see migration notes in the Python tab
+- Async and sync support with the same decorator and context manager APIs
 
-> **Migration:** v1 is not backward compatible with v0. See the Python tab for migration guidance and code examples.
+> **Migration:** v1 is not backward compatible with v0. See the Python Monitoring docs for migration guidance and side-by-side examples.
