@@ -5,160 +5,74 @@ description: Automatic tracing for LLM providers, vector databases, and framewor
 
 # Auto-Instrumentation
 
-Basalt automatically instruments popular LLM providers, vector databases, and frameworks, providing zero-code observability for your AI applications.
+Auto-instrumentation creates spans for common operations (LLM calls, vector searches, framework chains) without adding `@observe` decorators around every SDK call.
 
-## What is Auto-Instrumentation?
+Use it to get immediate visibility into provider-level operations, then add manual spans for your business logic where it matters.
 
-Auto-instrumentation automatically creates spans for operations without requiring manual `@observe` decorators. When you enable instrumentation for a provider:
+## Supported providers
 
-1. **Spans are created automatically** for all operations (LLM calls, vector searches, etc.)
-2. **Provider-specific attributes are captured** (model, tokens, prompts, etc.)
-3. **Context propagation works automatically** (evaluators, identity, etc.)
-4. **No code changes needed** - existing code works as-is
+Basalt supports these instrumentation names:
 
-## Supported Providers
-
-Basalt supports **17 providers** across 3 categories:
-
-### LLM Providers (10)
-- **openai** - OpenAI GPT models
-- **anthropic** - Anthropic Claude models
-- **google_generativeai** - Google Gemini models
-- **cohere** - Cohere models
-- **bedrock** - AWS Bedrock
-- **vertexai** - Google Cloud Vertex AI
-- **ollama** - Ollama local models
-- **mistralai** - Mistral AI models
-- **together** - Together AI models
-- **replicate** - Replicate models
-
-### Vector Databases (3)
-- **chromadb** - ChromaDB vector database
-- **pinecone** - Pinecone vector database
-- **qdrant** - Qdrant vector database
-
-### Frameworks (3)
-- **langchain** - LangChain framework
-- **llamaindex** - LlamaIndex framework
-- **haystack** - Haystack framework
-
-### In Development (1)
-- **google_genai** - New Google GenAI SDK (instrumentation ready, not yet published)
+- **LLMs:** `openai`, `anthropic`, `google_generativeai`, `cohere`, `bedrock`, `vertexai`, `ollama`, `mistralai`, `together`, `replicate`
+- **Vector DBs:** `chromadb`, `pinecone`, `qdrant`
+- **Frameworks:** `langchain`, `llamaindex`, `haystack`
 
 ## Installation
 
-Auto-instrumentation packages are installed separately to keep the core SDK lightweight.
-
-### Individual Providers
-
-Install specific providers you need:
+Auto-instrumentation is installed as extras to keep the core SDK lightweight:
 
 ```bash
-# LLM Providers
-pip install basalt-sdk[openai]
-pip install basalt-sdk[anthropic]
-pip install basalt-sdk[google_generativeai]
-pip install basalt-sdk[cohere]
-pip install basalt-sdk[bedrock]
-pip install basalt-sdk[vertexai]
-pip install basalt-sdk[ollama]
-pip install basalt-sdk[mistralai]
-pip install basalt-sdk[together]
-pip install basalt-sdk[replicate]
+# One provider
+pip install "basalt-sdk[openai]"
 
-# Vector Databases
-pip install basalt-sdk[chromadb]
-pip install basalt-sdk[pinecone]
-pip install basalt-sdk[qdrant]
-
-# Frameworks
-pip install basalt-sdk[langchain]
-pip install basalt-sdk[llamaindex]
-pip install basalt-sdk[haystack]
-```
-
-### Category Bundles
-
-Install all providers in a category:
-
-```bash
-# All LLM providers
-pip install basalt-sdk[llm-all]
-
-# All vector databases
-pip install basalt-sdk[vector-all]
-
-# All frameworks
-pip install basalt-sdk[framework-all]
+# A whole category
+pip install "basalt-sdk[llm-all]"
 
 # Everything
-pip install basalt-sdk[all]
+pip install "basalt-sdk[all]"
 ```
 
-## Basic Usage
+## Enable instrumentation
 
-### Enable All Installed
-
-Enable all installed instrumentation providers:
+### Enable all installed providers
 
 ```python
 from basalt import Basalt
 
 basalt = Basalt(api_key="your-api-key")
-
-# All installed providers are auto-instrumented
-import openai
-openai_client = openai.OpenAI(api_key="...")
-response = openai_client.chat.completions.create(...)  # Auto-traced!
 ```
 
-### Selective Enabling
-
-Enable only specific providers:
+### Enable only specific providers
 
 ```python
 from basalt import Basalt
 
 basalt = Basalt(
     api_key="your-api-key",
-    enabled_instruments=["openai", "anthropic", "chromadb"]
+    enabled_instruments=["openai", "chromadb"],
 )
-
-# Only OpenAI, Anthropic, and ChromaDB are auto-instrumented
 ```
 
-### Selective Disabling
-
-Disable specific providers while enabling others:
+### Disable specific providers
 
 ```python
 from basalt import Basalt
 
 basalt = Basalt(
     api_key="your-api-key",
-    disabled_instruments=["langchain"]  # Disable LangChain
+    disabled_instruments=["langchain"],
 )
-
-# All installed providers EXCEPT LangChain are auto-instrumented
 ```
 
-## LLM Providers
+## What gets captured
 
-### OpenAI
+Auto-instrumented spans typically include:
 
-**What gets traced:**
-- `chat.completions.create()` - Chat completions
-- `completions.create()` - Legacy completions
-- Streaming requests
+- Operation name and duration
+- Provider/model identifiers (for LLMs)
+- Token usage and errors (when the underlying SDK exposes them)
 
-**Captured attributes:**
-- Model name
-- Prompt messages
-- Completion text
-- Token counts (input, output, total)
-- Temperature, top_p, etc.
-
-**Example:**
+## Example (OpenAI)
 
 ```python
 from basalt import Basalt
@@ -167,637 +81,24 @@ import openai
 basalt = Basalt(api_key="...", enabled_instruments=["openai"])
 openai_client = openai.OpenAI(api_key="...")
 
-# This call is automatically traced
 response = openai_client.chat.completions.create(
     model="gpt-4",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-# Span created: "openai.chat.completions"
-# Attributes: model=gpt-4, prompt, completion, tokens
-```
-
-**With observability context:**
-
-```python
-from basalt.observability import start_observe, evaluator
-
-@evaluator("quality-check")
-@start_observe(feature_slug="qa", name="QA System")
-def qa_system(question: str):
-    # OpenAI call automatically inherits "quality-check" evaluator
-    response = openai_client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": question}]
-    )
-    return response.choices[0].message.content
-```
-
----
-
-### Anthropic
-
-**What gets traced:**
-- `messages.create()` - Claude messages
-
-**Captured attributes:**
-- Model name
-- Messages (system, user, assistant)
-- Response text
-- Token counts
-- Temperature, max_tokens, etc.
-
-**Example:**
-
-```python
-from basalt import Basalt
-import anthropic
-
-basalt = Basalt(api_key="...", enabled_instruments=["anthropic"])
-anthropic_client = anthropic.Anthropic(api_key="...")
-
-# Auto-traced
-response = anthropic_client.messages.create(
-    model="claude-3-5-sonnet-20241022",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-# Span created: "anthropic.messages"
-```
-
----
-
-### Google Gemini (google_generativeai)
-
-**What gets traced:**
-- `GenerativeModel.generate_content()` - Content generation
-- Streaming requests
-
-**Captured attributes:**
-- Model name
-- Prompt
-- Response text
-- Safety ratings
-
-**Example:**
-
-```python
-from basalt import Basalt
-import google.generativeai as genai
-
-basalt = Basalt(api_key="...", enabled_instruments=["google_generativeai"])
-genai.configure(api_key="...")
-
-model = genai.GenerativeModel("gemini-pro")
-
-# Auto-traced
-response = model.generate_content("Hello!")
-# Span created: "google_generativeai.generate_content"
-```
-
----
-
-### Cohere
-
-**What gets traced:**
-- `chat()` - Chat completions
-- `generate()` - Text generation
-
-**Example:**
-
-```python
-from basalt import Basalt
-import cohere
-
-basalt = Basalt(api_key="...", enabled_instruments=["cohere"])
-cohere_client = cohere.Client(api_key="...")
-
-# Auto-traced
-response = cohere_client.chat(message="Hello!")
-```
-
----
-
-### AWS Bedrock
-
-**What gets traced:**
-- `invoke_model()` - Model invocations
-- Claude, Titan, Jurassic, etc.
-
-**Example:**
-
-```python
-from basalt import Basalt
-import boto3
-
-basalt = Basalt(api_key="...", enabled_instruments=["bedrock"])
-bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
-
-# Auto-traced
-response = bedrock.invoke_model(
-    modelId="anthropic.claude-v2",
-    body=json.dumps({"prompt": "Hello!"})
+    messages=[{"role": "user", "content": "Hello!"}],
 )
 ```
 
----
+## Context propagation
 
-### Google Vertex AI
+Auto-instrumented spans inherit context set by `start_observe` (identity, experiment, metadata, evaluators). Use manual `observe` spans for your business logic and let auto-instrumentation cover provider calls.
 
-**What gets traced:**
-- Vertex AI model predictions
-- PaLM, Gemini on Vertex
+## Best practices
 
-**Example:**
+- Enable only the providers you use (`enabled_instruments`) to keep overhead low.
+- Don’t double-instrument: if a call is auto-instrumented, avoid wrapping the same call in a manual `observe` span.
+- Call `basalt.shutdown()` when your process exits to flush traces.
 
-```python
-from basalt import Basalt
-from vertexai.preview.language_models import ChatModel
+## Next steps
 
-basalt = Basalt(api_key="...", enabled_instruments=["vertexai"])
-
-chat_model = ChatModel.from_pretrained("chat-bison")
-# Auto-traced
-response = chat_model.send_message("Hello!")
-```
-
----
-
-### Ollama
-
-**What gets traced:**
-- Local model invocations
-- Llama, Mistral, etc. via Ollama
-
-**Example:**
-
-```python
-from basalt import Basalt
-import ollama
-
-basalt = Basalt(api_key="...", enabled_instruments=["ollama"])
-
-# Auto-traced
-response = ollama.chat(
-    model="llama2",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-```
-
----
-
-### Mistral AI
-
-**What gets traced:**
-- Chat completions via Mistral API
-
-**Example:**
-
-```python
-from basalt import Basalt
-from mistralai.client import MistralClient
-
-basalt = Basalt(api_key="...", enabled_instruments=["mistralai"])
-mistral_client = MistralClient(api_key="...")
-
-# Auto-traced
-response = mistral_client.chat(
-    model="mistral-small",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-```
-
----
-
-### Together AI
-
-**What gets traced:**
-- Model completions via Together API
-
-**Example:**
-
-```python
-from basalt import Basalt
-import together
-
-basalt = Basalt(api_key="...", enabled_instruments=["together"])
-together.api_key = "..."
-
-# Auto-traced
-response = together.Complete.create(
-    prompt="Hello!",
-    model="togethercomputer/llama-2-7b"
-)
-```
-
----
-
-### Replicate
-
-**What gets traced:**
-- Model predictions via Replicate API
-
-**Example:**
-
-```python
-from basalt import Basalt
-import replicate
-
-basalt = Basalt(api_key="...", enabled_instruments=["replicate"])
-
-# Auto-traced
-output = replicate.run(
-    "meta/llama-2-7b",
-    input={"prompt": "Hello!"}
-)
-```
-
----
-
-## Vector Databases
-
-### ChromaDB
-
-**What gets traced:**
-- `collection.query()` - Vector searches
-- `collection.add()` - Adding documents
-- `collection.get()` - Getting documents
-
-**Captured attributes:**
-- Collection name
-- Query text
-- Number of results
-- Distance metrics
-
-**Example:**
-
-```python
-from basalt import Basalt
-import chromadb
-
-basalt = Basalt(api_key="...", enabled_instruments=["chromadb"])
-chroma_client = chromadb.Client()
-collection = chroma_client.create_collection("docs")
-
-# Auto-traced
-results = collection.query(
-    query_texts=["search query"],
-    n_results=5
-)
-# Span created: "chromadb.query"
-# Kind: RETRIEVAL
-```
-
----
-
-### Pinecone
-
-**What gets traced:**
-- `index.query()` - Vector queries
-- `index.upsert()` - Upserting vectors
-
-**Example:**
-
-```python
-from basalt import Basalt
-import pinecone
-
-basalt = Basalt(api_key="...", enabled_instruments=["pinecone"])
-pinecone.init(api_key="...")
-index = pinecone.Index("my-index")
-
-# Auto-traced
-results = index.query(
-    vector=[0.1, 0.2, ...],
-    top_k=5
-)
-# Span created: "pinecone.query"
-```
-
----
-
-### Qdrant
-
-**What gets traced:**
-- `search()` - Vector searches
-- `upsert()` - Upserting points
-
-**Example:**
-
-```python
-from basalt import Basalt
-from qdrant_client import QdrantClient
-
-basalt = Basalt(api_key="...", enabled_instruments=["qdrant"])
-qdrant_client = QdrantClient(url="localhost")
-
-# Auto-traced
-results = qdrant_client.search(
-    collection_name="docs",
-    query_vector=[0.1, 0.2, ...],
-    limit=5
-)
-# Span created: "qdrant.search"
-```
-
----
-
-## Frameworks
-
-### LangChain
-
-**What gets traced:**
-- Chain executions
-- Agent runs
-- Tool calls
-- LLM calls within LangChain
-
-**Example:**
-
-```python
-from basalt import Basalt
-from langchain.chains import LLMChain
-from langchain.llms import OpenAI
-
-basalt = Basalt(api_key="...", enabled_instruments=["langchain", "openai"])
-
-chain = LLMChain(llm=OpenAI(), prompt=...)
-
-# Auto-traced at both LangChain and OpenAI levels
-result = chain.run("input")
-# Span hierarchy:
-# - langchain.chain
-#   - openai.chat.completions
-```
-
----
-
-### LlamaIndex
-
-**What gets traced:**
-- Query engine executions
-- Index queries
-- Retrieval operations
-- LLM calls within LlamaIndex
-
-**Example:**
-
-```python
-from basalt import Basalt
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-
-basalt = Basalt(api_key="...", enabled_instruments=["llamaindex", "openai"])
-
-documents = SimpleDirectoryReader("data").load_data()
-index = VectorStoreIndex.from_documents(documents)
-
-# Auto-traced
-query_engine = index.as_query_engine()
-response = query_engine.query("What is AI?")
-# Span hierarchy:
-# - llamaindex.query
-#   - llamaindex.retrieval
-#   - openai.chat.completions
-```
-
----
-
-### Haystack
-
-**What gets traced:**
-- Pipeline executions
-- Node runs
-- Retriever queries
-- Generator calls
-
-**Example:**
-
-```python
-from basalt import Basalt
-from haystack import Pipeline
-from haystack.nodes import BM25Retriever, PromptNode
-
-basalt = Basalt(api_key="...", enabled_instruments=["haystack", "openai"])
-
-pipeline = Pipeline()
-pipeline.add_node(component=BM25Retriever(...), name="Retriever", inputs=["Query"])
-pipeline.add_node(component=PromptNode(...), name="Generator", inputs=["Retriever"])
-
-# Auto-traced
-result = pipeline.run(query="What is AI?")
-# Span hierarchy:
-# - haystack.pipeline
-#   - haystack.retriever
-#   - openai.chat.completions
-```
-
----
-
-## Context Propagation
-
-Auto-instrumented spans automatically inherit context from parent spans:
-
-### Evaluators
-
-```python
-from basalt.observability import evaluator, start_observe
-
-@evaluator("quality-check")
-@start_observe(feature_slug="qa", name="QA")
-def qa_system(query: str):
-    # Auto-instrumented LLM call inherits "quality-check" evaluator
-    response = openai_client.chat.completions.create(...)
-    # OpenAI span has "quality-check" evaluator automatically
-    return response.choices[0].message.content
-```
-
-### Identity
-
-```python
-from basalt.observability import start_observe
-
-@start_observe(
-    feature_slug="qa",
-    name="QA",
-    identity={"user": {"id": "user-123"}}
-)
-def qa_system(query: str):
-    # Auto-instrumented call inherits user identity
-    response = openai_client.chat.completions.create(...)
-    # OpenAI span has user.id = "user-123" automatically
-    return response.choices[0].message.content
-```
-
-### Metadata
-
-```python
-from basalt.observability import start_observe
-
-@start_observe(
-    feature_slug="qa",
-    name="QA",
-    metadata={"version": "2.0", "environment": "prod"}
-)
-def qa_system(query: str):
-    # Auto-instrumented call inherits metadata
-    response = openai_client.chat.completions.create(...)
-    # OpenAI span has version and environment attributes
-    return response.choices[0].message.content
-```
-
-## Prompt Integration
-
-When using Basalt prompts with auto-instrumentation, prompt attributes are automatically injected:
-
-```python
-from basalt import Basalt
-from basalt.observability import start_observe
-
-basalt = Basalt(api_key="...", enabled_instruments=["openai"])
-
-@start_observe(feature_slug="qa", name="QA")
-def qa_with_prompt(query: str):
-    # Fetch prompt using context manager
-    with basalt.prompts.get_sync("qa-prompt", variables={"query": query}) as prompt:
-        # Auto-instrumented OpenAI call automatically gets:
-        # 1. Prompt attributes (slug, version, variables)
-        # 2. Any evaluators from parent context
-        # 3. Any identity from parent context
-        response = openai_client.chat.completions.create(
-            model=prompt.model.model,
-            messages=[{"role": "user", "content": prompt.text}]
-        )
-        # OpenAI span has all context!
-        return response.choices[0].message.content
-```
-
-**The OpenAI span will have:**
-- `basalt.prompt.slug = "qa-prompt"`
-- `basalt.prompt.version = "1.2.0"`
-- `basalt.prompt.variables = {"query": "..."}`
-- `basalt.prompt.model.provider = "openai"`
-- Any evaluators from parent
-- Any identity from parent
-
-## Complete Example
-
-Combining auto-instrumentation with manual observability:
-
-```python
-from basalt import Basalt
-from basalt.observability import start_observe, observe, evaluator, ObserveKind
-import openai
-import chromadb
-
-# Initialize with auto-instrumentation
-basalt = Basalt(
-    api_key="your-basalt-key",
-    enabled_instruments=["openai", "chromadb"]
-)
-
-openai_client = openai.OpenAI(api_key="your-openai-key")
-chroma_client = chromadb.Client()
-collection = chroma_client.create_collection("docs")
-
-@evaluator(["answer-quality", "hallucination"])
-@start_observe(
-    feature_slug="rag-qa",
-    name="RAG QA System",
-    identity={"user": {"id": "user-123"}}
-)
-def rag_qa_system(question: str):
-    """Complete RAG pipeline with auto-instrumentation."""
-    
-    # Manual span for retrieval (optional - could rely on ChromaDB auto-instrumentation)
-    with observe(name="Retrieve Context", kind=ObserveKind.RETRIEVAL) as span:
-        # ChromaDB query is auto-instrumented
-        results = collection.query(
-            query_texts=[question],
-            n_results=5
-        )
-        # ChromaDB span inherits evaluators and identity
-        context_docs = results["documents"][0]
-        span.set_output({"doc_count": len(context_docs)})
-    
-    # Manual span for generation (optional - could rely on OpenAI auto-instrumentation)
-    with observe(name="Generate Answer", kind=ObserveKind.GENERATION) as span:
-        context_text = "\n\n".join(context_docs)
-        prompt = f"Context:\n{context_text}\n\nQuestion: {question}\n\nAnswer:"
-        
-        # OpenAI call is auto-instrumented
-        response = openai_client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        # OpenAI span inherits evaluators and identity
-        
-        answer = response.choices[0].message.content
-        span.set_output(answer)
-        return answer
-
-# Execute
-answer = rag_qa_system("What is quantum computing?")
-basalt.shutdown()
-```
-
-**Trace hierarchy:**
-```
-RAG QA System (root, manual, evaluators: [answer-quality, hallucination])
-├── Retrieve Context (manual, RETRIEVAL)
-│   └── chromadb.query (auto-instrumented, inherits evaluators + identity)
-└── Generate Answer (manual, GENERATION)
-    └── openai.chat.completions (auto-instrumented, inherits evaluators + identity)
-```
-
-## Benefits of Auto-Instrumentation
-
-✅ **Zero-code tracing** - Existing code works without changes  
-✅ **Comprehensive coverage** - All LLM/vector calls traced automatically  
-✅ **Consistent attributes** - Provider-specific data captured uniformly  
-✅ **Context propagation** - Evaluators, identity, metadata flow automatically  
-✅ **Works with manual spans** - Mix auto and manual observability  
-✅ **Framework integration** - LangChain, LlamaIndex traces show full hierarchy  
-✅ **Cost tracking** - Token counts captured for all LLM calls  
-✅ **Error tracking** - Exceptions automatically recorded  
-
-## Best Practices
-
-### ✅ Do
-
-- **Enable only needed providers** - Use `enabled_instruments` for selective instrumentation
-- **Combine with manual spans** - Use `@observe` for business logic, auto-instrumentation for providers
-- **Use with evaluators** - Auto-instrumented spans inherit evaluators for comprehensive quality checks
-- **Set identity at root** - Identity propagates to all auto-instrumented spans
-- **Monitor token usage** - Auto-captured token counts help track costs
-
-### ❌ Don't
-
-- **Don't enable unused providers** - Adds unnecessary overhead
-- **Don't duplicate tracing** - If auto-instrumented, no need for manual `@observe` on the same call
-- **Don't forget to install packages** - Each provider requires separate installation
-- **Don't skip shutdown** - Always call `basalt.shutdown()` to flush traces
-
-## Troubleshooting
-
-### Provider not auto-traced
-
-1. Check provider is installed: `pip list | grep basalt-instrumentation`
-2. Verify provider is enabled: `enabled_instruments=["provider-name"]`
-3. Ensure Basalt initialized before importing provider library
-4. Check provider SDK version compatibility
-
-### Missing attributes
-
-- Some provider SDKs may not expose all data
-- Use manual spans with `span.set_attribute()` for custom attributes
-
-### Performance concerns
-
-- Auto-instrumentation adds minimal overhead (~1-2ms per span)
-- Disable unused providers to minimize overhead
-- Use sampling for expensive evaluators
-
-## Next Steps
-
-- [Workflows Guide](/v1/observabilite/python/workflows) - See auto-instrumentation in complete examples
-- [Evaluators Guide](/v1/observabilite/python/evaluators) - Quality checks on auto-instrumented spans
-- [Patterns Guide](/v1/observabilite/python/patterns) - Mix auto and manual observability
-- [API Reference](/v1/observabilite/python/api-reference) - Configuration options
+- [Patterns](/v1/observabilite/python/patterns)
+- [Workflows](/v1/observabilite/python/workflows)
+- [API Reference](/v1/observabilite/python/api-reference)

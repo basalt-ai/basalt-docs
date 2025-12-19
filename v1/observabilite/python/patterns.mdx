@@ -1,512 +1,56 @@
 ---
 title: Decorator vs Context Manager Patterns
-description: Understanding when and how to use decorators vs context managers for observability
+description: When to use decorators vs context managers for observability
 ---
 
 # Decorator vs Context Manager Patterns
 
-Basalt provides two ways to create spans: **decorators** and **context managers**. Understanding when to use each pattern is key to effective observability.
+Basalt gives you two equivalent ways to create spans:
 
-## Quick Comparison
+- **Decorators** (`@start_observe`, `@observe`): best for tracing whole functions with minimal code.
+- **Context managers** (`with start_observe(...)`, `with observe(...)`): best when you need a span handle to set input/output/attributes during execution.
 
-| Feature | Decorator | Context Manager |
-|---------|-----------|-----------------|
-| **Syntax** | `@observe(...)` | `with observe(...) as span:` |
-| **Automatic I/O** | ✅ Yes (args/return) | ❌ No (manual) |
-| **Span handle access** | ❌ No | ✅ Yes |
-| **Mid-execution control** | ❌ No | ✅ Yes |
-| **Multiple operations** | ❌ One per function | ✅ Many per block |
-| **Best for** | Function-level tracing | Fine-grained control |
-| **Code style** | Declarative | Imperative |
+In practice: use decorators by default, and reach for context managers when you need more control.
 
-## The Decorator Pattern
+## Decorators (recommended default)
 
-Decorators provide a clean, declarative way to trace entire functions with minimal boilerplate.
-
-### Basic Usage
+Use decorators to trace function boundaries. This keeps code readable and consistent.
 
 ```python
-from basalt.observability import start_observe, observe
+from basalt.observability import ObserveKind, observe, start_observe
 
-@start_observe(feature_slug="data-pipeline", name="Process Data")
-def process_data(data: dict):
-    # Input automatically captured from 'data' parameter
-    cleaned = clean_data(data)
-    result = transform_data(cleaned)
-    # Return value automatically captured as output
-    return result
+@observe(name="LLM call", kind=ObserveKind.GENERATION)
+def call_llm(prompt_text: str) -> str:
+    return "..."
 
-@observe(name="Clean Data")
-def clean_data(data: dict):
-    # Nested span automatically created
-    return {k: v for k, v in data.items() if v is not None}
-
-@observe(name="Transform Data")
-def transform_data(data: dict):
-    return {k: v.upper() for k, v in data.items()}
+@start_observe(feature_slug="support", name="Handle request")
+def handle_request(user_message: str) -> str:
+    return call_llm(user_message)
 ```
 
-**What gets captured automatically:**
-- Function arguments → `span.input`
-- Return value → `span.output`
-- Function name → `span.name` (if not specified)
-- Execution time → `span.duration`
-- Exceptions → `span.status` and `span.exception`
+## Context managers (fine-grained control)
 
-### With Span Kinds
+Use context managers when you want to enrich spans mid-flight (custom attributes, partial outputs, branching logic).
 
 ```python
-from basalt.observability import observe, ObserveKind
+from basalt.observability import ObserveKind, observe, start_observe
 
-@observe(name="Search Documents", kind=ObserveKind.RETRIEVAL)
-def search_docs(query: str):
-    return vector_db.search(query, top_k=5)
-
-@observe(name="Generate Answer", kind=ObserveKind.GENERATION)
-def generate_answer(context: str, question: str):
-    return llm.generate(f"Context: {context}\n\nQuestion: {question}")
+def handle_request(user_message: str) -> str:
+    with start_observe(feature_slug="support", name="Handle request"):
+        with observe(name="LLM call", kind=ObserveKind.GENERATION) as span:
+            span.set_input({"message": user_message})
+            output = "..."
+            span.set_output({"output": output})
+            span.set_attribute("cache_hit", False)
+            return output
 ```
 
-### With Metadata
+## Choosing between the two
 
-```python
-@observe(name="API Call", metadata={"version": "v2", "retry_count": 3})
-def call_external_api(endpoint: str):
-    return requests.get(endpoint)
-```
+- Prefer **decorators** for request handlers, background jobs, and any code with clear function boundaries.
+- Prefer **context managers** when you need the span handle or you’re tracing a block that isn’t naturally a function.
+- Mixing both is normal: `start_observe` at the entry point, `observe` spans for key steps, and auto-instrumentation for provider calls.
 
-### Advantages
+## Async note
 
-✅ **Clean and concise** - No boilerplate, no manual span lifecycle management  
-✅ **Automatic I/O capture** - No need to manually set input/output  
-✅ **Async auto-detection** - Works with both sync and async functions  
-✅ **Less error-prone** - Can't forget to close spans  
-✅ **Readable** - Intent is clear from decorator alone  
-
-### Limitations
-
-❌ **No span handle access** - Can't call `span.set_attribute()` or other methods  
-❌ **All-or-nothing** - Entire function is one span  
-❌ **No mid-execution control** - Can't modify span during execution  
-❌ **Limited to functions** - Can't trace arbitrary code blocks  
-
-## The Context Manager Pattern
-
-Context managers provide fine-grained control over span lifecycle and attributes.
-
-### Basic Usage
-
-```python
-from basalt.observability import start_observe, observe
-
-def process_data(data: dict):
-    with start_observe(feature_slug="data-pipeline", name="Process Data") as span:
-        span.set_input(data)
-        
-        # Multiple operations in one span
-        cleaned = clean_data(data)
-        transformed = transform_data(cleaned)
-        validated = validate_data(transformed)
-        
-        span.set_output(validated)
-        span.set_attribute("steps_completed", 3)
-        return validated
-
-def clean_data(data: dict):
-    with observe(name="Clean Data") as span:
-        span.set_input(data)
-        result = {k: v for k, v in data.items() if v is not None}
-        span.set_output(result)
-        span.set_attribute("removed_keys", len(data) - len(result))
-        return result
-```
-
-### With Span Kinds
-
-```python
-from basalt.observability import observe, ObserveKind
-
-def rag_pipeline(query: str):
-    # Retrieval span
-    with observe(name="Search Documents", kind=ObserveKind.RETRIEVAL) as span:
-        span.set_input({"query": query})
-        docs = vector_db.search(query, top_k=5)
-        span.set_output({"doc_count": len(docs)})
-        span.set_attribute("vector_db", "chromadb")
-    
-    # Generation span
-    with observe(name="Generate Answer", kind=ObserveKind.GENERATION) as span:
-        span.set_input({"query": query, "context": docs})
-        answer = llm.generate(prompt)
-        span.set_output({"answer": answer})
-        span.set_tokens(input=len(prompt), output=len(answer))
-```
-
-### With Dynamic Attributes
-
-```python
-def process_batch(items: list):
-    with observe(name="Batch Processing") as span:
-        span.set_input({"item_count": len(items)})
-        
-        processed = 0
-        failed = 0
-        
-        for item in items:
-            try:
-                process_item(item)
-                processed += 1
-            except Exception as e:
-                failed += 1
-                span.record_exception(e)
-        
-        span.set_attribute("processed_count", processed)
-        span.set_attribute("failed_count", failed)
-        span.set_output({"success_rate": processed / len(items)})
-```
-
-### Advantages
-
-✅ **Full span control** - Access to all span handle methods  
-✅ **Dynamic attributes** - Set attributes during execution  
-✅ **Multiple operations** - Many operations in one span  
-✅ **Fine-grained I/O** - Control exactly what gets captured  
-✅ **Error handling** - Custom exception handling within span  
-✅ **Code block tracing** - Not limited to functions  
-
-### Limitations
-
-❌ **More boilerplate** - Explicit I/O setting required  
-❌ **Manual lifecycle** - Must manage span context  
-❌ **More verbose** - More code than decorators  
-❌ **Easier to forget** - Could forget to set output or close span  
-
-## The start_observe Requirement
-
-**Every trace must have exactly one root span created with `start_observe`.**
-
-### Why start_observe is Required
-
-`start_observe` creates a **root span** that:
-- Initializes a new trace with a unique trace ID
-- Sets up the feature slug for categorization
-- Establishes the identity context (user/org)
-- Attaches experiment information
-- Configures evaluators at the root level
-
-Without `start_observe`, child spans would have no trace to attach to.
-
-### ✅ Correct: Root with start_observe
-
-```python
-@start_observe(feature_slug="api", name="Handle Request")
-def handle_request(data):
-    # Root span created
-    validate(data)  # Child span
-    process(data)   # Child span
-    return result
-
-@observe(name="Validate")
-def validate(data):
-    # Child span - requires parent from start_observe
-    pass
-```
-
-### ❌ Incorrect: No root span
-
-```python
-@observe(name="Handle Request")  # ❌ No root span!
-def handle_request(data):
-    # This will not create a trace - observe requires a parent
-    pass
-```
-
-### Using start_observe as Context Manager
-
-```python
-def main():
-    with start_observe(feature_slug="app", name="Main") as root:
-        # Root span created
-        root.set_input({"user_id": "123"})
-        
-        # Child operations
-        with observe(name="Step 1") as step1:
-            step1.set_output({"status": "complete"})
-        
-        with observe(name="Step 2") as step2:
-            step2.set_output({"status": "complete"})
-        
-        root.set_output({"steps_completed": 2})
-```
-
-## Span Handle Methods
-
-When using context managers, you have access to the span handle with many useful methods:
-
-### Data Methods
-
-```python
-with observe(name="operation") as span:
-    # Set input data
-    span.set_input({"query": "hello", "params": {"limit": 10}})
-    
-    # Set output data
-    span.set_output({"result": "world", "count": 5})
-    
-    # Set individual attributes
-    span.set_attribute("version", "2.0")
-    span.set_attribute("user_type", "premium")
-    
-    # Set multiple attributes at once
-    span.set_metadata({
-        "environment": "production",
-        "region": "us-west-2"
-    })
-```
-
-### Identity Methods
-
-```python
-with start_observe(feature_slug="app", name="handler") as span:
-    # Set full identity
-    span.set_identity({
-        "user": {"id": "user-123", "name": "Alice"},
-        "organization": {"id": "org-456", "name": "Acme Corp"}
-    })
-    
-    # Or set individually
-    span.set_user(user_id="user-123", name="Alice")
-    span.set_organization(org_id="org-456", name="Acme Corp")
-```
-
-### Status Methods
-
-```python
-with observe(name="operation") as span:
-    try:
-        result = risky_operation()
-        span.set_status("ok", "Operation completed successfully")
-    except Exception as e:
-        span.set_status("error", f"Operation failed: {str(e)}")
-        span.record_exception(e)  # Captures full traceback
-```
-
-### Event Methods
-
-```python
-with observe(name="multi-step") as span:
-    span.add_event("Started processing", {"item_count": 100})
-    
-    process_batch()
-    span.add_event("Batch processed", {"success_count": 95})
-    
-    notify_users()
-    span.add_event("Notifications sent", {"user_count": 50})
-```
-
-### Evaluator Methods
-
-```python
-with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
-    # Add single evaluator
-    span.add_evaluator("quality-check")
-    
-    # Add multiple evaluators
-    span.add_evaluators("toxicity", "bias-check", "pii-detection")
-    
-    # Configure sampling
-    from basalt.observability import EvaluationConfig
-    span.set_evaluator_config(EvaluationConfig(sample_rate=0.5))
-    
-    # Add evaluator-specific metadata
-    span.set_evaluator_metadata({"confidence_threshold": 0.8})
-```
-
-### LLM-Specific Methods (for GENERATION spans)
-
-```python
-with observe(name="llm-call", kind=ObserveKind.GENERATION) as span:
-    # Set model info
-    span.set_model("gpt-4")
-    
-    # Set prompt and completion
-    span.set_prompt("Translate 'hello' to French")
-    span.set_completion("Bonjour")
-    
-    # Set token counts
-    span.set_tokens(input=10, output=5, total=15)
-```
-
-## Static Methods on observe
-
-For use within decorator-traced functions where you don't have span handle access:
-
-```python
-from basalt.observability import observe
-
-@observe(name="process_data")
-def process_data(data: dict):
-    # Set metadata without span handle
-    observe.metadata({"version": "2.0"})
-    
-    # Update existing metadata
-    observe.update_metadata({"iteration": 1})
-    
-    # Set input/output
-    observe.set_input(data)
-    result = transform(data)
-    observe.set_output(result)
-    
-    # Set identity
-    observe.set_identity({"user": {"id": "123"}})
-    
-    # Add evaluator
-    observe.evaluate("quality-check")
-    
-    return result
-```
-
-**Note:** Static methods affect the **current active span** in the context, which is the span created by the decorator.
-
-## Mixing Patterns
-
-You can combine decorators and context managers in the same application:
-
-```python
-@start_observe(feature_slug="api", name="API Handler")
-def handle_api_request(user_id: str, query: str):
-    # Decorator for root - automatic I/O capture
-    
-    # Decorator for simple child function
-    user_data = fetch_user_data(user_id)
-    
-    # Context manager for fine-grained control
-    with observe(name="Complex Operation") as span:
-        span.set_attribute("query_length", len(query))
-        result = complex_processing(user_data, query)
-        span.set_attribute("result_size", len(result))
-    
-    return result
-
-@observe(name="Fetch User Data")
-def fetch_user_data(user_id: str):
-    # Decorator for simple tracing
-    return db.query(user_id)
-```
-
-**Guidelines for mixing:**
-- Use **decorators** for straightforward function-level tracing
-- Use **context managers** when you need to set attributes or handle errors
-- Always use **start_observe** for the root span (decorator or context manager)
-
-## Async Patterns
-
-Basalt fully supports async/await with automatic detection and explicit variants.
-
-### Automatic Detection (Recommended)
-
-```python
-@start_observe(feature_slug="async-app", name="Async Handler")
-async def handle_async_request(data):
-    # Decorator auto-detects async function
-    result = await process_async(data)
-    return result
-
-@observe(name="Process Async")
-async def process_async(data):
-    # Also auto-detected
-    await asyncio.sleep(0.1)
-    return data
-```
-
-### Explicit Async Variants
-
-```python
-from basalt.observability import async_start_observe, async_observe
-
-@async_start_observe(feature_slug="async-app", name="Async Handler")
-async def handle_async_request(data):
-    result = await process_async(data)
-    return result
-
-@async_observe(name="Process Async")
-async def process_async(data):
-    await asyncio.sleep(0.1)
-    return data
-```
-
-### Async Context Managers
-
-```python
-async def async_workflow():
-    async with async_start_observe(
-        feature_slug="async-workflow",
-        name="Workflow"
-    ) as span:
-        span.set_input({"task": "process"})
-        result = await process_data()
-        span.set_output(result)
-
-async def process_data():
-    async with async_observe(name="Process", kind=ObserveKind.FUNCTION) as span:
-        await asyncio.sleep(0.1)
-        span.set_attribute("processed", True)
-        return {"status": "complete"}
-```
-
-**Note:** Both `@observe` (auto-detection) and `@async_observe` (explicit) work correctly. Use whichever is clearer for your codebase.
-
-## Decision Tree: Which Pattern to Use?
-
-```
-Do you need to trace an entire function?
-├─ Yes
-│  ├─ Is automatic I/O capture sufficient?
-│  │  ├─ Yes → Use @observe decorator
-│  │  └─ No → Do you need span handle access?
-│  │     ├─ Yes → Use context manager
-│  │     └─ No → Use @observe + static methods
-│  └─ No (need to trace code block)
-│     └─ Use context manager
-│
-└─ Is this the entry point (root)?
-   ├─ Yes → Use @start_observe or with start_observe()
-   └─ No → Use @observe or with observe()
-```
-
-## Best Practices
-
-### ✅ Do
-
-- **Use decorators** for simple, clean function tracing
-- **Use context managers** when you need fine control
-- **Always use start_observe** for root spans
-- **Set span kinds** to categorize operations semantically
-- **Capture meaningful I/O** - not just raw data dumps
-- **Use descriptive names** - "search_documents" not "step1"
-- **Mix patterns** when appropriate
-
-### ❌ Don't
-
-- **Don't use observe without start_observe** - no trace will be created
-- **Don't capture sensitive data** in I/O (passwords, tokens, PII)
-- **Don't create too many spans** - adds overhead
-- **Don't forget to set output** in context managers
-- **Don't ignore exceptions** - use `record_exception()`
-
-## Summary
-
-| When to use... | Pattern |
-|---------------|---------|
-| Simple function tracing | `@observe` decorator |
-| Root span creation | `@start_observe` decorator or context manager |
-| Need span handle access | Context manager (`with observe() as span`) |
-| Mid-execution attributes | Context manager |
-| Multiple operations in one span | Context manager |
-| Automatic I/O capture | Decorator |
-| Async functions | `@observe` (auto-detects) or `async_observe` |
-
-Next steps:
-- [Workflows Guide](/v1/observabilite/python/workflows) - See complete end-to-end examples
-- [API Reference](/v1/observabilite/python/api-reference) - All methods documented
-- [Evaluators Guide](/v1/observabilite/python/evaluators) - Quality evaluation patterns
+The same patterns work in async code (async functions + `async with ...` where applicable). See [Workflows](/v1/observabilite/python/workflows) for full async examples.
