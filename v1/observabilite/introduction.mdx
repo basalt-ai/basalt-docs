@@ -1,12 +1,12 @@
 ---
-title: Monitoring
+title: Observability
 ---
 
-# Monitoring
+# Observability
 
-Basalt v1 introduces a unified, OpenTelemetry-based monitoring and observability system for AI applications. It replaces the v0 tracing APIs with a single, coherent model built around `start_observe` and `observe`.
+Basalt v1 introduces a unified, OpenTelemetry-based observability system for AI applications. It replaces the v0 tracing APIs with a single, coherent model built around `start_observe` and `observe`.
 
-With Monitoring, you can:
+With Observability, you can:
 
 - Trace complete AI workflows (prompts, RAG, tools, evaluators) as a single **trace**
 - Attach **user and organization identity** to requests and have it flow automatically
@@ -14,8 +14,8 @@ With Monitoring, you can:
 - Enable **auto-instrumentation** for LLM SDKs and other libraries with minimal code
 
 <Info>
-This section explains how Basalt Monitoring works conceptually and how it differs from v0.  
-For detailed Python usage, see the Python tab; for TypeScript, see the TypeScript tab.
+This section explains how Basalt Observability works conceptually and how it differs from v0.  
+For detailed Python usage, see the Python pages in this section. TypeScript v1 docs are not available yet (use the v0 archive).
 </Info>
 
 ## What's new in v1
@@ -26,4 +26,4 @@ For detailed Python usage, see the Python tab; for TypeScript, see the TypeScrip
 - Rich identity, experiment, and evaluator tracking
 - Async and sync support with the same decorator and context manager APIs
 
-> **Migration:** v1 is not backward compatible with v0. See the Python Monitoring docs for migration guidance and side-by-side examples.
+> **Migration:** v1 is not backward compatible with v0. See the Python Observability docs for migration guidance and side-by-side examples.

@@ -4,16 +4,12 @@ title: Overview
 
 # Overview
 
-Basalt’s Monitoring (observability) system gives you end-to-end visibility into your AI workloads—from HTTP handlers and background jobs down to prompts, LLM calls, tools, and evaluators.
+Basalt’s observability system gives you end-to-end visibility into your AI workloads—from HTTP handlers and background jobs down to prompts, LLM calls, tools, and evaluators.
 
 It is built on OpenTelemetry and centered on two primitives:
 
 - `start_observe` – creates **root spans** that represent entire requests or workflows
 - `observe` – creates **child spans** for nested operations (LLM calls, RAG, tools, etc.)
-
-<Warning>
-This documentation is for the Python SDK. For TypeScript, see the TypeScript tab.
-</Warning>
 
 ## Major v1 changes
 

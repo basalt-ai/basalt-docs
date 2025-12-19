@@ -94,12 +94,7 @@ If you omit `variables`, the prompt is returned with raw placeholders, which is 
 
 ## Caching
 
-The SDK automatically caches prompt resolutions for a short time (for example, a 5‑minute TTL):
-
-- **Reduces latency and API calls** when fetching the same slug+tag or slug+version repeatedly.
-- **Provides graceful fallback** if the API is temporarily unavailable: recent prompts can still be served from cache.
-
-You don’t need to manage caching manually; it’s handled internally by the SDK.
+The SDK caches prompt resolutions for a short time to reduce latency and API calls. No configuration is required for most apps.
 
 ## Error Handling
 

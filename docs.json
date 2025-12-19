@@ -14,10 +14,92 @@
         "tab": "Documentation",
         "versions": [
           {
-            "version": "0.5.0",
+            "version": "1.0.0",
             "groups": [
               {
-                "group": "Getting Started",
+                "group": "Start Here",
+                "pages": ["introduction", "v1/quickstart", "v1/installation"]
+              },
+              {
+                "group": "Prompts",
+                "icon": "comment-dots",
+                "pages": [
+                  "v1/prompts/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/prompts/python/overview",
+                      "v1/prompts/python/examples",
+                      "v1/prompts/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Datasets",
+                "icon": "database",
+                "pages": [
+                  "v1/datasets/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/datasets/python/overview",
+                      "v1/datasets/python/examples",
+                      "v1/datasets/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Experiments",
+                "icon": "flask",
+                "pages": [
+                  "v1/experiments/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/experiments/python/overview",
+                      "v1/experiments/python/examples",
+                      "v1/experiments/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Observability",
+                "icon": "chart-line",
+                "pages": [
+                  "v1/observabilite/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/observabilite/python/overview",
+                      "v1/observabilite/python/concepts",
+                      "v1/observabilite/python/patterns",
+                      "v1/observabilite/python/workflows",
+                      "v1/observabilite/python/evaluators",
+                      "v1/observabilite/python/auto-instrumentation",
+                      "v1/observabilite/python/examples",
+                      "v1/observabilite/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Learn more",
+                "pages": ["changelog", "faq", "getting-help"]
+              }
+            ]
+          },
+          {
+            "version": "0.5.0 ",
+            "groups": [
+              {
+                "group": "Start Here",
                 "pages": ["introduction", "v0/quickstart", "v0/installation"]
               },
               {
@@ -69,122 +151,6 @@
                 "pages": ["changelog", "faq", "getting-help"]
               }
             ]
-          },
-          {
-            "version": "1.0.0",
-            "groups": [
-              {
-                "group": "Getting Started",
-                "pages": ["introduction", "v1/quickstart", "v1/installation"]
-              },
-              {
-                "group": "Concepts",
-                "pages": [
-                  {
-                    "group": "Prompts",
-                    "icon": "comment-dots",
-                    "pages": [
-                      "v1/prompts/introduction",
-                      "v1/prompts/caching-policy",
-                      {
-                        "group": "Python",
-                        "icon": "python",
-                        "pages": [
-                          "v1/prompts/python/overview",
-                          "v1/prompts/python/examples",
-                          "v1/prompts/python/api-reference"
-                        ]
-                      },
-                      {
-                        "group": "TypeScript",
-                        "icon": "js",
-                        "pages": [
-                          "v1/prompts/typescript/placeholder"
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "group": "Datasets",
-                    "icon": "database",
-                    "pages": [
-                      "v1/datasets/introduction",
-                      {
-                        "group": "Python",
-                        "icon": "python",
-                        "pages": [
-                          "v1/datasets/python/overview",
-                          "v1/datasets/python/examples",
-                          "v1/datasets/python/api-reference"
-                        ]
-                      },
-                      {
-                        "group": "TypeScript",
-                        "icon": "js",
-                        "pages": [
-                          "v1/datasets/typescript/placeholder"
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "group": "Experiments",
-                    "icon": "flask",
-                    "pages": [
-                      "v1/experiments/introduction",
-                      {
-                        "group": "Python",
-                        "icon": "python",
-                        "pages": [
-                          "v1/experiments/python/overview",
-                          "v1/experiments/python/examples",
-                          "v1/experiments/python/api-reference"
-                        ]
-                      },
-                      {
-                        "group": "TypeScript",
-                        "icon": "js",
-                        "pages": [
-                          "v1/experiments/typescript/placeholder"
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "group": "Monitoring",
-                    "icon": "chart-line",
-                    "pages": [
-                      "v1/observabilite/introduction",
-                      {
-                        "group": "Python",
-                        "icon": "python",
-                        "pages": [
-                          "v1/observabilite/python/overview",
-                          "v1/observabilite/python/concepts",
-                          "v1/observabilite/python/patterns",
-                          "v1/observabilite/python/workflows",
-                          "v1/observabilite/python/evaluators",
-                          "v1/observabilite/python/auto-instrumentation",
-                          "v1/observabilite/python/examples",
-                          "v1/observabilite/python/api-reference"
-                        ]
-                      },
-                      {
-                        "group": "TypeScript",
-                        "icon": "js",
-                        "pages": [
-                          "v1/observabilite/typescript/placeholder"
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Learn more",
-                "pages": ["changelog", "faq", "getting-help"]
-              }
-            ]
           }
         ]
       },
@@ -192,46 +158,6 @@
         "tab": "API Reference",
         "icon": "terminal",
         "versions": [
-          {
-            "version": "0.5.0",
-            "groups": [
-              {
-                "group": "API Documentation",
-                "pages": [
-                  "v0/api-reference/introduction",
-                  "v0/api-reference/authentication"
-                ]
-              },
-              {
-                "group": "Prompts",
-                "pages": [
-                  "v0/api-reference/prompts/get",
-                  "v0/api-reference/prompts/list",
-                  "v0/api-reference/prompts/describe",
-                  "v0/api-reference/prompts/publish"
-                ]
-              },
-              {
-                "group": "Monitor",
-                "pages": [
-                  "v0/api-reference/monitor/log",
-                  "v0/api-reference/monitor/trace"
-                ]
-              },
-              {
-                "group": "Datasets",
-                "pages": [
-                  "v0/api-reference/datasets/get",
-                  "v0/api-reference/datasets/list",
-                  "v0/api-reference/datasets/add-row"
-                ]
-              },
-              {
-                "group": "Experiments",
-                "pages": ["v0/api-reference/experiments/create"]
-              }
-            ]
-          },
           {
             "version": "1.0.0",
             "groups": [
@@ -252,7 +178,7 @@
                 ]
               },
               {
-                "group": "Monitor",
+                "group": "Observability",
                 "pages": [
                   "v1/api-reference/monitor/log",
                   "v1/api-reference/monitor/trace"
@@ -269,6 +195,46 @@
               {
                 "group": "Experiments",
                 "pages": ["v1/api-reference/experiments/create"]
+              }
+            ]
+          },
+          {
+            "version": "0.5.0 (archive)",
+            "groups": [
+              {
+                "group": "API Documentation",
+                "pages": [
+                  "v0/api-reference/introduction",
+                  "v0/api-reference/authentication"
+                ]
+              },
+              {
+                "group": "Prompts",
+                "pages": [
+                  "v0/api-reference/prompts/get",
+                  "v0/api-reference/prompts/list",
+                  "v0/api-reference/prompts/describe",
+                  "v0/api-reference/prompts/publish"
+                ]
+              },
+              {
+                "group": "Observability",
+                "pages": [
+                  "v0/api-reference/monitor/log",
+                  "v0/api-reference/monitor/trace"
+                ]
+              },
+              {
+                "group": "Datasets",
+                "pages": [
+                  "v0/api-reference/datasets/get",
+                  "v0/api-reference/datasets/list",
+                  "v0/api-reference/datasets/add-row"
+                ]
+              },
+              {
+                "group": "Experiments",
+                "pages": ["v0/api-reference/experiments/create"]
               }
             ]
           }

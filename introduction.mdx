@@ -7,7 +7,7 @@ icon: 'square-info'
 import { Button } from '/snippets/button.mdx'
 
 ## Getting started
-To get started with Basalt, you need an account on the Basalt application. Once you have an account, you can explore our documentation to do your first calls to our API or use our SDK.
+Basalt helps you manage prompts, datasets, experiments, and observability for AI features — with an API and SDKs.
 
 <Button
 variant='primary'
@@ -15,22 +15,42 @@ value='Create an account'
 href='https://app.getbasalt.ai'
 />
 
+<Info>
+Basalt **Python SDK** is documented in **v1**. If you’re using **TypeScript/JavaScript**, the v1 SDK is not available yet — use the **v0 (archive)** docs.
+</Info>
 
+## The 4 pillars
 
-## Setting up
 <CardGroup cols={2}>
-  <Card
-	title="Quickstart"
-	icon="rocket"
-	href="/quickstart"
-  >
-	Quickstart with Basalt and start getting your prompt and monitor.
+  <Card title="Prompts" icon="comment-dots" href="/v1/prompts/introduction">
+    Host and version prompts centrally, fetch them at runtime, and roll out changes safely.
   </Card>
-  <Card
-	title="Installation"
-	icon="terminal"
-	href="/installation"
-  >
-	See how to Install the Basalt SDK.
+  <Card title="Datasets" icon="database" href="/v1/datasets/introduction">
+    Store and retrieve structured examples for evaluation, regression, and experimentation.
+  </Card>
+  <Card title="Observability" icon="chart-line" href="/v1/observabilite/introduction">
+    Trace end-to-end AI workflows with `start_observe` and `observe` (OpenTelemetry-based).
+  </Card>
+  <Card title="Experiments" icon="flask" href="/v1/experiments/introduction">
+    Run and compare variants, attach evaluations, and iterate with confidence.
+  </Card>
+</CardGroup>
+
+
+
+## Choose your path
+
+<CardGroup cols={2}>
+  <Card title="Quickstart (Python v1)" icon="rocket" href="/v1/quickstart">
+    Fetch your first prompt and send your first trace to Basalt.
+  </Card>
+  <Card title="Install the SDK (Python v1)" icon="terminal" href="/v1/installation">
+    Install, authenticate, and initialize the SDK.
+  </Card>
+  <Card title="Quickstart (TypeScript v0 archive)" icon="rocket" href="/v0/quickstart">
+    Use the legacy SDK docs while TypeScript v1 is in progress.
+  </Card>
+  <Card title="API Reference" icon="terminal" href="/v1/api-reference/introduction">
+    Raw HTTP API endpoints (v1).
   </Card>
 </CardGroup>

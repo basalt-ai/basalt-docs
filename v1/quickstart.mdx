@@ -1,6 +1,6 @@
 ---
-title: "Quickstart (v1)"
-description: "Quickstart guide for Basalt v1"
+title: "Quickstart"
+description: "Get a first prompt + a first trace in Basalt (Python v1)"
 icon: "rocket"
 ---
 
@@ -8,54 +8,77 @@ icon: "rocket"
 	**The TypeScript SDK is not yet available for v1.** If you're using TypeScript/JavaScript, we recommend using the v0 docs: [v0/quickstart](/v0/quickstart).
 </Warning>
 
-## Quickstart (Python)
-
 <Info>
   **Prerequisites:** Before you begin, make sure to have an [account on Basalt](https://app.getbasalt.ai).
 </Info>
 
-### 1. Install the SDK
+## Quickstart (Python)
+
+<Steps>
+  <Step title="Install the SDK">
 
 ```bash
 pip install basalt-sdk
 ```
 
-### 2. Set your API key
+  </Step>
+  <Step title="Set your API key">
 
 ```bash
 export BASALT_API_KEY="your_api_key_here"
 ```
 
-### 3. Initialize the Basalt client
+  </Step>
+  <Step title="Initialize the SDK">
 
 ```python
-from basalt import Basalt, TelemetryConfig
+import os
+from basalt import Basalt
 
-telemetry = TelemetryConfig(
-    service_name="my-app",
-    environment="production",
-)
-
-client = Basalt(
-    api_key="your_api_key",
-    telemetry_config=telemetry,
-    observability_metadata={
-        "version": "1.0.0",
-        "region": "us-east-1",
-    },
-)
+basalt = Basalt(api_key=os.environ["BASALT_API_KEY"])
 ```
 
-### 4. List your prompts
+  </Step>
+  <Step title="Start observing + get a prompt + call your LLM">
+
+This is the minimal “golden path”:
+1) `start_observe` (creates a trace), 2) `get_sync` (fetches the prompt), 3) your LLM call, 4) see the trace in Basalt.
 
 ```python
-response = client.prompts.list_sync()
-print(f"Total prompts: {response.total}")
-for prompt in response.prompts:
-    print(f"Slug: {prompt.slug} | Description: {prompt.description}")
-client.shutdown()
+import os
+from basalt import Basalt
+from basalt.observability import ObserveKind, observe, start_observe
+
+basalt = Basalt(api_key=os.environ["BASALT_API_KEY"])
+
+@observe(name="LLM call", kind=ObserveKind.GENERATION)
+def call_llm(prompt_text: str) -> str:
+    # Replace this with your OpenAI/Anthropic/etc. client call.
+    return "..."
+
+@start_observe(feature_slug="quickstart", name="First trace")
+def run():
+    prompt = basalt.prompts.get_sync(
+        slug="my-prompt-slug",
+        tag="production",
+        variables={"customer_message": "Hello!"},
+    )
+    output = call_llm(prompt.text)
+    observe.set_output({"output": output})
+    return output
+
+if __name__ == "__main__":
+    print(run())
+    basalt.shutdown()
 ```
 
----
+  </Step>
+</Steps>
 
-For more details, see the [API Reference](./api-reference/introduction).
+## What you get
+
+After running the script, open the Basalt dashboard to see a trace with your root span (`start_observe`) and your LLM span (`observe`).
+
+![Example trace in Basalt](/images/trace-example.svg)
+
+Next: [Prompts](/v1/prompts/introduction) • [Observability](/v1/observabilite/introduction) • [API Reference](/v1/api-reference/introduction)
