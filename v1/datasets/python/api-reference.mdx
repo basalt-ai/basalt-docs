@@ -75,7 +75,7 @@ Adds a single row to a dataset.
 **Parameters:**
 
 - `slug` (str, required): Dataset identifier.
-- `values` (dict, required): Column name → value mapping.
+- `values` (dict, required): Column name → value mapping. Values can be strings, numbers, or `FileAttachment` objects for file uploads.
 - `name` (str, optional): Row identifier; auto-generated if omitted.
 - `ideal_output` (str, optional): Expected output for evaluation.
 - `metadata` (dict, optional): Arbitrary metadata for this row.
@@ -139,5 +139,23 @@ Represents a single test case / row.
 - `values` (dict): Column name → value mapping.
 - `ideal_output` (str | None): Expected output, when available.
 - `metadata` (dict | None): Additional metadata for this row.
+
+---
+
+### `FileAttachment`
+
+Used to upload files as part of a dataset row.
+
+```python
+from basalt import FileAttachment
+
+attachment = FileAttachment(
+    source=Path("path/to/file"),
+    content_type="image/png"
+)
+```
+
+- `source` (Path | str): Path to the file to upload.
+- `content_type` (str): MIME type of the file (e.g., `"image/png"`, `"application/pdf"`).
 
 Refer to the Python SDK documentation for lower-level details and additional helpers.

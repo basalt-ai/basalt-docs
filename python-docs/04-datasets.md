@@ -243,6 +243,49 @@ test_cases = [
 add_multiple_test_cases('support-qa', test_cases)
 ```
 
+### Adding Rows with Files
+
+You can upload files (images, documents, etc.) as part of a dataset row using the `FileAttachment` class.
+
+```python
+from basalt import Basalt, FileAttachment
+from pathlib import Path
+
+basalt = Basalt(api_key="your-api-key")
+
+image_path = Path("path/to/image.png")
+secondary_image_path = Path("path/to/thumbnail.png")
+third_image_path = Path("path/to/detail.png")
+
+row = basalt.datasets.add_row_sync(
+    slug="image-dataset",
+    values={
+        "description": "Test image upload",
+        "image": FileAttachment(
+            source=image_path,
+            content_type="image/png",
+        ),
+        "thumbnail":  FileAttachment(
+            source=secondary_image_path,
+            content_type="image/png",
+        ),
+        "detail_view":  FileAttachment(
+            source=third_image_path,
+            content_type="image/png",
+        ),
+    },
+    name="Image upload example",
+    metadata={
+        "upload_method": "file_path",
+        "source_file": str(image_path),
+    },
+)
+
+print(f"Added row with files: {row.name}")
+
+basalt.shutdown()
+```
+
 ## Use Cases
 
 ### Use Case 1: RAG Evaluation Dataset

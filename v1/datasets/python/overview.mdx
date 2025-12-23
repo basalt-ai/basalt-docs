@@ -143,8 +143,13 @@ The main objects you work with are:
 ### DatasetRow
 
 - `name`: Row identifier
-- `values`: Dict of `column_name -> value`
+- `values`: Dict of `column_name -> value`. Values can be strings, numbers, or `FileAttachment` objects.
 - `ideal_output`: Optional expected output for evaluation
 - `metadata`: Optional dict with additional context
+
+### FileAttachment
+
+- `source`: Path to the file to upload
+- `content_type`: MIME type of the file
 
 See the API Reference for method signatures and all available fields.
