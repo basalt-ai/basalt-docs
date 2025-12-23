@@ -1,0 +1,121 @@
+---
+title: "Migrate from v0 to v1"
+description: "Learn how to upgrade your application from Basalt v0 to v1"
+icon: "arrow-up-from-bracket"
+---
+
+# Migrating from v0 to v1
+
+Basalt v1 is a major update that introduces a unified observability system based on OpenTelemetry and a more consistent SDK API. This guide covers the main changes you need to make when upgrading.
+
+## Key Changes at a Glance
+
+| Feature | v0 (Legacy) | v1 (Current) |
+| :--- | :--- | :--- |
+| **Prompts API** | `basalt.prompt` | `basalt.prompts` |
+| **Tracing** | `basalt.monitor` / `generation.end()` | `start_observe` / `observe` |
+| **Identity** | Manual in `log` or `trace` | Automatic via context propagation |
+| **Error Handling** | Error as value (`error, result = ...`) | Standard Python Exceptions |
+
+
+## 1. Prompts API
+
+The prompts API has been renamed from `prompt` to `prompts` (plural) and now distinguishes between synchronous and asynchronous calls.
+
+<CodeGroup>
+```python v0 (Legacy)
+# Always async, returns a tuple
+error, prompt, generation = await basalt.prompt.get('my-slug')
+```
+
+```python v1 (Current)
+# Synchronous
+prompt = basalt.prompts.get_sync(slug='my-slug')
+
+# Asynchronous
+prompt = await basalt.prompts.get(slug='my-slug')
+```
+</CodeGroup>
+
+## 2. Observability & Tracing
+
+The biggest change in v1 is the move to a unified observability model. Instead of manually logging generations or ending traces, you now use decorators or context managers.
+
+### Basic Tracing
+
+<CodeGroup>
+```python v0 (Legacy)
+error, prompt, generation = await basalt.prompt.get('my-slug')
+output = call_llm(prompt.text)
+generation.end(output)
+```
+
+```python v1 (Current)
+from basalt.observability import start_observe, observe, ObserveKind
+
+@observe(name="LLM Call", kind=ObserveKind.GENERATION)
+def call_llm(text):
+    return "..."
+
+@start_observe(feature_slug="my-feature")
+def run():
+    prompt = basalt.prompts.get_sync(slug='my-slug')
+    output = call_llm(prompt.text)
+    observe.set_output(output)
+```
+</CodeGroup>
+
+## 3. Identity Tracking
+
+In v0, you had to pass user and organization information to every log or trace call. In v1, you set it once at the start of your trace, and it flows automatically to all nested spans.
+
+<CodeGroup>
+```python v0 (Legacy)
+basalt.monitor.log(
+    event="llm_call",
+    user_id="user_123",
+    org_id="org_456",
+    ...
+)
+```
+
+```python v1 (Current)
+@start_observe(
+    feature_slug="my-feature",
+    identity={
+        "user": {"id": "user_123"},
+        "organization": {"id": "org_456"}
+    }
+)
+def run():
+    # All nested @observe calls will automatically 
+    # inherit this identity.
+    ...
+```
+</CodeGroup>
+
+## 4. Error Handling (Exceptions vs Error as Value)
+
+In v0, the SDK followed an "error as value" pattern (similar to Go), where most methods returned a tuple containing an error object and the result. In v1, the SDK uses standard Python exceptions for a more idiomatic experience.
+
+<CodeGroup>
+```python v0 (Legacy)
+# Methods return (error, result, ...)
+error, prompt, generation = await basalt.prompt.get('my-slug')
+
+if error:
+    print(f"Error: {error.message}")
+else:
+    print(prompt.text)
+```
+
+```python v1 (Current)
+# Methods raise exceptions on failure
+try:
+    prompt = basalt.prompts.get_sync(slug='my-slug')
+    print(prompt.text)
+except Exception as e:
+    print(f"Caught an error: {e}")
+```
+</CodeGroup>
+

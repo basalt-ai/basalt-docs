@@ -18,7 +18,12 @@
             "groups": [
               {
                 "group": "Start Here",
-                "pages": ["introduction", "v1/quickstart", "v1/installation"]
+                "pages": [
+                  "introduction",
+                  "v1/quickstart",
+                  "v1/installation",
+                  "v1/migrate-from-v0"
+                ]
               },
               {
                 "group": "Prompts",
@@ -77,6 +82,7 @@
                     "group": "Python",
                     "icon": "python",
                     "pages": [
+                      "v1/observabilite/python/get-started",
                       "v1/observabilite/python/overview",
                       "v1/observabilite/python/concepts",
                       "v1/observabilite/python/patterns",
@@ -90,7 +96,7 @@
               },
               {
                 "group": "Learn more",
-                "pages": ["changelog", "faq", "getting-help"]
+                "pages": ["getting-help"]
               }
             ]
           },
@@ -147,7 +153,7 @@
               },
               {
                 "group": "Learn more",
-                "pages": ["changelog", "faq", "getting-help"]
+                "pages": ["getting-help"]
               }
             ]
           }
