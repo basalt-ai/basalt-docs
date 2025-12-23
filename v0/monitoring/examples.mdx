@@ -31,10 +31,8 @@ generation.end(response)
 error, result, generation = await basalt.prompt.get('customer-reply', {
   'variables': {
     'customerName': 'John Smith',
-    'inquiry': 'When will my order arrive?'
   }
 })
-
 value, generation = result.value, result.generation
 
 # Generate content with your LLM provider

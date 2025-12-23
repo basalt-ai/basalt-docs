@@ -1,0 +1,129 @@
+---
+title: Overview
+---
+
+# Overview
+
+Basalt’s observability system gives you end-to-end visibility into your AI workloads—from HTTP handlers and background jobs down to prompts, LLM calls, tools, and evaluators.
+
+It is built on OpenTelemetry and centered on two primitives:
+
+- `start_observe` – creates **root spans** that represent entire requests or workflows
+- `observe` – creates **child spans** for nested operations (LLM calls, RAG, tools, etc.)
+
+## Major v1 changes
+
+- Unified `observe` / `start_observe` API for tracing, logging, and context
+- Full OpenTelemetry support with automatic context propagation (sync and async)
+- Auto-instrumentation for LLMs, vector DBs, and popular frameworks
+- First-class **identity**, **experiments**, and **evaluators** attached to traces
+- Consistent APIs for sync and async functions (same decorators / context managers)
+
+## Root spans with `start_observe`
+
+Every trace starts with a **root span** created by `start_observe`. Use this at the entry points of your system (HTTP handlers, workers, CLI commands).
+
+```python
+from basalt.observability import start_observe, observe
+
+@start_observe(
+    feature_slug="request-processing",
+    name="process_request",
+    identity={
+        "user": {"id": "user_123", "name": "Alice"},
+        "organization": {"id": "org_abc"},
+    },
+    metadata={"environment": "production", "version": "2.0"},
+)
+def process():
+    sub_task()
+    return "done"
+
+@observe(name="sub_task")
+def sub_task():
+    pass
+```
+
+All spans created under this root automatically share identity, experiment, and context.
+
+## Nested spans with `observe`
+
+Use `observe` to create child spans that describe meaningful units of work:
+
+- LLM generations
+- Retrieval / RAG
+- Tool and function execution
+- Generic business logic
+
+```python
+from basalt.observability import observe, ObserveKind
+
+@observe(name="Generate Answer", kind=ObserveKind.GENERATION)
+def generate_answer(prompt: str) -> str:
+    # Call your LLM here
+    ...
+
+@observe(name="Search Documents", kind=ObserveKind.RETRIEVAL)
+def search_documents(query: str):
+    # Call your vector DB or search backend
+    ...
+```
+
+Kinds (`ObserveKind.GENERATION`, `RETRIEVAL`, `TOOL`, etc.) make traces easier to explore and filter in the Basalt UI.
+
+## Enriching spans
+
+You can attach additional information to the **current active span** using static helpers:
+
+- `observe.set_identity(...)` – set or update user/org identity
+- `observe.metadata(...)` / `observe.update_metadata(...)` – add metadata
+- `observe.set_input(...)` / `observe.set_output(...)` – capture inputs/outputs
+
+```python
+from basalt.observability import observe
+
+observe.set_identity({
+    "user": {"id": "user-123"},
+    "organization": {"id": "org-456"},
+})
+
+observe.metadata(environment="production", feature_flag="new-search")
+observe.set_input({"query": "reset my password"})
+observe.set_output({"status": "ok"})
+```
+
+## Async monitoring
+
+The same decorators work for async functions. For advanced use, explicit async variants `async_start_observe` and `async_observe` are also available.
+
+```python
+from basalt.observability import start_observe, observe
+
+@start_observe(feature_slug="async-api", name="Handle Async Request")
+async def handle_request_async(data):
+    return await process_async(data)
+
+@observe(name="Process Async")
+async def process_async(data):
+    ...
+```
+
+Basalt automatically propagates trace context across async boundaries, so all spans end up in the same trace.
+
+## Global monitoring configuration
+
+You can configure global metadata at client initialization so every span carries shared attributes such as service version or region:
+
+```python
+from basalt import Basalt
+
+client = Basalt(
+    api_key="your-api-key",
+    observability_metadata={
+        "service.version": "1.2.3",
+        "deployment.region": "us-west-2",
+    },
+)
+```
+
+Use the **Concepts**, **Patterns**, and **Workflows** pages for deeper guidance, and the **API Reference** for the full Python surface area.

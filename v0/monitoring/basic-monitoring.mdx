@@ -1,7 +1,4 @@
 ---
-title: "Basic Monitoring"
-description: "Learn how to track and monitor your LLM interactions using the Basalt SDK."
----
 
 <Info>
   Basic monitoring is only available for prompts retrieved directly from Basalt using the `get` method. This approach is designed for simple use cases where you're using a single prompt and not complex workflows. For advanced monitoring scenarios, please refer to the [Tracing](/monitoring/tracing) documentation.
@@ -40,11 +37,6 @@ generation.end(output)
 
 This simple pattern automatically tracks:
 
-- The prompt that was used
-- When the prompt was retrieved
-- When the completion was received
-- The full completion text
-- The total time taken for the interaction
 
 ## User and Organization Identification
 
@@ -225,10 +217,5 @@ generation.end('output')
 
 Basic monitoring is suitable for simple scenarios where you're using a single prompt. For more advanced use cases, such as:
 
-- Tracking multi-step workflows
-- Monitoring prompts not stored in Basalt
-- Collecting detailed metrics
-- Creating custom traces
-- Building complex evaluation pipelines
 
 Please refer to the [Tracing](/monitoring/tracing) documentation, which provides comprehensive tools for these scenarios.

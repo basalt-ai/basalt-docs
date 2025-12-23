@@ -1,0 +1,104 @@
+---
+title: Auto-Instrumentation
+description: Automatic tracing for LLM providers, vector databases, and frameworks
+---
+
+# Auto-Instrumentation
+
+Auto-instrumentation creates spans for common operations (LLM calls, vector searches, framework chains) without adding `@observe` decorators around every SDK call.
+
+Use it to get immediate visibility into provider-level operations, then add manual spans for your business logic where it matters.
+
+## Supported providers
+
+Basalt supports these instrumentation names:
+
+- **LLMs:** `openai`, `anthropic`, `google_generativeai`, `cohere`, `bedrock`, `vertexai`, `ollama`, `mistralai`, `together`, `replicate`
+- **Vector DBs:** `chromadb`, `pinecone`, `qdrant`
+- **Frameworks:** `langchain`, `llamaindex`, `haystack`
+
+## Installation
+
+Auto-instrumentation is installed as extras to keep the core SDK lightweight:
+
+```bash
+# One provider
+pip install "basalt-sdk[openai]"
+
+# A whole category
+pip install "basalt-sdk[llm-all]"
+
+# Everything
+pip install "basalt-sdk[all]"
+```
+
+## Enable instrumentation
+
+### Enable all installed providers
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
+```
+
+### Enable only specific providers
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(
+    api_key="your-api-key",
+    enabled_instruments=["openai", "chromadb"],
+)
+```
+
+### Disable specific providers
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(
+    api_key="your-api-key",
+    disabled_instruments=["langchain"],
+)
+```
+
+## What gets captured
+
+Auto-instrumented spans typically include:
+
+- Operation name and duration
+- Provider/model identifiers (for LLMs)
+- Token usage and errors (when the underlying SDK exposes them)
+
+## Example (OpenAI)
+
+```python
+from basalt import Basalt
+import openai
+
+basalt = Basalt(api_key="...", enabled_instruments=["openai"])
+openai_client = openai.OpenAI(api_key="...")
+
+response = openai_client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+```
+
+## Context propagation
+
+Auto-instrumented spans inherit context set by `start_observe` (identity, experiment, metadata, evaluators). Use manual `observe` spans for your business logic and let auto-instrumentation cover provider calls.
+
+## Best practices
+
+- Enable only the providers you use (`enabled_instruments`) to keep overhead low.
+- Don’t double-instrument: if a call is auto-instrumented, avoid wrapping the same call in a manual `observe` span.
+- Call `basalt.shutdown()` when your process exits to flush traces.
+
+## Next steps
+
+- [Patterns](/v1/observabilite/python/patterns)
+- [Workflows](/v1/observabilite/python/workflows)
+- [API Reference](/v1/observabilite/python/api-reference)

@@ -1,0 +1,70 @@
+---
+title: API Reference
+---
+
+# API Reference
+
+## ExperimentsClient
+
+The `ExperimentsClient` is the main entry point for managing experiments.
+
+### `create_sync`
+
+Creates a new experiment synchronously.
+
+```python
+def create_sync(self, feature_slug: str, name: str) -> Experiment
+```
+
+**Parameters:**
+
+- `feature_slug` (str): A slug to identify the feature this experiment belongs to.
+- `name` (str): A human-readable name for the experiment.
+
+**Returns:**
+
+- `Experiment`: The created experiment object.
+
+### `create`
+
+Creates a new experiment asynchronously.
+
+```python
+async def create(self, feature_slug: str, name: str) -> Experiment
+```
+
+**Parameters:**
+
+- `feature_slug` (str): A slug to identify the feature this experiment belongs to.
+- `name` (str): A human-readable name for the experiment.
+
+**Returns:**
+
+- `Experiment`: The created experiment object.
+
+## Models
+
+### Experiment
+
+Represents a registered experiment.
+
+```python
+@dataclass(slots=True, frozen=True)
+class Experiment:
+    id: str                 # Unique identifier
+    name: str               # Human-readable name
+    feature_slug: str       # Feature slug
+    created_at: str         # ISO 8601 timestamp
+```
+
+### TraceExperiment
+
+Represents experiment metadata attached to a trace.
+
+```python
+@dataclass(frozen=True, slots=True)
+class TraceExperiment:
+    id: str                      # Experiment ID
+    name: str | None = None      # Optional display name
+    feature_slug: str | None = None  # Optional feature slug
+```

@@ -1,0 +1,83 @@
+---
+title: Evaluators
+description: Attach quality checks to spans and traces
+---
+
+# Evaluators
+
+Evaluators are server-side quality checks that run on span data (inputs/outputs/metadata) after spans are exported to Basalt. They run asynchronously, so they don’t block your application.
+
+Use evaluators to score things like correctness, safety/toxicity, hallucinations, or domain-specific rules.
+
+## How attachment works
+
+There are two common ways to attach evaluators:
+
+- **Propagating (recommended):** attach to a span/trace and it flows to child spans created under it.
+- **Span-only:** attach to a single span without affecting children.
+
+## Propagating evaluators (recommended)
+
+Attach evaluators to a root span so everything in the trace inherits them:
+
+```python
+from basalt.observability import evaluator, start_observe
+
+@evaluator(slugs=["quality", "toxicity"])
+@start_observe(feature_slug="support", name="Handle request")
+def handle_request(user_message: str):
+    ...
+```
+
+This is the simplest “set it once” approach and works well with auto-instrumentation: provider spans (OpenAI, vector DBs, etc.) inherit evaluators automatically.
+
+## Span-only evaluators
+
+Attach an evaluator to just one span (useful when only a specific step needs checking):
+
+```python
+from basalt.observability import ObserveKind, observe
+
+with observe(name="LLM call", kind=ObserveKind.GENERATION) as span:
+    span.add_evaluator("generation-quality")
+    ...
+```
+
+## Sampling (cost control)
+
+Some evaluators can be expensive. Use sampling to run them on a fraction of traces/spans:
+
+```python
+from basalt.observability import EvaluationConfig, evaluator, start_observe
+
+@evaluator(slugs=["expensive-eval"], config=EvaluationConfig(sample_rate=0.1))
+@start_observe(feature_slug="app", name="Handler")
+def handler():
+    ...
+```
+
+## Evaluator metadata (optional)
+
+If an evaluator needs extra context (expected output, rubric, references), attach evaluator-specific metadata to the span:
+
+```python
+from basalt.observability import observe
+
+with observe(name="Answer") as span:
+    span.add_evaluator("answer-correctness")
+    span.set_evaluator_metadata({"expected_answer": "Paris"})
+    ...
+```
+
+## Best practices
+
+- Start with 1–2 evaluators on your main flows, then expand.
+- Prefer propagating attachment at the root; use span-only attachment for targeted checks.
+- Use sampling for expensive evaluators.
+- Keep evaluator metadata small and structured.
+
+## Next steps
+
+- [Auto-Instrumentation](/v1/observabilite/python/auto-instrumentation)
+- [Workflows](/v1/observabilite/python/workflows)
+- [API Reference](/v1/observabilite/python/api-reference)

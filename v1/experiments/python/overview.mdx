@@ -1,0 +1,80 @@
+---
+title: Overview
+---
+
+# Overview
+
+This page explains how to use Basalt's Experiments API with Python. Experiments help you organize, track, and compare different approaches in your AI workflows.
+
+## Installation
+
+Ensure you have the Basalt SDK installed:
+
+```bash
+pip install basalt-sdk
+```
+
+## Client Initialization
+
+You can interact with experiments using the `ExperimentsClient`.
+
+```python
+from basalt.experiments import ExperimentsClient
+
+client = ExperimentsClient(api_key="your-api-key")
+```
+
+## Creating Experiments
+
+You can create experiments programmatically to register new tests or variants.
+
+### Synchronous Creation
+
+```python
+experiment = client.create_sync(
+    feature_slug="llm-routing",
+    name="Model Selection Experiment"
+)
+
+print(f"Created experiment: {experiment.id}")
+```
+
+### Asynchronous Creation
+
+```python
+import asyncio
+
+async def create_experiment():
+    experiment = await client.create(
+        feature_slug="llm-routing",
+        name="Model Selection Experiment"
+    )
+    return experiment
+
+asyncio.run(create_experiment())
+```
+
+## Using Experiments with Observability
+
+The most common use case is attaching an experiment context to your traces. This allows you to slice and dice your observability data by experiment.
+
+```python
+from basalt.observability import start_observe, observe
+
+@start_observe(
+    feature_slug="ab-test",
+    name="experiment.variant_a",
+    experiment="exp-456", # The ID of the experiment
+    identity={
+        "organization": {"id": "123", "name": "ACME"},
+        "user": {"id": "456", "name": "John Doe"}
+    }
+)
+def run_variant_a():
+    # Experiment metadata is automatically attached to the root span
+    observe.set_input({"variant": "A", "model": "gpt-4o"})
+    
+    # ... your logic ...
+    
+    return "result"
+```

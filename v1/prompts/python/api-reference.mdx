@@ -1,0 +1,120 @@
+---
+title: "API Reference"
+description: "Detailed API reference for prompt operations."
+---
+
+## List Prompts
+
+`basalt.prompts.list_sync()` / `basalt.prompts.list()`
+
+Lists all prompts accessible to your API key.
+
+**Description:**
+Use this to discover prompts, show them in internal tools, or drive admin UIs.
+
+**Returns:**
+
+- `total` (int): Total number of prompts.
+- `prompts` (list): List of prompt metadata objects.
+
+Each prompt in `prompts` has:
+
+- `slug` (str): Unique identifier.
+- `description` (str): Human-readable description.
+- `latest_version` (str): Most recent version number.
+- `tags` (list[str]): Tags pointing to versions (e.g. `["production", "latest"]`).
+
+---
+
+## Get Prompt
+
+`basalt.prompts.get_sync(slug, tag=None, version=None, variables=None)`  
+`await basalt.prompts.get(slug, tag=None, version=None, variables=None)`
+
+Retrieves a specific prompt with its full content and configuration.
+
+**Description:**
+Use this when you need the actual prompt text and model configuration to send to an LLM.
+
+**Parameters:**
+
+- `slug` (str, required): Prompt identifier.
+- `tag` (str, optional): Tag to resolve (e.g. `"latest"`, `"production"`).  
+  Use this to decouple your code from concrete version numbers.
+- `version` (str, optional): Specific version number (e.g. `"1.2.0"`).  
+  Use this for pinning in tests or for reproducing historical behavior.
+- `variables` (dict, optional): Variables for Jinja2 substitution inside the prompt text.
+
+Exactly one of `tag` or `version` should usually be provided. If both are omitted, the SDK may default to `latest` depending on configuration.
+
+**Returns:**
+
+- `slug` (str): Prompt identifier.
+- `version` (str): Resolved version number (e.g. `"1.2.0"`).
+- `text` (str): Final prompt text (after substitution if `variables` were provided).
+- `description` (str): Human-readable description.
+- `model.provider` (str): e.g. `"openai"`, `"anthropic"`.
+- `model.model` (str): e.g. `"gpt-4"`, `"claude-4-opus"`.
+- `model.parameters.temperature` (float): Sampling temperature.
+- `model.parameters.max_tokens` (int): Maximum completion tokens.
+- `model.parameters.top_p` (float): Nucleus sampling parameter.
+
+---
+
+## Describe Prompt
+
+`basalt.prompts.describe_sync(slug)`
+
+Gets metadata about a prompt, including available versions and tags, without fetching the full prompt text.
+
+**Description:**
+Use this for admin tooling, dashboards, or CLI commands that need to inspect the lifecycle of a prompt.
+
+**Parameters:**
+
+- `slug` (str, required): Prompt identifier.
+
+**Returns:**
+
+- `slug` (str): Prompt identifier.
+- `description` (str): Human-readable description.
+- `available_versions` (list[str]): All known versions for this prompt.
+- `available_tags` (list[str]): Tags currently pointing to versions (e.g. `["production", "staging", "latest"]`).
+
+---
+
+## Publish Prompt
+
+`basalt.prompt.publish_sync(slug, new_tag, version)`  
+`await basalt.prompt.publish(slug, new_tag, version)`
+
+Assigns or updates tags for prompt versions.
+
+**Description:**
+Use this to control which version a tag (such as `production` or `staging`) points to.  
+This is the core mechanism for rolling out, promoting, or rolling back prompt changes.
+
+**Parameters:**
+
+- `slug` (str, required): Prompt identifier.
+- `new_tag` (str, required): Tag to assign or move (e.g. `"production"`, `"staging"`).
+- `version` (str, required): Version to tag (e.g. `"1.3.0"`).
+
+**Returns:**
+
+- `slug` (str): Prompt identifier.
+- `version` (str): Version number that was tagged.
+- `new_tag` (str): Tag that was assigned.
+
+---
+
+## Exceptions
+
+The following exceptions can be raised by any of the methods above:
+
+- `NotFoundError`: The prompt, tag, or version does not exist.
+- `UnauthorizedError`: The API key is missing, invalid, or lacks permissions.
+- `NetworkError`: Network connectivity issues when calling the Basalt API.
+- `BasaltAPIError`: General API errors (validation failures, server errors, etc.).
+
+Wrap calls in `try`/`except` blocks to implement appropriate fallbacks (e.g. default prompts, safe error responses, or retries).

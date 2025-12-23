@@ -1,154 +1,273 @@
 {
-	"$schema": "https://mintlify.com/docs.json",
-	"theme": "maple",
-	"name": "Basalt Documentation",
-	"colors": {
-		"primary": "#db5704",
-		"light": "#d5e347",
-		"dark": "#221f1d"
-	},
-	"favicon": "/favicon.svg",
-	"navigation": {
-		"tabs": [
-			{
-				"tab": "Documentation",
-				"versions": [
-					{
-						"version": "0.5.0",
-						"groups": [
-							{
-								"group": "Getting Started",
-								"pages": [
-									"introduction",
-									"quickstart",
-									"installation"
-								]
-							},
-							{
-								"group": "Guides",
-								"pages": [
-									{
-										"group": "Prompts",
-										"icon": "comment-dots",
-										"pages": [
-											"prompts/introduction",
-											"prompts/get-prompt",
-											"prompts/list-prompts",
-											"prompts/describe-prompt",
-											"prompts/caching-policy",
-											"prompts/error-handling",
-											"prompts/examples"
-										]
-									},
-									{
-										"group": "Monitoring",
-										"icon": "chart-line",
-										"pages": [
-											"monitoring/introduction",
-											"monitoring/basic-monitoring",
-											"monitoring/tracing",
-											"monitoring/evaluation",
-											"monitoring/examples"
-										]
-									},
-									{
-										"group": "Experiments",
-										"icon": "flask",
-										"pages": [
-											"experiments/introduction",
-											"experiments/create-experiment",
-											"experiments/example",
-											"experiments/ci-testing"
-										]
-									},
-									{
-										"group": "Datasets",
-										"icon": "database",
-										"pages": [
-											"datasets/introduction"
-										]
-									}
-								]
-							},
-							{
-								"group": "Learn more",
-								"pages": [
-									"changelog",
-									"faq",
-									"getting-help"
-								]
-							}
-						]
-					}
-				]
-			},
-			{
-			"tab": "API Reference",
-			"icon": "terminal",
-			"groups": [
-				{
-					"group": "API Documentation",
-					"pages": [
-						"api-reference/introduction",
-						"api-reference/authentication"
-					]
-				},
-				{
-					"group": "Prompts",
-					"pages": [
-						"api-reference/prompts/get",
-						"api-reference/prompts/list",
-						"api-reference/prompts/describe",
-                        "api-reference/prompts/publish"
-					]
-				},
-				{
-					"group": "Monitor",
-					"pages": [
-						"api-reference/monitor/log",
-						"api-reference/monitor/trace"
-					]
-				},
-                {
-					"group": "Datasets",
-					"pages": [
-                        "api-reference/datasets/get",
-                        "api-reference/datasets/list",
-                        "api-reference/datasets/add-row"
-					]
-				},
-				{
-					"group": "Experiments",
-					"pages": [
-						"api-reference/experiments/create"
-					]
-				}
-              
-			]
-			}
-		]
-		},
-		"logo": {
-		"light": "/logo/light.svg",
-		"dark": "/logo/dark.svg"
-		},
-		"navbar": {
-		"links": [
-			{
-			"label": "Support",
-			"href": "mailto:support@getbasalt.ai"
-			},
-			{
-			"label": "Dashboard",
-			"href": "https://app.getbasalt.ai"
-			}
-		]
-	},
-	"footer": {
-		"socials": {
-			"x": "https://x.com/mintlify",
-			"github": "https://github.com/mintlify",
-			"linkedin": "https://linkedin.com/company/mintlify"
-		}
-	}
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Basalt Documentation",
+  "colors": {
+    "primary": "#db5704",
+    "light": "#d5e347",
+    "dark": "#221f1d"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "versions": [
+          {
+            "version": "1.0.0",
+            "groups": [
+              {
+                "group": "Start Here",
+                "pages": [
+                  "introduction",
+                  "v1/quickstart",
+                  "v1/installation",
+                  "v1/migrate-from-v0"
+                ]
+              },
+              {
+                "group": "Prompts",
+                "icon": "comment-dots",
+                "pages": [
+                  "v1/prompts/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/prompts/python/overview",
+                      "v1/prompts/python/examples",
+                      "v1/prompts/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Datasets",
+                "icon": "database",
+                "pages": [
+                  "v1/datasets/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/datasets/python/overview",
+                      "v1/datasets/python/examples",
+                      "v1/datasets/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Experiments",
+                "icon": "flask",
+                "pages": [
+                  "v1/experiments/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/experiments/python/overview",
+                      "v1/experiments/python/examples",
+                      "v1/experiments/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Observability",
+                "icon": "chart-line",
+                "pages": [
+                  "v1/observabilite/introduction",
+                  {
+                    "group": "Python",
+                    "icon": "python",
+                    "pages": [
+                      "v1/observabilite/python/get-started",
+                      "v1/observabilite/python/overview",
+                      "v1/observabilite/python/concepts",
+                      "v1/observabilite/python/patterns",
+                      "v1/observabilite/python/workflows",
+                      "v1/observabilite/python/evaluators",
+                      "v1/observabilite/python/auto-instrumentation",
+                      "v1/observabilite/python/api-reference"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Learn more",
+                "pages": ["getting-help"]
+              }
+            ]
+          },
+          {
+            "version": "0.5.0 ",
+            "groups": [
+              {
+                "group": "Start Here",
+                "pages": ["introduction", "v0/quickstart", "v0/installation"]
+              },
+              {
+                "group": "Guides",
+                "pages": [
+                  {
+                    "group": "Prompts",
+                    "icon": "comment-dots",
+                    "pages": [
+                      "v0/prompts/introduction",
+                      "v0/prompts/get-prompt",
+                      "v0/prompts/list-prompts",
+                      "v0/prompts/describe-prompt",
+                      "v0/prompts/caching-policy",
+                      "v0/prompts/error-handling",
+                      "v0/prompts/examples"
+                    ]
+                  },
+                  {
+                    "group": "Monitoring",
+                    "icon": "chart-line",
+                    "pages": [
+                      "v0/monitoring/introduction",
+                      "v0/monitoring/basic-monitoring",
+                      "v0/monitoring/tracing",
+                      "v0/monitoring/evaluation",
+                      "v0/monitoring/examples"
+                    ]
+                  },
+                  {
+                    "group": "Experiments",
+                    "icon": "flask",
+                    "pages": [
+                      "v0/experiments/introduction",
+                      "v0/experiments/create-experiment",
+                      "v0/experiments/example",
+                      "v0/experiments/ci-testing"
+                    ]
+                  },
+                  {
+                    "group": "Datasets",
+                    "icon": "database",
+                    "pages": ["v0/datasets/introduction"]
+                  }
+                ]
+              },
+              {
+                "group": "Learn more",
+                "pages": ["getting-help"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "terminal",
+        "versions": [
+          {
+            "version": "1.0.0",
+            "groups": [
+              {
+                "group": "API Documentation",
+                "pages": [
+                  "v1/api-reference/introduction",
+                  "v1/api-reference/authentication"
+                ]
+              },
+              {
+                "group": "Prompts",
+                "pages": [
+                  "v1/api-reference/prompts/get",
+                  "v1/api-reference/prompts/list",
+                  "v1/api-reference/prompts/describe",
+                  "v1/api-reference/prompts/publish"
+                ]
+              },
+              {
+                "group": "Observability",
+                "pages": [
+                  "v1/api-reference/monitor/log",
+                  "v1/api-reference/monitor/trace"
+                ]
+              },
+              {
+                "group": "Datasets",
+                "pages": [
+                  "v1/api-reference/datasets/get",
+                  "v1/api-reference/datasets/list",
+                  "v1/api-reference/datasets/add-row"
+                ]
+              },
+              {
+                "group": "Experiments",
+                "pages": ["v1/api-reference/experiments/create"]
+              }
+            ]
+          },
+          {
+            "version": "0.5.0 (archive)",
+            "groups": [
+              {
+                "group": "API Documentation",
+                "pages": [
+                  "v0/api-reference/introduction",
+                  "v0/api-reference/authentication"
+                ]
+              },
+              {
+                "group": "Prompts",
+                "pages": [
+                  "v0/api-reference/prompts/get",
+                  "v0/api-reference/prompts/list",
+                  "v0/api-reference/prompts/describe",
+                  "v0/api-reference/prompts/publish"
+                ]
+              },
+              {
+                "group": "Observability",
+                "pages": [
+                  "v0/api-reference/monitor/log",
+                  "v0/api-reference/monitor/trace"
+                ]
+              },
+              {
+                "group": "Datasets",
+                "pages": [
+                  "v0/api-reference/datasets/get",
+                  "v0/api-reference/datasets/list",
+                  "v0/api-reference/datasets/add-row"
+                ]
+              },
+              {
+                "group": "Experiments",
+                "pages": ["v0/api-reference/experiments/create"]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@getbasalt.ai"
+      },
+      {
+        "label": "Dashboard",
+        "href": "https://app.getbasalt.ai"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/mintlify",
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
+    }
+  }
 }

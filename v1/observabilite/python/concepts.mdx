@@ -1,0 +1,435 @@
+---
+title: Core Concepts
+description: Understanding observability, traces, spans, and context propagation in Basalt
+---
+
+# Observability Core Concepts
+
+Basalt's observability system is built on OpenTelemetry, providing deep insights into your LLM application's behavior through distributed tracing, automatic instrumentation, and intelligent evaluation attachment.
+
+## What is Observability?
+
+Observability in Basalt allows you to:
+- **Trace execution flows** from prompt retrieval through LLM calls to final outputs
+- **Monitor performance** with automatic timing and token usage tracking
+- **Evaluate quality** by attaching evaluators to specific operations
+- **Track identity** by associating user and organization context with operations
+- **Debug issues** with detailed span hierarchies and error tracking
+
+## OpenTelemetry Architecture
+
+### Traces and Spans
+
+Basalt uses OpenTelemetry's trace and span model to represent your application's execution:
+
+```
+Trace (unique ID: abc-123)
+└── Root Span: "QA System" ← Created by start_observe
+    ├── Span: "search_knowledge_base" ← Nested operation
+    │   └── attributes: query, results_count, duration
+    ├── Span: "prompt.get" ← Prompt retrieval
+    │   └── attributes: slug, version, variables
+    └── Span: "openai.chat.completions" ← LLM call (auto-instrumented)
+        └── attributes: model, prompt, completion, tokens
+```
+
+**Key Concepts:**
+
+- **Trace**: A complete journey through your system, identified by a unique trace ID. All related operations share this ID.
+- **Span**: A single operation within a trace, representing a unit of work (function call, API request, database query).
+- **Root Span**: The entry point of a trace, created with `start_observe`. Every trace must have exactly one root span.
+- **Child Spans**: Nested operations within a parent span, created with `observe`.
+
+### Span Hierarchy
+
+Spans form a parent-child tree structure:
+
+```python
+@start_observe(feature_slug="app", name="main")  # Root span
+def main():
+    fetch_data()      # Child span level 1
+    process_data()    # Child span level 1
+
+@observe(name="fetch_data")
+def fetch_data():
+    query_db()        # Child span level 2
+    
+@observe(name="query_db")
+def query_db():
+    pass              # Leaf span
+```
+
+This creates:
+```
+Trace
+└── main (root)
+    ├── fetch_data
+    │   └── query_db
+    └── process_data
+```
+
+## Context Propagation
+
+One of Basalt's most powerful features is **automatic context propagation**. When you set identity, evaluators, or metadata on a parent span, they automatically flow to all child spans.
+
+### How Context Propagation Works
+
+Basalt uses OpenTelemetry's context mechanism to propagate data:
+
+1. **Context Storage**: Data is stored in thread-local (or async-local) context
+2. **Automatic Inheritance**: Child spans read from parent context
+3. **Span Processors**: The `BasaltContextProcessor` applies context to spans on creation
+
+```python
+# Internal flow (simplified)
+from opentelemetry.context import attach, set_value
+
+# When you set identity on root span
+user_identity = {"id": "user-123", "name": "Alice"}
+token = attach(set_value(USER_CONTEXT_KEY, user_identity))
+
+# Child spans automatically read this
+def on_span_start(span):
+    user = context.get_value(USER_CONTEXT_KEY)
+    if user:
+        span.set_attribute("basalt.user.id", user["id"])
+```
+
+### What Gets Propagated
+
+**Identity (User & Organization)**:
+```python
+@start_observe(
+    feature_slug="app",
+    name="handler",
+    identity={"user": {"id": "user-123"}, "organization": {"id": "org-456"}}
+)
+def handler():
+    # All child spans automatically have user.id and organization.id
+    service_layer()  # Has identity
+```
+
+**Evaluators**:
+```python
+@evaluator("quality-check")  # Propagating mode
+def handler():
+    llm_call()  # Gets "quality-check" evaluator
+    
+    with observe("child") as span:
+        span.add_evaluator("child-only")  # Non-propagating mode
+        # This span has both "quality-check" and "child-only"
+```
+
+**Metadata**:
+```python
+@start_observe(
+    feature_slug="app",
+    name="handler",
+    metadata={"version": "2.0", "environment": "prod"}
+)
+def handler():
+    # All child spans inherit version and environment
+    pass
+```
+
+**Experiments**:
+```python
+from basalt.types import TraceExperiment
+
+@start_observe(
+    feature_slug="ab-test",
+    name="variant_a",
+    experiment=TraceExperiment(id="exp-123", name="Model Comparison")
+)
+def variant_a():
+    # Experiment ID attached to all child spans
+    pass
+```
+
+## Span Kinds
+
+Basalt defines semantic span kinds to categorize operations:
+
+| Kind | Use Case | Example |
+|------|----------|---------|
+| `GENERATION` | LLM text generation | OpenAI completion, Claude response |
+| `RETRIEVAL` | Vector search, database queries | ChromaDB search, Pinecone query |
+| `TOOL` | Tool/function execution | Calculator, API call, web search |
+| `FUNCTION` | General function calls | Business logic, data processing |
+| `EVENT` | Discrete events | User action, notification sent |
+| `SPAN` | Generic operations | Default catch-all |
+
+```python
+from basalt.observability import observe, ObserveKind
+
+@observe(name="search", kind=ObserveKind.RETRIEVAL)
+def search_documents(query: str):
+    return vector_db.search(query)
+
+@observe(name="generate", kind=ObserveKind.GENERATION)
+def generate_answer(context: str):
+    return llm.generate(context)
+```
+
+Span kinds enable:
+- Semantic filtering in dashboards
+- Kind-specific evaluators
+- Performance analysis by operation type
+
+## Evaluator Attachment
+
+Evaluators are quality checks that run on span data after execution. Understanding how evaluators attach to spans is crucial for effective observability.
+
+### Attachment Flow
+
+```
+1. Root span created with @evaluator decorator
+   → Evaluator stored in context
+   
+2. Child span created
+   → Reads evaluators from context
+   → Applies to span via BasaltContextProcessor
+   → Span attribute: basalt.span.evaluators = ["eval-1"]
+   
+3. Auto-instrumented LLM call
+   → Automatically inherits evaluators from context
+   → Also inherits prompt attributes if in prompt context manager
+   → Evaluation runs server-side after span completes
+```
+
+### Two Attachment Modes
+
+**Propagating** (affects children):
+- `@evaluator(slugs=[...])` decorator
+- `with_evaluators(...)` context manager
+- `attach_evaluator(...)` context manager
+- Global: `configure_trace_defaults(evaluators=[...])`
+
+**Non-propagating** (span-only):
+- `span.add_evaluator(slug)` method
+- `attach_evaluators_to_span(...)` helper
+
+```python
+@evaluator("quality")  # Propagating
+def parent():
+    # This span has "quality"
+    with observe("child") as child:
+        # This span also has "quality" (inherited)
+        child.add_evaluator("child-only")  # Non-propagating
+        # This span has both "quality" and "child-only"
+```
+
+### Sampling
+
+Control evaluation costs with sampling:
+
+```python
+from basalt.observability import EvaluationConfig, evaluator
+
+@evaluator("expensive-eval", config=EvaluationConfig(sample_rate=0.1))
+def handler():
+    # "expensive-eval" runs on only 10% of traces
+    pass
+```
+
+## Prompt Integration
+
+When you fetch a prompt using the context manager pattern, Basalt automatically creates a prompt span and injects attributes into subsequent LLM calls.
+
+### Automatic Attribute Injection
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="...")
+
+@start_observe(feature_slug="qa", name="answer_question")
+def answer_question(query: str):
+    # Fetch prompt with context manager
+    with basalt.prompts.get_sync("qa-prompt", variables={"query": query}) as prompt:
+        # This creates a "prompt.get" span
+        
+        # Auto-instrumented LLM call automatically receives:
+        response = openai_client.chat.completions.create(
+            model=prompt.model.model,
+            messages=[{"role": "user", "content": prompt.text}]
+        )
+        # LLM span gets:
+        # - basalt.prompt.slug = "qa-prompt"
+        # - basalt.prompt.version = "1.2.0"
+        # - basalt.prompt.variables = {"query": "..."}
+        # - basalt.prompt.model.provider = "openai"
+        # - basalt.prompt.from_cache = true/false
+```
+
+### The Complete Flow
+
+```
+1. User calls answer_question()
+   └── Root span created: "answer_question"
+   
+2. Prompt context manager entered
+   └── Prompt span created: "prompt.get"
+       └── Prompt attributes stored in context
+   
+3. OpenAI call made (auto-instrumented)
+   └── LLM span created: "openai.chat.completions"
+       └── Reads prompt attributes from context
+       └── Automatically attached to span
+   
+4. All spans share the same trace ID
+   └── Can filter by prompt.slug in dashboard
+```
+
+This automatic linking enables:
+- Tracking which prompt version was used for each generation
+- A/B testing prompt variations
+- Debugging prompt-related issues
+- Analyzing performance by prompt
+
+## Identity Tracking
+
+Identity tracking associates user and organization context with traces, enabling per-user analytics and debugging.
+
+### Structure
+
+```python
+identity = {
+    "user": {
+        "id": "user-123",      # Required
+        "name": "Alice Smith"  # Optional
+    },
+    "organization": {
+        "id": "org-456",       # Required
+        "name": "Acme Corp"    # Optional
+    }
+}
+```
+
+### Setting Identity
+
+**At root span**:
+```python
+@start_observe(
+    feature_slug="app",
+    name="handler",
+    identity=identity
+)
+def handler():
+    # All child spans have user.id and organization.id
+    pass
+```
+
+**Dynamically**:
+```python
+@start_observe(feature_slug="app", name="handler")
+def handler(user_id: str):
+    observe.set_identity({"user": {"id": user_id}})
+    # Identity now set for all subsequent spans
+```
+
+**From function arguments** (callable pattern):
+```python
+def get_identity(user_id: str, **kwargs):
+    return {"user": {"id": user_id}}
+
+@start_observe(
+    feature_slug="app",
+    name="handler",
+    identity=get_identity  # Callable
+)
+def handler(user_id: str):
+    # Identity automatically extracted from user_id argument
+    pass
+```
+
+### Benefits
+
+- Filter traces by user or organization
+- Debug user-specific issues
+- Track usage per customer
+- Implement user-based rate limiting
+- Generate per-user analytics
+
+## Experiments
+
+Experiments enable A/B testing, model comparison, and variant tracking.
+
+```python
+from basalt.types import TraceExperiment
+
+experiment = TraceExperiment(
+    id="exp-789",
+    name="GPT-4 vs Claude Comparison",
+    feature_slug="qa-system"
+)
+
+@start_observe(
+    feature_slug="qa-system",
+    name="variant_gpt4",
+    experiment=experiment
+)
+def variant_a():
+    # Use GPT-4
+    pass
+
+@start_observe(
+    feature_slug="qa-system",
+    name="variant_claude",
+    experiment=experiment
+)
+def variant_b():
+    # Use Claude
+    pass
+```
+
+All spans in each variant are tagged with the experiment ID, enabling:
+- Compare metrics between variants
+- Track experiment performance over time
+- Evaluate variant quality differences
+
+## Auto-Instrumentation
+
+Basalt automatically instruments popular LLM providers, vector databases, and frameworks without code changes.
+
+### How It Works
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(
+    api_key="...",
+    enabled_instruments=["openai", "anthropic", "chromadb"]
+)
+
+# Now these calls are automatically traced:
+response = openai_client.chat.completions.create(...)  # Span created
+results = chroma_collection.query(...)  # Span created
+```
+
+Auto-instrumented spans:
+- Inherit evaluators from parent context
+- Inherit identity (user/org) from parent context
+- Automatically capture provider-specific attributes (model, tokens, etc.)
+- Work seamlessly with manual `@observe` decorators
+
+Supported providers include 10 LLM providers, 3 vector databases, and 3 frameworks (see Auto-Instrumentation guide for full list).
+
+## Summary
+
+Basalt's observability system provides:
+
+1. **OpenTelemetry-based tracing** - Industry-standard distributed tracing
+2. **Automatic context propagation** - Identity, evaluators, and metadata flow to children
+3. **Flexible attachment modes** - Propagating and non-propagating evaluators
+4. **Prompt integration** - Automatic attribute injection for LLM calls
+5. **Semantic span kinds** - Categorize operations for better analysis
+6. **Auto-instrumentation** - Zero-code tracing for popular providers
+7. **Identity tracking** - Per-user and per-org analytics
+8. **Experiments** - Built-in A/B testing support
+
+Next, explore:
+- [Patterns Guide](/v1/observabilite/python/patterns) - Decorators vs context managers
+- [Workflows Guide](/v1/observabilite/python/workflows) - End-to-end examples
+- [Evaluators Guide](/v1/observabilite/python/evaluators) - Quality evaluation
+- [API Reference](/v1/observabilite/python/api-reference) - Complete method documentation

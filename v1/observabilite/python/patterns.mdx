@@ -1,0 +1,56 @@
+---
+title: Decorator vs Context Manager Patterns
+description: When to use decorators vs context managers for observability
+---
+
+# Decorator vs Context Manager Patterns
+
+Basalt gives you two equivalent ways to create spans:
+
+- **Decorators** (`@start_observe`, `@observe`): best for tracing whole functions with minimal code.
+- **Context managers** (`with start_observe(...)`, `with observe(...)`): best when you need a span handle to set input/output/attributes during execution.
+
+In practice: use decorators by default, and reach for context managers when you need more control.
+
+## Decorators (recommended default)
+
+Use decorators to trace function boundaries. This keeps code readable and consistent.
+
+```python
+from basalt.observability import ObserveKind, observe, start_observe
+
+@observe(name="LLM call", kind=ObserveKind.GENERATION)
+def call_llm(prompt_text: str) -> str:
+    return "..."
+
+@start_observe(feature_slug="support", name="Handle request")
+def handle_request(user_message: str) -> str:
+    return call_llm(user_message)
+```
+
+## Context managers (fine-grained control)
+
+Use context managers when you want to enrich spans mid-flight (custom attributes, partial outputs, branching logic).
+
+```python
+from basalt.observability import ObserveKind, observe, start_observe
+
+def handle_request(user_message: str) -> str:
+    with start_observe(feature_slug="support", name="Handle request"):
+        with observe(name="LLM call", kind=ObserveKind.GENERATION) as span:
+            span.set_input({"message": user_message})
+            output = "..."
+            span.set_output({"output": output})
+            span.set_attribute("cache_hit", False)
+            return output
+```
+
+## Choosing between the two
+
+- Prefer **decorators** for request handlers, background jobs, and any code with clear function boundaries.
+- Prefer **context managers** when you need the span handle or you’re tracing a block that isn’t naturally a function.
+- Mixing both is normal: `start_observe` at the entry point, `observe` spans for key steps, and auto-instrumentation for provider calls.
+
+## Async note
+
+The same patterns work in async code (async functions + `async with ...` where applicable). See [Workflows](/v1/observabilite/python/workflows) for full async examples.

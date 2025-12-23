@@ -1,0 +1,67 @@
+---
+title: Examples
+---
+
+# Examples
+
+## A/B Testing Setup
+
+This example demonstrates how to set up a simple A/B test where you route traffic to two different variants and track them as separate experiments.
+
+```python
+import random
+from basalt.experiments import ExperimentsClient
+from basalt.observability import start_observe, observe
+
+# Initialize client
+client = ExperimentsClient(api_key="your-api-key")
+
+# Create experiments for two variants
+variant_a = client.create_sync(feature_slug="checkout-flow", name="Variant A: Standard")
+variant_b = client.create_sync(feature_slug="checkout-flow", name="Variant B: Streamlined")
+
+def get_variant():
+    return variant_a if random.random() < 0.5 else variant_b
+
+@start_observe(feature_slug="checkout-flow", name="checkout_process")
+def process_checkout(user_id):
+    # Determine which experiment to run
+    experiment = get_variant()
+    
+    # Start a span for the specific variant, attaching the experiment ID
+    with start_observe(
+        name=f"variant_{experiment.id}", 
+        experiment=experiment.id,
+        feature_slug=experiment.feature_slug
+    ):
+        if experiment.id == variant_a.id:
+            # Logic for Variant A
+            observe.set_input({"step": "standard_checkout"})
+            pass
+        else:
+            # Logic for Variant B
+            observe.set_input({"step": "streamlined_checkout"})
+            pass
+
+# Simulate traffic
+process_checkout("user_123")
+```
+
+## Context Manager Usage
+
+You can also use the context manager to wrap specific blocks of code with experiment context.
+
+```python
+from basalt.observability import start_observe
+
+# ... assuming experiment_id is known ...
+experiment_id = "exp-123"
+
+with start_observe(
+    feature_slug="search-ranking",
+    name="search.v2",
+    experiment=experiment_id,
+):
+    # All spans created within this block will be associated with the experiment
+    results = run_search_v2("query")
+```

@@ -1,0 +1,79 @@
+---
+title: Complete Workflows
+description: How to structure end-to-end traces (prompt retrieval, LLM calls, RAG) without boilerplate
+---
+
+# Complete Workflows
+
+This page shows how to structure an end-to-end trace in a real app: one root span per request/job, and a few child spans for the steps that matter. Keep most of your code descriptive and add spans only where they provide signal.
+
+## The recommended structure
+
+1. **Entry point:** wrap your request handler / worker job with `start_observe`.
+2. **Key steps:** add `observe` spans for major stages (retrieval, generation, tools).
+3. **Provider calls:** rely on auto-instrumentation when possible (OpenAI, vector DBs, frameworks).
+4. **Quality:** attach evaluators at the root (optionally sampled).
+
+## Example: minimal RAG workflow
+
+```python
+from basalt import Basalt
+from basalt.observability import ObserveKind, observe, start_observe
+
+basalt = Basalt(
+    api_key="your-api-key",
+    enabled_instruments=["openai", "chromadb"],  # optional
+)
+
+@observe(name="Retrieve", kind=ObserveKind.RETRIEVAL)
+def retrieve(query: str) -> list[str]:
+    # Your vector DB call here (auto-instrumented if enabled)
+    return ["doc1", "doc2"]
+
+@observe(name="Generate", kind=ObserveKind.GENERATION)
+def generate(query: str, docs: list[str]) -> str:
+    # Your LLM call here (auto-instrumented if enabled)
+    return "..."
+
+@start_observe(feature_slug="qa", name="Answer question")
+def answer(question: str) -> str:
+    docs = retrieve(question)
+    return generate(question, docs)
+```
+
+## Where prompts fit
+
+Fetch a prompt once per generation step, then call your LLM with `prompt.text` and `prompt.model`:
+
+```python
+prompt = basalt.prompts.get_sync(
+    slug="support-answer",
+    tag="production",
+    variables={"question": question, "context": "\\n".join(docs)},
+)
+output = call_llm(prompt.text)
+```
+
+## Where evaluators fit
+
+Attach evaluators at the root so the whole trace (including auto-instrumented provider spans) inherits them:
+
+```python
+from basalt.observability import EvaluationConfig, evaluator, start_observe
+
+@evaluator(slugs=["quality", "toxicity"], config=EvaluationConfig(sample_rate=0.1))
+@start_observe(feature_slug="support", name="Handle request")
+def handle_request(...):
+    ...
+```
+
+## Async workflow
+
+Use the same structure in async code: root span at the entry point, child spans for key steps. Prefer the patterns used in your codebase (decorators vs context managers) and keep spans coarse-grained.
+
+## Next steps
+
+- [Patterns](/v1/observabilite/python/patterns)
+- [Auto-Instrumentation](/v1/observabilite/python/auto-instrumentation)
+- [Evaluators](/v1/observabilite/python/evaluators)
+- [API Reference](/v1/observabilite/python/api-reference)

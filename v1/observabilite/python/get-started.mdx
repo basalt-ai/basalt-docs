@@ -1,0 +1,64 @@
+---
+title: "Getting Started"
+description: "Start tracing your AI application in 2 minutes"
+icon: "play"
+---
+
+# Getting Started with Observability
+
+Basalt Observability is built on OpenTelemetry and designed to be integrated into any Python application with minimal code changes.
+
+## 1. Install the SDK
+
+```bash
+pip install basalt-sdk
+```
+
+## 2. Initialize Basalt
+
+Set your API key as an environment variable:
+
+```bash
+export BASALT_API_KEY="your_api_key_here"
+```
+
+Initialize the client in your application:
+
+```python
+import os
+from basalt import Basalt
+
+basalt = Basalt(api_key=os.environ["BASALT_API_KEY"])
+```
+
+## 3. Add Tracing to your Code
+
+Use `@start_observe` for your entry points (like an API handler) and `@observe` for nested operations (like LLM calls or tool use).
+
+```python
+from basalt.observability import start_observe, observe, ObserveKind
+
+@observe(name="LLM Generation", kind=ObserveKind.GENERATION)
+def call_llm(prompt: str):
+    # Your LLM call logic here
+    return "This is a generated response"
+
+@start_observe(feature_slug="my-feature", name="Process Request")
+def main():
+    result = call_llm("Hello world")
+    return result
+
+if __name__ == "__main__":
+    main()
+    basalt.shutdown() # Ensure all traces are sent
+```
+
+## 4. View your Traces
+
+Run your script, then head over to the [Basalt Dashboard](https://app.getbasalt.ai) to see your traces in real-time.
+
+## Next Steps
+
+- [Core Concepts](/v1/observabilite/python/concepts) - Understand traces, spans, and context.
+- [Auto-instrumentation](/v1/observabilite/python/auto-instrumentation) - Automatically trace OpenAI, Anthropic, and more.
+- [Identity Tracking](/v1/observabilite/python/concepts#identity-tracking) - Attach users and organizations to your traces.
