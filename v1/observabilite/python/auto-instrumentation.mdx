@@ -81,7 +81,9 @@ import openai
 basalt = Basalt(api_key="...", enabled_instruments=["openai"])
 openai_client = openai.OpenAI(api_key="...")
 
-response = openai_client.chat.completions.create(
+@start_observe(feature_slug="my-feature", name="Process Request")
+def main():
+    response = openai_client.chat.completions.create(
     model="gpt-4",
     messages=[{"role": "user", "content": "Hello!"}],
 )
