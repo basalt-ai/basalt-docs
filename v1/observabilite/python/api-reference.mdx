@@ -19,6 +19,8 @@ Creates a **root span** to start a new trace. Every trace must have exactly one 
     feature_slug: str,
     name: str,
     identity: dict | Callable = None,
+    evaluate_config: EvaluationConfig = None,
+    evaluators: list[str] = None,
     experiment: TraceExperiment | dict = None,
     metadata: dict = None
 )
@@ -32,6 +34,8 @@ with start_observe(
     feature_slug: str,
     name: str,
     identity: dict | Callable = None,
+    evaluate_config: EvaluationConfig = None,
+    evaluators: list[str] = None,
     experiment: TraceExperiment | dict = None,
     metadata: dict = None
 ) as span:
@@ -45,6 +49,8 @@ with start_observe(
 | `feature_slug` | `str` | Yes | Feature identifier for categorization (e.g., "qa-system", "data-pipeline") |
 | `name` | `str` | Yes | Human-readable span name (e.g., "Answer Question") |
 | `identity` | `dict \| Callable` | No | User/org identity dict or callable that extracts identity from function args |
+| `evaluate_config` | `EvaluationConfig` | No | Evaluation sampling configuration (e.g., `EvaluationConfig(sample_rate=0.1)`) |
+| `evaluators` | `list[str]` | No | List of evaluator slugs to attach to this trace |
 | `experiment` | `TraceExperiment \| dict` | No | Experiment information for A/B testing |
 | `metadata` | `dict` | No | Additional metadata to attach to span |
 
@@ -107,14 +113,19 @@ with start_observe(feature_slug="job", name="Batch Job") as span:
 
 ### observe
 
-Creates a **child span** within an existing trace. Requires a parent span from `start_observe`.
+Creates a **child span** within an existing trace. Requires a parent span from `start_observe`. If no parent span exists, silently creates a no-op span (no errors, just no telemetry).
 
 **As Decorator:**
 ```python
 @observe(
     name: str,
     kind: ObserveKind | str = None,
-    metadata: dict = None
+    metadata: dict = None,
+    evaluators: list[str] = None,
+    input: Any = None,
+    output: Any = None,
+    variables: dict = None,
+    prompt: Prompt = None
 )
 def my_function(...):
     ...
@@ -125,7 +136,12 @@ def my_function(...):
 with observe(
     name: str,
     kind: ObserveKind | str = None,
-    metadata: dict = None
+    metadata: dict = None,
+    evaluators: list[str] = None,
+    input: Any = None,
+    output: Any = None,
+    variables: dict = None,
+    prompt: Prompt = None
 ) as span:
     ...
 ```
@@ -135,8 +151,13 @@ with observe(
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `name` | `str` | Yes | Span name |
-| `kind` | `ObserveKind \| str` | No | Semantic span kind (see ObserveKind) |
+| `kind` | `ObserveKind \| str` | No | Semantic span kind (see ObserveKind); defaults to `SPAN` |
 | `metadata` | `dict` | No | Additional metadata |
+| `evaluators` | `list[str]` | No | List of evaluator slugs to attach to this span (non-propagating) |
+| `input` | `Any` | No | Input data for the span; can be a value or callable |
+| `output` | `Any` | No | Output data for the span; can be a callable |
+| `variables` | `dict` | No | Variables dict for the span; can be a callable |
+| `prompt` | `Prompt` | No | Prompt object to inject into span attributes; useful for auto-instrumentation |
 
 **ObserveKind Values:**
 

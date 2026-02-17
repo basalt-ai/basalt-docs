@@ -18,11 +18,12 @@ Lists all datasets accessible to your API key.
 
 **Returns:**
 
-An object with:
-- `total` (int): Total number of datasets.
-- `datasets` (list): List of dataset metadata objects.
-
-Each dataset object includes `slug`, `name`, `description`, `num_rows`, and `columns`.
+A list of `Dataset` objects (without rows). Each dataset object includes:
+- `slug` (str): Unique identifier for the dataset.
+- `name` (str): Human-readable name.
+- `description` (str): Description of the dataset.
+- `num_rows` (int): Number of rows in the dataset.
+- `columns` (list[DatasetColumn]): List of column definitions.
 
 ---
 
@@ -36,7 +37,7 @@ Async variant of `list_sync`, suitable for use in async applications.
 
 **Returns:**
 
-Same as `list_sync`: an object with `total` and `datasets`.
+Same as `list_sync`: a list of `Dataset` objects.
 
 ---
 
@@ -46,7 +47,7 @@ Same as `list_sync`: an object with `total` and `datasets`.
 basalt.datasets.get_sync(slug: str)
 ```
 
-Retrieves a dataset by slug, including its rows and columns.
+Synchronously retrieves a dataset by slug, including its rows and columns.
 
 **Parameters:**
 
@@ -55,6 +56,24 @@ Retrieves a dataset by slug, including its rows and columns.
 **Returns:**
 
 A `Dataset` object (see below).
+
+---
+
+### `get` (async)
+
+```python
+await basalt.datasets.get(slug: str)
+```
+
+Async variant of `get_sync`, suitable for use in async applications.
+
+**Parameters:**
+
+- `slug` (str, required): Dataset identifier.
+
+**Returns:**
+
+A `Dataset` object with all rows included.
 
 ---
 
@@ -142,20 +161,104 @@ Represents a single test case / row.
 
 ---
 
+---
+
+## Error Handling
+
+The following exceptions can be raised by dataset operations:
+
+**API Errors (all inherit from `BasaltAPIError`):**
+
+- `NotFoundError`: The dataset does not exist (HTTP 404).
+- `UnauthorizedError`: The API key is missing, invalid, or lacks permissions (HTTP 401).
+- `BadRequestError`: Invalid request parameters (HTTP 400).
+- `ForbiddenError`: API key lacks permissions for this resource (HTTP 403).
+- `BasaltAPIError`: Other API-level errors.
+
+**File Upload Errors:**
+
+- `FileValidationError`: File validation failed before upload (unsupported type, too large, etc.).
+- `FileUploadError`: File upload to S3 failed. Has optional `file_key` attribute.
+
+**Connection Errors:**
+
+- `NetworkError`: Network connectivity issues.
+
+**Base Exception:**
+
+- `BasaltError`: Base class for all Basalt SDK errors.
+
+**Example:**
+
+```python
+from basalt.types.exceptions import NotFoundError, FileValidationError, FileUploadError
+
+try:
+    basalt.datasets.add_row_sync(
+        slug="my-dataset",
+        values={"content": FileAttachment(source="large-file.pdf")}
+    )
+except FileValidationError as e:
+    print(f"File validation failed: {e.message}")
+except FileUploadError as e:
+    print(f"File upload failed: {e.message}")
+except NotFoundError:
+    print("Dataset not found")
+```
+
+---
+
+## Data Objects
+
 ### `FileAttachment`
 
 Used to upload files as part of a dataset row.
 
 ```python
 from basalt import FileAttachment
+from pathlib import Path
 
+# From file path
 attachment = FileAttachment(
-    source=Path("path/to/file"),
-    content_type="image/png"
+    source=Path("path/to/file.png"),
+    content_type="image/png"  # Optional: auto-detected if omitted
 )
+
+# From bytes
+attachment = FileAttachment(
+    source=b"binary_data_here",
+    content_type="image/png",
+    filename="image.png"  # Required for bytes
+)
+
+# From file-like object
+with open("file.png", "rb") as f:
+    attachment = FileAttachment(source=f, content_type="image/png")
 ```
 
-- `source` (Path | str): Path to the file to upload.
-- `content_type` (str): MIME type of the file (e.g., `"image/png"`, `"application/pdf"`).
+**Parameters:**
 
-Refer to the Python SDK documentation for lower-level details and additional helpers.
+- `source` (str | Path | bytes | BinaryIO): File source. Can be a file path, bytes, or file-like object.
+- `content_type` (str, optional): MIME type of the file (e.g., `"image/png"`, `"application/pdf"`, `"text/html"`, `"text/markdown"`). If omitted, content type is auto-detected from the file extension or path.
+- `filename` (str, optional): Filename to use. Required when `source` is bytes. Auto-determined otherwise.
+
+**Supported content types:**
+- `image/png`
+- `image/jpeg`
+- `application/pdf`
+- `text/html`
+- `text/markdown`
+
+**Maximum file size:** 10 MB per file.
+
+**Usage in dataset rows:**
+
+```python
+basalt.datasets.add_row_sync(
+    slug="my-dataset",
+    values={
+        "question": "What is in this image?",
+        "image": FileAttachment(source=Path("screenshot.png"))
+    }
+)
+```

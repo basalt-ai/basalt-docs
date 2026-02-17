@@ -15,10 +15,62 @@ pip install basalt-sdk
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.10 or later
 - Basalt API key ([get one here](https://app.getbasalt.ai))
+
+## Optional Dependencies
+
+The SDK includes optional extras for auto-instrumentation of specific LLM providers, vector databases, and frameworks. You only need to install these if you plan to use auto-instrumentation.
+
+### LLM Providers
+
+```bash
+# Individual providers
+pip install basalt-sdk[openai]
+pip install basalt-sdk[anthropic]
+pip install basalt-sdk[google_generativeai]
+pip install basalt-sdk[bedrock]
+
+# All LLM providers
+pip install basalt-sdk[llm-all]
+```
+
+### Vector Databases
+
+```bash
+# Individual providers
+pip install basalt-sdk[chromadb]
+pip install basalt-sdk[pinecone]
+pip install basalt-sdk[qdrant]
+
+# All vector DB providers
+pip install basalt-sdk[vector-all]
+```
+
+### Frameworks
+
+```bash
+# Individual frameworks
+pip install basalt-sdk[langchain]
+pip install basalt-sdk[llamaindex]
+pip install basalt-sdk[haystack]
+
+# All frameworks
+pip install basalt-sdk[framework-all]
+```
+
+### Everything
+
+```bash
+# Install all optional dependencies
+pip install basalt-sdk[all]
+```
+
+**Note:** Optional dependencies are not required for basic usage (prompts, datasets, experiments APIs). See the [auto-instrumentation guide](/v1/observabilite/python/auto-instrumentation) for more details.
 
 ## Next Steps
 
 - [Quickstart](./quickstart)
-- [API Reference](./api-reference/introduction)
+- [Prompts](/v1/prompts/python/overview)
+- [Datasets](/v1/datasets/python/overview)
+- [Observability](/v1/observabilite/python/get-started)

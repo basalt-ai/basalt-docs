@@ -4,43 +4,78 @@ title: API Reference
 
 # API Reference
 
-## ExperimentsClient
+## Accessing the Experiments API
 
-The `ExperimentsClient` is the main entry point for managing experiments.
+The `ExperimentsClient` is accessible as a property on the main `Basalt` client:
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
+experiment = await basalt.experiments.create(
+    feature_slug="recommendation-system",
+    name="Test Algorithm v2"
+)
+```
+
+## Methods
 
 ### `create_sync`
 
 Creates a new experiment synchronously.
 
 ```python
-def create_sync(self, feature_slug: str, name: str) -> Experiment
+basalt.experiments.create_sync(feature_slug: str, name: str) -> Experiment
 ```
 
 **Parameters:**
 
-- `feature_slug` (str): A slug to identify the feature this experiment belongs to.
-- `name` (str): A human-readable name for the experiment.
+- `feature_slug` (str, required): A slug to identify the feature this experiment belongs to (e.g., "qa-model", "recommendation-algo").
+- `name` (str, required): A human-readable name for the experiment (e.g., "GPT-4 vs Claude Comparison").
 
 **Returns:**
 
-- `Experiment`: The created experiment object.
+An `Experiment` object with:
+- `id` (str): Unique experiment identifier
+- `name` (str): Experiment name
+- `feature_slug` (str): Feature identifier
+- `created_at` (str): ISO 8601 timestamp of creation
 
-### `create`
+**Raises:**
+
+- `UnauthorizedError`: Invalid or missing API key
+- `BadRequestError`: Invalid parameters
+- `NetworkError`: Network connectivity issues
+- `BasaltAPIError`: Other API errors
+
+**Example:**
+
+```python
+experiment = basalt.experiments.create_sync(
+    feature_slug="qa-system",
+    name="Test Claude vs GPT-4"
+)
+print(f"Experiment {experiment.id} created")
+```
+
+### `create` (async)
 
 Creates a new experiment asynchronously.
 
 ```python
-async def create(self, feature_slug: str, name: str) -> Experiment
+await basalt.experiments.create(feature_slug: str, name: str) -> Experiment
 ```
 
-**Parameters:**
+Async variant of `create_sync`. Same parameters and return type.
 
-- `feature_slug` (str): A slug to identify the feature this experiment belongs to.
-- `name` (str): A human-readable name for the experiment.
+**Example:**
 
-**Returns:**
-
-- `Experiment`: The created experiment object.
+```python
+experiment = await basalt.experiments.create(
+    feature_slug="qa-system",
+    name="Test Claude vs GPT-4"
+)
+```
 
 ## Models
 
@@ -59,12 +94,33 @@ class Experiment:
 
 ### TraceExperiment
 
-Represents experiment metadata attached to a trace.
+Represents experiment metadata attached to a trace. Used when attaching an experiment to a span.
 
 ```python
 @dataclass(frozen=True, slots=True)
 class TraceExperiment:
-    id: str                      # Experiment ID
-    name: str | None = None      # Optional display name
-    feature_slug: str | None = None  # Optional feature slug
+    id: str                           # Experiment ID (required)
+    name: str | None = None           # Optional display name
+    feature_slug: str | None = None   # Optional feature slug
+```
+
+All fields except `id` are optional. Example:
+
+```python
+from basalt.types import TraceExperiment
+from basalt.observability import start_observe
+
+experiment = TraceExperiment(
+    id="exp-123",
+    name="GPT-4 vs Claude",
+    feature_slug="qa-system"
+)
+
+@start_observe(
+    feature_slug="qa-system",
+    name="Answer Question",
+    experiment=experiment
+)
+def answer_question(question: str):
+    ...
 ```

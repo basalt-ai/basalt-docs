@@ -13,11 +13,11 @@ from basalt import Basalt
 
 basalt = Basalt(api_key="your-api-key")
 
-response = basalt.datasets.list_sync()
+datasets = basalt.datasets.list_sync()
 
-print(f"Total datasets: {response.total}")
+print(f"Total datasets: {len(datasets)}")
 
-for dataset in response.datasets:
+for dataset in datasets:
     print(f"\nSlug: {dataset.slug}")
     print(f"  Name: {dataset.name}")
     print(f"  Description: {dataset.description}")
@@ -97,10 +97,11 @@ def add_multiple_test_cases(slug: str, test_cases: list):
             print(f"✓ Added: {row.name}")
 
         except Exception as e:
-            print(f"✗ Failed to add test case {i}: {e}")
-
-    basalt.shutdown()
-
+             print(f"✗ Failed to add test case {i}: {e}")
+ 
+     basalt.shutdown()
+```
+ 
 ## Adding rows with files
 
 You can upload files (images, documents, etc.) as part of a dataset row using the `FileAttachment` class.
@@ -142,9 +143,6 @@ row = basalt.datasets.add_row_sync(
 print(f"Added row with files: {row.name}")
 
 basalt.shutdown()
-```
-
-    basalt.shutdown()
 ```
 
 ## Use case: Prompt testing against a dataset

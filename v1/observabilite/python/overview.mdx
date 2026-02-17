@@ -110,20 +110,127 @@ async def process_async(data):
 
 Basalt automatically propagates trace context across async boundaries, so all spans end up in the same trace.
 
-## Global monitoring configuration
+## Client Initialization
 
-You can configure global metadata at client initialization so every span carries shared attributes such as service version or region:
+### Basic initialization
+
+The simplest way to initialize Basalt:
+
+```python
+from basalt import Basalt
+import os
+
+basalt = Basalt(api_key=os.environ["BASALT_API_KEY"])
+```
+
+### With observability metadata
+
+Attach global metadata that will be added to all traces:
 
 ```python
 from basalt import Basalt
 
-client = Basalt(
+basalt = Basalt(
     api_key="your-api-key",
     observability_metadata={
+        "service.name": "my-app",
         "service.version": "1.2.3",
+        "deployment.environment": "production",
         "deployment.region": "us-west-2",
     },
 )
 ```
+
+### With telemetry configuration
+
+For advanced configuration of OpenTelemetry behavior and auto-instrumentation:
+
+```python
+from basalt import Basalt, TelemetryConfig
+
+telemetry = TelemetryConfig(
+    service_name="my-service",
+    environment="production",
+    enable_instrumentation=True,
+    trace_content=True,
+    enabled_providers=["openai", "anthropic"],  # Only enable specific providers
+)
+
+basalt = Basalt(
+    api_key="your-api-key",
+    telemetry_config=telemetry,
+)
+```
+
+### With selective auto-instrumentation
+
+Enable or disable auto-instrumentation providers:
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(
+    api_key="your-api-key",
+    enabled_instruments=["openai", "anthropic", "chromadb"],
+)
+
+# Or disable specific providers
+basalt = Basalt(
+    api_key="your-api-key",
+    disabled_instruments=["langchain"],  # Don't instrument LangChain
+)
+```
+
+### Shutdown
+
+Always call `shutdown()` before your application exits to flush pending telemetry:
+
+```python
+basalt.shutdown()
+```
+
+## TelemetryConfig Reference
+
+```python
+from basalt import TelemetryConfig
+
+config = TelemetryConfig(
+    enabled=True,                              # Enable/disable telemetry entirely
+    service_name="my-service",                 # OpenTelemetry service name
+    service_version="1.2.3",                   # Service version
+    environment="production",                  # deployment.environment
+    enable_instrumentation=True,               # Enable auto-instrumentation
+    trace_content=True,                        # Include trace content in exports
+    enabled_providers=["openai", "anthropic"], # Specific providers to instrument
+    disabled_providers=[],                     # Providers to skip
+    exporter=None,                             # Custom SpanExporter (advanced)
+    extra_resource_attributes={                # Additional OTEL resource attributes
+        "custom_key": "custom_value"
+    },
+    sample_rate=0.0,                           # Evaluator sampling rate (0.0-1.0)
+)
+```
+
+**Supported providers for `enabled_providers`/`disabled_providers`:**
+
+- LLMs: `openai`, `anthropic`, `google_generativeai`, `bedrock`, `vertexai`, `ollama`, `mistralai`, `together`, `replicate`
+- Vector DBs: `chromadb`, `pinecone`, `qdrant`
+- Frameworks: `langchain`, `llamaindex`, `haystack`
+
+## Environment Variables
+
+You can also configure Basalt using environment variables:
+
+| Variable                             | Purpose                                      | Example                    |
+| ------------------------------------ | -------------------------------------------- | -------------------------- |
+| `BASALT_API_KEY`                     | API authentication key                       | `sk-...`                   |
+| `BASALT_TELEMETRY_ENABLED`           | Enable/disable telemetry                     | `true` or `false`          |
+| `BASALT_SERVICE_NAME`                | Service name for traces                      | `my-app`                   |
+| `BASALT_ENVIRONMENT`                 | Deployment environment                       | `production`               |
+| `BASALT_LOG_LEVEL`                   | Log level for Basalt loggers                 | `DEBUG`, `INFO`, `WARNING` |
+| `BASALT_ENABLED_INSTRUMENTS`         | Comma-separated list of providers to enable  | `openai,anthropic`         |
+| `BASALT_DISABLED_INSTRUMENTS`        | Comma-separated list of providers to disable | `langchain`                |
+| `BASALT_OTEL_EXPORTER_OTLP_ENDPOINT` | Custom OTLP endpoint                         | `http://localhost:4317`    |
+| `BASALT_SAMPLE_RATE`                 | Global evaluation sample rate                | `0.1`                      |
 
 Use the **Concepts**, **Patterns**, and **Workflows** pages for deeper guidance, and the **API Reference** for the full Python surface area.
