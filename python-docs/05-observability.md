@@ -144,6 +144,32 @@ observe.set_input({"query": "hello"})
 observe.set_output("world")
 ```
 
+You can also record input and output on the **first span of the current trace** (for example, an HTTP
+server span created by FastAPI auto-instrumentation, or the `start_observe` root span) from anywhere
+in your code:
+
+```python
+from basalt.observability import observe, start_observe
+
+
+@start_observe(feature_slug="api-handler", name="API Handler")
+def handle_request(user_id: str, payload: dict):
+    # Attach high-level I/O to the first span in the trace
+    observe.trace_set_input({"user_id": user_id, "payload": payload})
+
+    authenticate(user_id)
+    result = process_data(payload)
+
+    observe.trace_set_output({"status": "ok", "result": result})
+    return result
+```
+
+`observe.trace_set_input` / `observe.trace_set_output` follow this precedence:
+
+1. **Parent of the Basalt root span** (e.g., FastAPI HTTP server span) when present.
+2. The **Basalt root span** created via `start_observe`.
+3. The **current span** when no Basalt root span exists.
+
 
 ### Evaluators
 
@@ -221,3 +247,109 @@ client = Basalt(
 ```
 
 This metadata will be automatically attached to every span created by the SDK.
+
+## Client Lifecycle
+
+Create **one** `Basalt` instance per process and reuse it for the entire
+application lifetime.  The client holds no trace state — trace boundaries are
+determined by `start_observe()` calls, not by client instances.
+
+Call `basalt.shutdown()` **exactly once**, when the process is about to exit.
+
+> **Warning:** `shutdown()` permanently destroys the global OpenTelemetry
+> `TracerProvider` (its `BatchSpanProcessor` worker threads are terminated and
+> cannot be restarted).  Creating a new `Basalt` client after `shutdown()` will
+> silently produce dead traces.  Never call `shutdown()` between loop iterations
+> or between HTTP requests.
+
+### Scripts and batch jobs
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="...")
+
+try:
+    for item in work_items:
+        with start_observe(feature_slug="batch", name="process_item"):
+            process(item)  # Each iteration is a separate trace
+finally:
+    basalt.shutdown()  # Once, at the end
+```
+
+### Web servers (FastAPI, Flask, etc.)
+
+Each HTTP request runs in its own thread or async task, which means its own
+OpenTelemetry context.  Two concurrent requests automatically get separate
+`trace_id` values — no client recreation needed.
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from basalt import Basalt
+
+basalt = Basalt(api_key="...")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    basalt.shutdown()  # Once, at app teardown
+
+app = FastAPI(lifespan=lifespan)
+
+@app.post("/ask")
+def ask(question: str):
+    with start_observe(feature_slug="qa", name="ask"):
+        return answer(question)  # Separate trace per request
+```
+
+## Prompt Context Managers
+
+Prompts can be used as context managers to automatically link LLM calls to the prompt data for enhanced observability.
+
+### How It Works
+
+When you use a prompt as a context manager, it creates an active span that any subsequent LLM calls (via auto-instrumented providers) will automatically link to the prompt's text and model configuration.
+
+```python
+from basalt import Basalt
+import openai
+
+basalt = Basalt(api_key="your-api-key")
+client = openai.OpenAI()
+
+# Prompt span becomes active and scopes LLM calls
+with basalt.prompts.get_sync('summary-prompt', tag='production') as prompt:
+    # This LLM call automatically links to the prompt data
+    response = client.chat.completions.create(
+        model=prompt.model.model,
+        messages=[{"role": "user", "content": prompt.text}]
+    )
+
+basalt.shutdown()
+```
+
+### Async Support
+
+Context managers work seamlessly with async/await as well:
+
+```python
+import asyncio
+from basalt import Basalt
+import openai
+
+async def generate_summary():
+    basalt = Basalt(api_key="your-api-key")
+    client = openai.AsyncOpenAI()
+    
+    # Async context manager for async LLM calls
+    async with await basalt.prompts.get('summary-prompt', tag='production') as prompt:
+        response = await client.chat.completions.create(
+            model=prompt.model.model,
+            messages=[{"role": "user", "content": prompt.text}]
+        )
+    
+    basalt.shutdown()
+
+asyncio.run(generate_summary())
+```

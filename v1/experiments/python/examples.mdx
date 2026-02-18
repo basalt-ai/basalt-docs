@@ -47,6 +47,52 @@ def process_checkout(user_id):
 process_checkout("user_123")
 ```
 
+## Experiment Loop (Batch Evaluation)
+
+Process multiple items under the same experiment.  Each `start_observe()` call
+creates a **separate trace** automatically — the context manager cleans up
+OpenTelemetry context on exit, so the next iteration starts with a fresh
+`trace_id`.
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, ObserveKind
+
+basalt = Basalt(api_key="your-api-key")
+
+# Create one experiment for the entire batch
+experiment = basalt.experiments.create_sync(
+    feature_slug="support-ticket",
+    name="GPT-4o-mini Ticket Analysis",
+)
+
+tickets = [
+    "I can't log in after resetting my password.",
+    "Order #12345 hasn't arrived yet.",
+    "I was billed twice this month.",
+]
+
+for ticket in tickets:
+    # New trace per iteration — no client recreation needed
+    with start_observe(
+        name="analyse_ticket",
+        feature_slug="support-ticket",
+        experiment=experiment,
+    ) as span:
+        span.set_input({"ticket": ticket})
+        result = analyse(ticket)
+        observe.set_output({"result": result})
+
+# Shutdown ONCE at the end
+basalt.shutdown()
+```
+
+<Warning>
+Do **not** call `basalt.shutdown()` inside the loop or recreate the `Basalt`
+client per iteration.  `shutdown()` permanently kills the global
+`TracerProvider` — all subsequent traces would be silently dropped.
+</Warning>
+
 ## Context Manager Usage
 
 You can also use the context manager to wrap specific blocks of code with experiment context.

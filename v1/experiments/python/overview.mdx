@@ -16,13 +16,21 @@ pip install basalt-sdk
 
 ## Client Initialization
 
-You can interact with experiments using the `ExperimentsClient`.
+Access the experiments API through the `experiments` property on the main `Basalt` client:
 
 ```python
-from basalt.experiments import ExperimentsClient
+from basalt import Basalt
 
-client = ExperimentsClient(api_key="your-api-key")
+basalt = Basalt(api_key="your-api-key")
 ```
+
+<Warning>
+Create **one** `Basalt` instance per process and reuse it for the entire
+application lifetime.  `shutdown()` permanently destroys the global
+OpenTelemetry `TracerProvider` — never call it between loop iterations or
+between requests.  See [Observability Concepts](/v1/observabilite/python/concepts)
+for details.
+</Warning>
 
 ## Creating Experiments
 
@@ -31,7 +39,7 @@ You can create experiments programmatically to register new tests or variants.
 ### Synchronous Creation
 
 ```python
-experiment = client.create_sync(
+experiment = basalt.experiments.create_sync(
     feature_slug="llm-routing",
     name="Model Selection Experiment"
 )
@@ -45,7 +53,7 @@ print(f"Created experiment: {experiment.id}")
 import asyncio
 
 async def create_experiment():
-    experiment = await client.create(
+    experiment = await basalt.experiments.create(
         feature_slug="llm-routing",
         name="Model Selection Experiment"
     )
@@ -78,3 +86,34 @@ def run_variant_a():
     
     return "result"
 ```
+
+### Experiments in a Loop
+
+When processing multiple items under one experiment, each `start_observe()` call
+naturally creates a **separate trace** — the context manager cleans up the
+OpenTelemetry context on exit, so the next iteration starts fresh.
+
+```python
+experiment = basalt.experiments.create_sync(
+    feature_slug="support-ticket",
+    name="Ticket Analysis",
+)
+
+for ticket in tickets:
+    with start_observe(
+        name="analyse_ticket",
+        feature_slug="support-ticket",
+        experiment=experiment,
+    ) as span:
+        span.set_input({"ticket": ticket})
+        result = process(ticket)
+        observe.set_output({"result": result})
+
+basalt.shutdown()  # Once, at the end
+```
+
+<Warning>
+Do **not** call `basalt.shutdown()` inside the loop or recreate the `Basalt`
+client per iteration.  `shutdown()` permanently kills the `TracerProvider` —
+all subsequent traces would be silently dropped.
+</Warning>

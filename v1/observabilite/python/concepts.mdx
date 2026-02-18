@@ -388,6 +388,34 @@ All spans in each variant are tagged with the experiment ID, enabling:
 - Track experiment performance over time
 - Evaluate variant quality differences
 
+### Trace boundaries and experiments in loops
+
+Trace boundaries are determined by `start_observe()` context scoping, **not** by
+the `Basalt` client instance.  Each `start_observe()` call creates a new root
+span — and when no parent span is active, OpenTelemetry assigns a fresh
+`trace_id`.
+
+This means you can process multiple items under one experiment in a loop without
+recreating the client:
+
+```python
+for item in items:
+    with start_observe(
+        name="process",
+        feature_slug="batch",
+        experiment=experiment,  # Same experiment object
+    ):
+        handle(item)
+    # Context cleaned up here — next iteration gets a new trace
+```
+
+<Warning>
+Create **one** `Basalt` instance per process.  `shutdown()` permanently
+destroys the global `TracerProvider` — call it only at process exit.
+See [Experiments examples](/v1/experiments/python/examples) for a full
+batch-evaluation pattern.
+</Warning>
+
 ## Auto-Instrumentation
 
 Basalt automatically instruments popular LLM providers, vector databases, and frameworks without code changes.

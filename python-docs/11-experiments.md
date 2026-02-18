@@ -84,19 +84,39 @@ with start_observe(
 
 
 
-## Creating Experiments
+## Client Lifecycle
 
-### Using ExperimentsClient
-
-Create experiments programmatically using the API client:
+> **Important:** Create **one** `Basalt` instance per process and reuse it for the
+> entire application lifetime.  The client holds no trace state — trace boundaries
+> are determined by `start_observe()` calls, not by client instances.
+>
+> Call `basalt.shutdown()` **exactly once**, when the process is about to exit.
+> `shutdown()` permanently destroys the global OpenTelemetry `TracerProvider`.
+> Creating a new `Basalt` client after `shutdown()` will silently produce dead
+> traces that are never exported.
 
 ```python
-from basalt.experiments import ExperimentsClient
+from basalt import Basalt
 
-client = ExperimentsClient(api_key="your-api-key")
+basalt = Basalt(api_key="your-api-key")
+
+# ... use basalt throughout your application ...
+
+# Only at process exit:
+basalt.shutdown()
+```
+
+## Creating Experiments
+
+Create experiments using the `experiments` property on the `Basalt` client:
+
+```python
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
 
 # Create experiment synchronously
-experiment = client.create_sync(
+experiment = basalt.experiments.create_sync(
     feature_slug="my-feature",
     name="GPT-5.1 vs GPT-5 Test"
 )
@@ -109,17 +129,62 @@ print(f"Created experiment: {experiment.id}")
 
 ```python
 import asyncio
-from basalt.experiments import ExperimentsClient
+from basalt import Basalt
+
+basalt = Basalt(api_key="your-api-key")
 
 async def create_experiment():
-    client = ExperimentsClient(api_key="your-api-key")
-
-    experiment = await client.create(
+    experiment = await basalt.experiments.create(
         feature_slug="llm-routing",
         name="Model Selection Experiment"
     )
-
     return experiment
 
 experiment = asyncio.run(create_experiment())
 ```
+
+## Running Experiments in a Loop
+
+A common pattern is to process multiple items under the same experiment — for
+example, evaluating a batch of test cases or support tickets.
+
+Each `start_observe()` call naturally creates a **separate trace** (with its own
+`trace_id`) because the context manager cleans up the OpenTelemetry context on
+exit.  There is no need to recreate the `Basalt` client per iteration.
+
+```python
+from basalt import Basalt
+from basalt.observability import start_observe, observe, ObserveKind
+
+basalt = Basalt(api_key="your-api-key")
+
+# 1. Create one experiment
+experiment = basalt.experiments.create_sync(
+    feature_slug="support-ticket",
+    name="Support Ticket Analysis",
+)
+
+# 2. Loop — each iteration is a separate trace
+test_cases = ["case-1", "case-2", "case-3"]
+
+for case in test_cases:
+    # Each start_observe() creates a new root span (new trace_id)
+    with start_observe(
+        name="analyse_case",
+        feature_slug="support-ticket",
+        experiment=experiment,
+    ) as span:
+        span.set_input({"case": case})
+
+        # Child spans, LLM calls, tools, etc.
+        result = process(case)
+
+        observe.set_output({"result": result})
+
+# 3. Shutdown ONCE at the end
+basalt.shutdown()
+```
+
+> **Warning:** Do **not** call `basalt.shutdown()` inside the loop.  `shutdown()`
+> permanently kills the global `TracerProvider` — all subsequent iterations would
+> silently produce dead traces that are never exported.
